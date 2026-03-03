@@ -10,6 +10,7 @@ import type { AppState } from '../types';
 import { debug } from '../utils/debug-logger';
 import { TocRenderer } from '../ui/toc-renderer';
 import type { ExportUI } from '../ui/export-ui';
+import type { CommentManager } from '../comments/comment-manager';
 
 // Fix Vite's dynamic import base path for Chrome extensions
 // Override import.meta to use chrome-extension:// base URL
@@ -41,6 +42,7 @@ class MDViewContentScript {
   private state: AppState | null = null;
   private tocRenderer: TocRenderer | null = null;
   private exportUI: ExportUI | null = null;
+  private commentManager: CommentManager | null = null;
 
   async initialize(): Promise<void> {
     // Prevent running in iframes (used for file watching)
@@ -263,6 +265,11 @@ class MDViewContentScript {
         await this.setupExportUI();
       }
 
+      // Setup Comments (only for local files)
+      if (this.state?.preferences.commentsEnabled && window.location.protocol === 'file:') {
+        await this.setupComments(content, filePath);
+      }
+
       // Set up auto-reload if enabled (after initial render completes)
       if (this.state?.preferences.autoReload) {
         debug.info('MDView', 'Auto-reload is enabled, setting up file watcher...');
@@ -482,6 +489,12 @@ class MDViewContentScript {
     let reloadTimeout: number | null = null;
 
     const debouncedReload = () => {
+      // Skip reload if we just wrote comments
+      if (this.commentManager?.isWriteInProgress()) {
+        debug.debug('MDView', 'Skipping reload - comment write in progress');
+        return;
+      }
+
       // Don't reload too soon after page load
       const timeSincePageLoad = Date.now() - pageLoadTime;
       if (timeSincePageLoad < MIN_TIME_BEFORE_RELOAD) {
@@ -867,6 +880,21 @@ class MDViewContentScript {
   }
 
   /**
+   * Setup comment system for local files
+   */
+  private async setupComments(markdown: string, filePath: string): Promise<void> {
+    try {
+      debug.info('MDView', 'Setting up Comments...');
+      const { CommentManager } = await import('../comments/comment-manager');
+      this.commentManager = new CommentManager();
+      await this.commentManager.initialize(markdown, filePath, this.state!.preferences);
+      debug.info('MDView', 'Comments initialized');
+    } catch (error) {
+      debug.error('MDView', 'Failed to setup comments:', error);
+    }
+  }
+
+  /**
    * Handle preference changes
    */
   private async handlePreferenceChange(
@@ -903,6 +931,11 @@ class MDViewContentScript {
     if (this.exportUI) {
       this.exportUI.destroy();
       this.exportUI = null;
+    }
+
+    if (this.commentManager) {
+      this.commentManager.destroy();
+      this.commentManager = null;
     }
   }
 }
