@@ -49,6 +49,9 @@ export interface AppState {
     tocAutoCollapse?: boolean; // Auto-collapse nested sections
     tocPosition?: 'left' | 'right'; // Position of TOC
     tocStyle?: 'floating' | 'fixed'; // Style of TOC (floating card or fixed sidebar)
+    // Comments
+    commentsEnabled?: boolean; // Enable/disable comments feature
+    commentAuthor?: string; // Author name for new comments
     // Export settings
     exportDefaultFormat?: 'docx' | 'pdf';
     exportDefaultPageSize?: PaperSize;
@@ -476,3 +479,34 @@ export type FilenameTemplateVar =
   | '{year}' // YYYY
   | '{month}' // MM
   | '{day}'; // DD
+
+// Comment feature types
+
+/**
+ * A single comment attached to text in the markdown
+ */
+export interface Comment {
+  id: string; // e.g. "comment-1"
+  selectedText: string; // The text the comment is anchored to
+  body: string; // The comment content
+  author: string; // From extension settings
+  date: string; // ISO 8601 timestamp
+  resolved: boolean; // Whether the comment has been resolved
+}
+
+/**
+ * Result of parsing comments from raw markdown
+ */
+export interface CommentParseResult {
+  cleanedMarkdown: string; // Markdown with comment footnotes stripped
+  comments: Comment[]; // Extracted comments
+}
+
+/**
+ * Comment metadata stored in the footnote HTML comment
+ */
+export interface CommentMetadata {
+  author: string;
+  date: string;
+  resolved?: boolean;
+}
