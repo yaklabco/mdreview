@@ -24,6 +24,8 @@ const defaultState: AppState = {
     tocMaxDepth: 6,
     tocAutoCollapse: false,
     tocPosition: 'left',
+    commentsEnabled: true,
+    commentAuthor: '',
     blockedSites: [], // Sites where MDView should not render
   },
   document: {

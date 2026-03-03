@@ -136,6 +136,11 @@ class PopupManager {
       showToc.checked = !!preferences.showToc;
     }
 
+    const commentsEnabled = document.getElementById('comments-enabled') as HTMLInputElement;
+    if (commentsEnabled) {
+      commentsEnabled.checked = preferences.commentsEnabled !== false;
+    }
+
     // Update log level select
     const logLevelSelect = document.getElementById('log-level-select') as HTMLSelectElement;
     if (logLevelSelect) {
@@ -290,6 +295,21 @@ class PopupManager {
         void (async () => {
           await this.handlePreferenceChange({ showToc: target.checked });
           // Trigger reload to show/hide TOC
+          await chrome.tabs.reload();
+        })();
+      });
+    }
+
+    // Comments toggle
+    const commentsEnabled = document.getElementById('comments-enabled');
+    if (commentsEnabled) {
+      commentsEnabled.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        debug.log('Popup', 'Comments toggle changed:', target.checked);
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        void (async () => {
+          await this.handlePreferenceChange({ commentsEnabled: target.checked });
+          // Trigger reload to show/hide comments
           await chrome.tabs.reload();
         })();
       });
