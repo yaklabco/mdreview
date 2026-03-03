@@ -52,26 +52,21 @@ export class CommentManager {
     const result = parseComments(markdown);
     this.comments = [...result.comments];
 
-    // Set up UI - create gutter and append to document body
+    // Set up UI
     this.ui = new CommentUI();
-    const gutter = this.ui.createGutter();
-    document.body.appendChild(gutter);
 
-    for (const comment of this.comments) {
-      const card = this.ui.renderCard(comment);
-      gutter.appendChild(card);
-    }
-
-    // Add has-comments class to body when comments exist
-    if (this.comments.length > 0) {
-      document.body.classList.add('has-comments');
-    }
-
-    // Set up highlighter
+    // Set up highlighter - highlight text first, then position cards
     this.highlighter = new CommentHighlighter();
     const container = document.getElementById('mdview-container') || document.body;
     for (const comment of this.comments) {
       this.highlighter.highlightComment(container, comment);
+    }
+
+    // Render cards and position them next to their highlights
+    for (const comment of this.comments) {
+      const card = this.ui.renderCard(comment);
+      document.body.appendChild(card);
+      this.positionCardAtHighlight(card, comment.id);
     }
 
     // Set up context menu for adding comments
@@ -127,29 +122,32 @@ export class CommentManager {
       e.preventDefault();
       const selectedText = selection.toString().trim();
 
-      // Show input form in the gutter
       if (this.ui) {
-        const gutter = document.querySelector('.mdview-comment-gutter');
-        if (gutter) {
-          // Remove any existing input form
-          const existingForm = gutter.querySelector('.mdview-comment-input');
-          if (existingForm) existingForm.remove();
+        // Remove any existing input form
+        document.querySelector('.mdview-comment-input')?.remove();
 
-          const form = this.ui.renderInputForm(
-            (body: string) => {
-              if (body.trim()) {
-                void this.addComment(selectedText, body);
-              }
-              form.remove();
-            },
-            () => form.remove()
-          );
-          gutter.prepend(form);
+        // Get the selection's position to place the form nearby
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const scrollTop = window.scrollY;
 
-          // Focus the textarea
-          const textarea = form.querySelector('textarea');
-          if (textarea) textarea.focus();
-        }
+        const form = this.ui.renderInputForm(
+          (body: string) => {
+            if (body.trim()) {
+              void this.addComment(selectedText, body);
+            }
+            form.remove();
+          },
+          () => form.remove()
+        );
+
+        // Position the form in the right margin, aligned with the selection
+        form.style.top = `${rect.top + scrollTop}px`;
+        document.body.appendChild(form);
+
+        // Focus the textarea
+        const textarea = form.querySelector('textarea');
+        if (textarea) textarea.focus();
       }
     });
   }
@@ -224,14 +222,11 @@ export class CommentManager {
     // Serialize into markdown
     const updatedMarkdown = serializerAddComment(this.rawMarkdown, comment);
 
-    // Write to file
-    await this.writeFile(updatedMarkdown);
-
-    // Update internal state
+    // Update internal state immediately (optimistic)
     this.rawMarkdown = updatedMarkdown;
     this.comments.push(comment);
 
-    // Optimistically patch DOM
+    // Patch DOM immediately (optimistic)
     const container = document.getElementById('mdview-container') || document.body;
     if (this.highlighter) {
       this.highlighter.highlightComment(container, comment);
@@ -239,14 +234,17 @@ export class CommentManager {
 
     if (this.ui) {
       const card = this.ui.renderCard(comment);
-      const gutter = document.querySelector('.mdview-comment-gutter');
-      if (gutter) gutter.appendChild(card);
-      this.ui.showToast('Comment saved');
+      document.body.appendChild(card);
+      this.positionCardAtHighlight(card, comment.id);
     }
 
-    // Add has-comments class if this is the first comment
-    if (this.comments.length === 1) {
-      document.body.classList.add('has-comments');
+    // Write to file in the background
+    try {
+      await this.writeFile(updatedMarkdown);
+      if (this.ui) this.ui.showToast('Comment saved');
+    } catch (error) {
+      console.error('[MDView] Comment write failed:', error);
+      if (this.ui) this.ui.showToast(`Write failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -260,13 +258,19 @@ export class CommentManager {
       newBody
     );
 
-    await this.writeFile(updatedMarkdown);
-
-    // Update internal state
+    // Update internal state immediately
     this.rawMarkdown = updatedMarkdown;
     const comment = this.comments.find((c) => c.id === id);
     if (comment) {
       comment.body = newBody;
+    }
+
+    // Write to file
+    try {
+      await this.writeFile(updatedMarkdown);
+      if (this.ui) this.ui.showToast('Comment updated');
+    } catch {
+      if (this.ui) this.ui.showToast('Comment updated locally (file write failed)');
     }
   }
 
@@ -276,18 +280,23 @@ export class CommentManager {
   async resolveComment(id: string): Promise<void> {
     const updatedMarkdown = serializerResolveComment(this.rawMarkdown, id);
 
-    await this.writeFile(updatedMarkdown);
-
-    // Update internal state
+    // Update internal state immediately
     this.rawMarkdown = updatedMarkdown;
     const comment = this.comments.find((c) => c.id === id);
     if (comment) {
       comment.resolved = true;
     }
 
-    // Update highlight to resolved state
+    // Update highlight to resolved state immediately
     if (this.highlighter) {
       this.highlighter.setResolved(id);
+    }
+
+    // Write to file
+    try {
+      await this.writeFile(updatedMarkdown);
+    } catch {
+      if (this.ui) this.ui.showToast('Resolved locally (file write failed)');
     }
   }
 
@@ -297,13 +306,11 @@ export class CommentManager {
   async deleteComment(id: string): Promise<void> {
     const updatedMarkdown = serializerRemoveComment(this.rawMarkdown, id);
 
-    await this.writeFile(updatedMarkdown);
-
-    // Update internal state
+    // Update internal state immediately
     this.rawMarkdown = updatedMarkdown;
     this.comments = this.comments.filter((c) => c.id !== id);
 
-    // Remove highlight from DOM
+    // Remove highlight from DOM immediately
     if (this.highlighter) {
       this.highlighter.removeHighlight(id);
     }
@@ -314,9 +321,11 @@ export class CommentManager {
     );
     if (card) card.remove();
 
-    // Remove has-comments class if no comments remain
-    if (this.comments.length === 0) {
-      document.body.classList.remove('has-comments');
+    // Write to file
+    try {
+      await this.writeFile(updatedMarkdown);
+    } catch {
+      if (this.ui) this.ui.showToast('Deleted locally (file write failed)');
     }
   }
 
@@ -326,11 +335,15 @@ export class CommentManager {
   private async writeFile(content: string): Promise<void> {
     this.writeInProgress = true;
     try {
-      await chrome.runtime.sendNativeMessage('com.mdview.filewriter', {
-        action: 'write',
-        path: this.filePath,
-        content,
-      });
+      // Relay through service worker since content scripts can't use sendNativeMessage
+      const response = await chrome.runtime.sendMessage({
+        type: 'WRITE_FILE',
+        payload: { path: this.filePath, content },
+      }) as { success?: boolean; error?: string };
+
+      if (response?.error) {
+        throw new Error(response.error);
+      }
     } finally {
       // Keep the guard active for a grace period so the auto-reload watcher
       // has time to see and ignore the file change event we just caused.
@@ -370,7 +383,23 @@ export class CommentManager {
 
     this.highlighter = null;
     this.comments = [];
-    document.body.classList.remove('has-comments');
+
+    // Remove any floating cards/forms from DOM
+    document.querySelectorAll('.mdview-comment-card, .mdview-comment-input').forEach((el) => el.remove());
+  }
+
+  /**
+   * Position a comment card in the right margin, aligned with its highlight.
+   */
+  private positionCardAtHighlight(card: HTMLElement, commentId: string): void {
+    if (!this.highlighter) return;
+
+    const highlight = this.highlighter.getHighlightElement(commentId);
+    if (!highlight) return;
+
+    const rect = highlight.getBoundingClientRect();
+    const scrollTop = window.scrollY;
+    card.style.top = `${rect.top + scrollTop}px`;
   }
 
   /**

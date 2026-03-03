@@ -265,8 +265,8 @@ class MDViewContentScript {
         await this.setupExportUI();
       }
 
-      // Setup Comments (only for local files)
-      if (this.state?.preferences.commentsEnabled && window.location.protocol === 'file:') {
+      // Setup Comments (only for local files, default enabled)
+      if (this.state?.preferences.commentsEnabled !== false && window.location.protocol === 'file:') {
         await this.setupComments(content, filePath);
       }
 

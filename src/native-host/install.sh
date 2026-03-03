@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-HOST_SCRIPT="$SCRIPT_DIR/host.js"
+HOST_SCRIPT="$SCRIPT_DIR/host.cjs"
 HOST_NAME="com.mdview.filewriter"
 
 # Determine manifest directory based on OS

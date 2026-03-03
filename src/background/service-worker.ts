@@ -331,6 +331,25 @@ chrome.runtime.onMessage.addListener(
             break;
           }
 
+          case 'WRITE_FILE': {
+            const payload = message.payload as { path: string; content: string };
+            try {
+              const result = await chrome.runtime.sendNativeMessage(
+                'com.mdview.filewriter',
+                {
+                  action: 'write',
+                  path: payload.path,
+                  content: payload.content,
+                }
+              );
+              sendResponse(result);
+            } catch (error) {
+              debug.error('MDView-Background', 'Native write failed:', error);
+              sendResponse({ error: String(error) });
+            }
+            break;
+          }
+
           default:
             debug.warn('MDView', 'Unknown message type:', message.type);
             sendResponse({ error: 'Unknown message type' });

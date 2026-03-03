@@ -1984,68 +1984,26 @@ body.toc-visible-right .mdview-export-btn.position-right {
    Comment System Styles
    ============================================ */
 
-/* === Layout - Right Gutter === */
+/* === Floating Comment Cards === */
 
-/* Shift content left to make room for the comment gutter */
-body.mdview-active.has-comments #mdview-container {
-  max-width: calc(var(--md-max-width, 980px) - 280px);
-  margin-right: 280px;
-  margin-left: auto;
-}
-
-/* Full-width mode with comments */
-body.mdview-active.has-comments.full-width #mdview-container {
-  max-width: calc(100% - 280px);
-  margin-right: 280px;
-}
-
-/* Comment gutter panel */
-.mdview-comment-gutter {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 280px;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 100;
-  padding: 12px 8px;
-  background: var(--md-bg);
-  border-left: 1px solid var(--md-border);
-}
-
-.mdview-comment-gutter::-webkit-scrollbar {
-  width: 4px;
-}
-
-.mdview-comment-gutter::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.mdview-comment-gutter::-webkit-scrollbar-thumb {
-  background: var(--md-border);
-  border-radius: 4px;
-}
-
-.mdview-comment-gutter::-webkit-scrollbar-thumb:hover {
-  background: var(--md-fg-muted);
-}
-
-/* === Comment Cards === */
+/* Cards float absolutely in the right margin, aligned with their highlight */
 .mdview-comment-card {
+  position: absolute;
+  right: 16px;
+  width: 260px;
   background: var(--md-comment-card-bg, var(--md-code-bg));
   border-left: 3px solid var(--md-link);
   border-radius: 0 6px 6px 0;
   padding: 10px 12px;
-  margin-bottom: 8px;
   font-size: 13px;
-  box-shadow: 0 1px 3px var(--md-shadow);
-  transition: box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px var(--md-shadow);
+  z-index: 100;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .mdview-comment-card:hover,
 .mdview-comment-card.active {
-  box-shadow: 0 2px 8px var(--md-shadow);
+  box-shadow: 0 4px 16px var(--md-shadow);
 }
 
 .mdview-comment-card.resolved {
@@ -2162,12 +2120,15 @@ body.mdview-active.has-comments.full-width #mdview-container {
 
 /* === Comment Input Form === */
 .mdview-comment-input {
+  position: absolute;
+  right: 16px;
+  width: 260px;
   background: var(--md-comment-card-bg, var(--md-code-bg));
   border: 1px solid var(--md-border);
   border-radius: 6px;
   padding: 12px;
-  margin-bottom: 8px;
-  box-shadow: 0 1px 4px var(--md-shadow);
+  box-shadow: 0 4px 16px var(--md-shadow);
+  z-index: 200;
 }
 
 .mdview-comment-input textarea {
@@ -2253,21 +2214,16 @@ body.mdview-active.has-comments.full-width #mdview-container {
 
 /* === Comment System Responsive === */
 @media (max-width: 1024px) {
-  /* Hide the comment gutter on narrow viewports */
-  .mdview-comment-gutter {
+  /* Hide floating cards on narrow viewports */
+  .mdview-comment-card,
+  .mdview-comment-input {
     display: none;
-  }
-
-  /* Restore normal container width */
-  body.mdview-active.has-comments #mdview-container {
-    max-width: var(--md-max-width, 980px);
-    margin-right: auto;
   }
 }
 
 /* === Comment System Print === */
 @media print {
-  .mdview-comment-gutter,
+  .mdview-comment-card,
   .mdview-comment-input,
   .mdview-toast,
   .comment-menu-btn {

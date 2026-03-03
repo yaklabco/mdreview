@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/opt/homebrew/bin/node
 'use strict';
 
 const fs = require('fs');
@@ -57,7 +57,31 @@ function handleMessage(msg) {
   }
 
   try {
-    fs.writeFileSync(msg.path, msg.content, 'utf8');
+    const existing = fs.readFileSync(msg.path, 'utf8');
+    const newContent = msg.content;
+
+    // Extract the document body (everything before the comments separator)
+    const SEP = '<!-- mdview:comments -->';
+    const existingBody = existing.indexOf(SEP) !== -1
+      ? existing.substring(0, existing.indexOf(SEP)).trimEnd()
+      : existing.trimEnd();
+    const newBody = newContent.indexOf(SEP) !== -1
+      ? newContent.substring(0, newContent.indexOf(SEP)).trimEnd()
+      : newContent.trimEnd();
+
+    // Strip all [^comment-N] references for comparison since those are
+    // the inline markers the serializer inserts/removes
+    const REF = /\[\^comment-\d+\]/g;
+    const existingClean = existingBody.replace(REF, '');
+    const newClean = newBody.replace(REF, '');
+
+    if (existingClean !== newClean) {
+      return writeMessage({
+        error: 'Refused: write would modify document content beyond comment markers. Only comment changes are allowed.'
+      });
+    }
+
+    fs.writeFileSync(msg.path, newContent, 'utf8');
     writeMessage({ success: true });
   } catch (err) {
     writeMessage({ error: err.message });
