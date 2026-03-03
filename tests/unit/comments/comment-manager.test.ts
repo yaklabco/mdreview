@@ -318,7 +318,9 @@ describe('CommentManager', () => {
       );
     });
 
-    test('returns true during writes', async () => {
+    test('returns true during writes and stays true during grace period', async () => {
+      vi.useFakeTimers();
+
       // Initially false
       expect(manager.isWriteInProgress()).toBe(false);
 
@@ -342,8 +344,16 @@ describe('CommentManager', () => {
       resolveNativeMessage({ success: true });
       await writePromise;
 
-      // Should be false after write completes
+      // Should still be true during the grace period
+      expect(manager.isWriteInProgress()).toBe(true);
+
+      // Advance past the grace period (1000ms)
+      vi.advanceTimersByTime(1000);
+
+      // Now should be false
       expect(manager.isWriteInProgress()).toBe(false);
+
+      vi.useRealTimers();
     });
   });
 

@@ -180,14 +180,14 @@ export class CommentUI {
     actions.className = 'mdview-comment-input-actions';
 
     const saveBtn = document.createElement('button');
-    saveBtn.className = 'mdview-comment-save-btn';
+    saveBtn.className = 'mdview-comment-btn-save';
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', () => {
       onSave(textarea.value);
     });
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'mdview-comment-cancel-btn';
+    cancelBtn.className = 'mdview-comment-btn-cancel';
     cancelBtn.textContent = 'Cancel';
     cancelBtn.addEventListener('click', () => {
       onCancel();

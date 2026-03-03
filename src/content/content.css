@@ -1993,6 +1993,12 @@ body.mdview-active.has-comments #mdview-container {
   margin-left: auto;
 }
 
+/* Full-width mode with comments */
+body.mdview-active.has-comments.full-width #mdview-container {
+  max-width: calc(100% - 280px);
+  margin-right: 280px;
+}
+
 /* Comment gutter panel */
 .mdview-comment-gutter {
   position: fixed;
@@ -2056,6 +2062,7 @@ body.mdview-active.has-comments #mdview-container {
   align-items: center;
   gap: 6px;
   margin-bottom: 6px;
+  position: relative;
 }
 
 .comment-author {
@@ -2103,6 +2110,37 @@ body.mdview-active.has-comments #mdview-container {
   color: #fff;
   line-height: 1.5;
   vertical-align: middle;
+}
+
+/* === Overflow Menu === */
+.mdview-comment-menu {
+  position: absolute;
+  right: 4px;
+  top: 100%;
+  background: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px var(--md-shadow);
+  z-index: 200;
+  min-width: 120px;
+  padding: 4px 0;
+}
+
+.mdview-comment-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--md-fg);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.1s ease;
+}
+
+.mdview-comment-menu-item:hover {
+  background: var(--md-selection);
 }
 
 /* === Text Highlighting === */
@@ -2196,8 +2234,8 @@ body.mdview-active.has-comments #mdview-container {
   bottom: 24px;
   right: 24px;
   padding: 10px 20px;
-  background: #333;
-  color: #fff;
+  background: var(--md-fg, #333);
+  color: var(--md-bg, #fff);
   border-radius: 6px;
   font-size: 13px;
   z-index: 10000;
