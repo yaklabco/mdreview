@@ -42,6 +42,9 @@ const catppuccinMocha: Theme = {
     warning: '#f9e2af',
     error: '#f38ba8',
     info: '#89b4fa',
+    commentHighlight: 'rgba(249, 226, 175, 0.25)',
+    commentHighlightResolved: 'rgba(249, 226, 175, 0.08)',
+    commentCardBg: '#1e1e2e',
   },
 
   typography: {

@@ -42,6 +42,9 @@ const monokai: Theme = {
     warning: '#e6db74',
     error: '#f92672',
     info: '#66d9ef',
+    commentHighlight: 'rgba(230, 219, 116, 0.25)',
+    commentHighlightResolved: 'rgba(230, 219, 116, 0.08)',
+    commentCardBg: '#3e3d32',
   },
 
   typography: {

@@ -42,6 +42,9 @@ const catppuccinFrappe: Theme = {
     warning: '#ef9f76',
     error: '#e78284',
     info: '#8caaee',
+    commentHighlight: 'rgba(229, 200, 144, 0.25)',
+    commentHighlightResolved: 'rgba(229, 200, 144, 0.08)',
+    commentCardBg: '#292c3c',
   },
 
   typography: {

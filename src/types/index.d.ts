@@ -117,6 +117,10 @@ export interface ThemeColors {
   warning: string;
   error: string;
   info: string;
+  // Comment highlighting
+  commentHighlight: string;
+  commentHighlightResolved: string;
+  commentCardBg: string;
 }
 
 export interface ThemeTypography {

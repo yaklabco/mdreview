@@ -42,6 +42,9 @@ const catppuccinMacchiato: Theme = {
     warning: '#eed49f',
     error: '#ed8796',
     info: '#8aadf4',
+    commentHighlight: 'rgba(238, 212, 159, 0.25)',
+    commentHighlightResolved: 'rgba(238, 212, 159, 0.08)',
+    commentCardBg: '#1e2030',
   },
 
   typography: {
