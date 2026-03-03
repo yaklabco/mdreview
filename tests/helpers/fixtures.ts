@@ -155,6 +155,9 @@ export const mockTheme = {
     warning: '#ffd33d',
     error: '#d73a49',
     info: '#0366d6',
+    commentHighlight: 'rgba(255, 212, 59, 0.35)',
+    commentHighlightResolved: 'rgba(155, 155, 155, 0.2)',
+    commentCardBg: '#f6f8fa',
   },
   typography: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',

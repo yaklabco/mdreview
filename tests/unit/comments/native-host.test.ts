@@ -112,7 +112,7 @@ describe('Native Host Message Handling', () => {
 
     it('should return error for non-markdown file path', () => {
       const result = handleMessage({ action: 'write', path: '/path/to/file.js', content: 'hello' });
-      expect(result.error).toMatch(/not a markdown file/);
+      expect((result as { error: string }).error).toMatch(/not a markdown file/);
     });
 
     it('should write file and return success for valid message', () => {
