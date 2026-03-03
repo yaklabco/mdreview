@@ -6,7 +6,13 @@
 import { MarkdownConverter } from './markdown-converter';
 import { domPurifier } from '../utils/dom-purifier';
 import { workerPool } from '../workers/worker-pool';
-import type { ConversionResult, ThemeName, CachedResult, ParseTaskPayload } from '../types';
+import type {
+  ConversionResult,
+  ThemeName,
+  CachedResult,
+  ParseTaskPayload,
+  CommentParseResult,
+} from '../types';
 import { debug } from '../utils/debug-logger';
 import { splitIntoSections } from '../utils/section-splitter';
 import { SkeletonRenderer } from '../utils/skeleton-renderer';
@@ -46,6 +52,7 @@ export class RenderPipeline {
   private workersEnabled = true;
   private progressUpdateTimer: number | null = null;
   private lastProgressUpdate = 0;
+  private lastCommentParseResult: CommentParseResult | null = null;
 
   constructor() {
     this.converter = new MarkdownConverter();
@@ -137,6 +144,20 @@ export class RenderPipeline {
         processedMarkdown = stripResult.markdown;
         if (stripResult.tocFound) {
           debug.info('RenderPipeline', 'Stripped original TOC from markdown');
+        }
+      }
+
+      // Preprocess: Strip comment footnotes before parsing
+      this.lastCommentParseResult = null;
+      if ((preferences as { commentsEnabled?: boolean }).commentsEnabled) {
+        const { parseComments } = await import('../comments/comment-parser');
+        this.lastCommentParseResult = parseComments(processedMarkdown);
+        processedMarkdown = this.lastCommentParseResult.cleanedMarkdown;
+        if (this.lastCommentParseResult.comments.length > 0) {
+          debug.info(
+            'RenderPipeline',
+            `Stripped ${this.lastCommentParseResult.comments.length} comment footnotes from markdown`
+          );
         }
       }
 
@@ -544,6 +565,20 @@ export class RenderPipeline {
       }
     }
 
+    // Preprocess: Strip comment footnotes before parsing
+    this.lastCommentParseResult = null;
+    if ((preferences as { commentsEnabled?: boolean }).commentsEnabled) {
+      const { parseComments } = await import('../comments/comment-parser');
+      this.lastCommentParseResult = parseComments(processedMarkdown);
+      processedMarkdown = this.lastCommentParseResult.cleanedMarkdown;
+      if (this.lastCommentParseResult.comments.length > 0) {
+        debug.info(
+          'RenderPipeline',
+          `Stripped ${this.lastCommentParseResult.comments.length} comment footnotes (progressive hydration)`
+        );
+      }
+    }
+
     // Split markdown into sections
     const sections = splitIntoSections(processedMarkdown);
     debug.info('RenderPipeline', `Progressive hydration: ${sections.length} sections`);
@@ -648,6 +683,13 @@ export class RenderPipeline {
     });
 
     debug.info('RenderPipeline', 'Progressive hydration fully complete');
+  }
+
+  /**
+   * Get the comment parse result from the last render
+   */
+  getLastCommentParseResult(): CommentParseResult | null {
+    return this.lastCommentParseResult;
   }
 
   /**
