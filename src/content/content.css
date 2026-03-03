@@ -1979,3 +1979,264 @@ body.toc-visible-right .mdview-export-btn.position-right {
     display: none !important;
   }
 }
+
+/* ============================================
+   Comment System Styles
+   ============================================ */
+
+/* === Layout - Right Gutter === */
+
+/* Shift content left to make room for the comment gutter */
+body.mdview-active.has-comments #mdview-container {
+  max-width: calc(var(--md-max-width, 980px) - 280px);
+  margin-right: 280px;
+  margin-left: auto;
+}
+
+/* Comment gutter panel */
+.mdview-comment-gutter {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+  padding: 12px 8px;
+  background: var(--md-bg);
+  border-left: 1px solid var(--md-border);
+}
+
+.mdview-comment-gutter::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mdview-comment-gutter::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mdview-comment-gutter::-webkit-scrollbar-thumb {
+  background: var(--md-border);
+  border-radius: 4px;
+}
+
+.mdview-comment-gutter::-webkit-scrollbar-thumb:hover {
+  background: var(--md-fg-muted);
+}
+
+/* === Comment Cards === */
+.mdview-comment-card {
+  background: var(--md-comment-card-bg, var(--md-code-bg));
+  border-left: 3px solid var(--md-link);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  box-shadow: 0 1px 3px var(--md-shadow);
+  transition: box-shadow 0.15s ease;
+}
+
+.mdview-comment-card:hover,
+.mdview-comment-card.active {
+  box-shadow: 0 2px 8px var(--md-shadow);
+}
+
+.mdview-comment-card.resolved {
+  opacity: 0.5;
+  border-left-color: var(--md-border);
+}
+
+.mdview-comment-card.resolved .comment-body {
+  text-decoration: line-through;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--md-fg);
+}
+
+.comment-date {
+  font-size: 11px;
+  color: var(--md-fg-muted);
+  margin-left: auto;
+}
+
+.comment-body {
+  color: var(--md-fg-muted);
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.comment-menu-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: var(--md-fg-muted);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background-color 0.15s ease;
+}
+
+.comment-menu-btn:hover {
+  background: var(--md-selection);
+}
+
+.resolved-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--md-success);
+  color: #fff;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+/* === Text Highlighting === */
+.mdview-comment-highlight {
+  background-color: var(--md-comment-highlight, rgba(255, 212, 59, 0.35));
+  border-radius: 2px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.mdview-comment-highlight:hover,
+.mdview-comment-highlight.active {
+  filter: brightness(1.15);
+}
+
+.mdview-comment-highlight.resolved {
+  background-color: var(--md-comment-highlight-resolved, rgba(155, 155, 155, 0.2));
+}
+
+/* === Comment Input Form === */
+.mdview-comment-input {
+  background: var(--md-comment-card-bg, var(--md-code-bg));
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px var(--md-shadow);
+}
+
+.mdview-comment-input textarea {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-family);
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mdview-comment-input textarea:focus {
+  outline: none;
+  border-color: var(--md-link);
+  box-shadow: 0 0 0 3px var(--md-selection);
+}
+
+.mdview-comment-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mdview-comment-input-actions button {
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--md-border);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mdview-comment-btn-cancel {
+  background: var(--md-bg);
+  color: var(--md-fg);
+}
+
+.mdview-comment-btn-cancel:hover {
+  background: var(--md-bg-secondary);
+}
+
+.mdview-comment-btn-save {
+  background: var(--md-link);
+  color: #fff;
+  border-color: var(--md-link);
+}
+
+.mdview-comment-btn-save:hover {
+  filter: brightness(1.1);
+}
+
+/* === Comment Toast Notification === */
+.mdview-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.mdview-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* === Comment System Responsive === */
+@media (max-width: 1024px) {
+  /* Hide the comment gutter on narrow viewports */
+  .mdview-comment-gutter {
+    display: none;
+  }
+
+  /* Restore normal container width */
+  body.mdview-active.has-comments #mdview-container {
+    max-width: var(--md-max-width, 980px);
+    margin-right: auto;
+  }
+}
+
+/* === Comment System Print === */
+@media print {
+  .mdview-comment-gutter,
+  .mdview-comment-input,
+  .mdview-toast,
+  .comment-menu-btn {
+    display: none !important;
+  }
+
+  .mdview-comment-highlight {
+    background-color: transparent !important;
+  }
+}
