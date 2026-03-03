@@ -87,6 +87,7 @@ const githubLight: Theme = {
       secondaryBkg: '#eaeef2',
       tertiaryBkg: '#ffffff',
       textColor: '#24292f',
+      tertiaryTextColor: '#24292f',
       nodeBkg: '#f6f8fa',
       nodeBorder: '#d0d7de',
       clusterBkg: '#eaeef2',
@@ -94,12 +95,17 @@ const githubLight: Theme = {
       defaultLinkColor: '#0969da',
       titleColor: '#1f2328',
       edgeLabelBackground: '#ffffff',
+      // ER diagram specific
+      relationLabelColor: '#24292f',
+      relationLabelBackground: '#ffffff',
+      attributeBackgroundColorOdd: '#f6f8fa',
+      attributeBackgroundColorEven: '#ffffff',
       actorBorder: '#d0d7de',
       actorBkg: '#f6f8fa',
       actorTextColor: '#24292f',
       actorLineColor: '#d0d7de',
       signalColor: '#24292f',
-      signalTextColor: '#ffffff',
+      signalTextColor: '#24292f',
       labelBoxBkgColor: '#f6f8fa',
       labelBoxBorderColor: '#d0d7de',
       labelTextColor: '#24292f',
@@ -115,4 +121,3 @@ const githubLight: Theme = {
 };
 
 export default githubLight;
-
