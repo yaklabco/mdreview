@@ -7,6 +7,7 @@
  */
 
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 export const ALLOWED_EXTENSIONS = ['.md', '.markdown', '.mdx'];
@@ -17,15 +18,26 @@ export interface WriteMessage {
   content?: string | null;
 }
 
+export interface GetUsernameMessage {
+  action: 'get_username';
+}
+
+export type HostMessage = WriteMessage | GetUsernameMessage;
+
 export interface SuccessResponse {
   success: true;
+}
+
+export interface UsernameResponse {
+  success: true;
+  username: string;
 }
 
 export interface ErrorResponse {
   error: string;
 }
 
-export type HostResponse = SuccessResponse | ErrorResponse;
+export type HostResponse = SuccessResponse | UsernameResponse | ErrorResponse;
 
 /**
  * Validate that the given file path has an allowed markdown extension.
@@ -44,9 +56,18 @@ export function validatePath(filePath: string): string | null {
  * Does not perform any I/O on stdin/stdout -- the caller is
  * responsible for serialising the response.
  */
-export function handleMessage(msg: WriteMessage | null | string): HostResponse {
+export function handleMessage(msg: HostMessage | null | string): HostResponse {
   if (!msg || typeof msg !== 'object') {
     return { error: 'Invalid message format' };
+  }
+
+  if (msg.action === 'get_username') {
+    try {
+      return { success: true, username: os.userInfo().username };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { error: message };
+    }
   }
 
   if (msg.action !== 'write') {

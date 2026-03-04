@@ -323,4 +323,218 @@ More content here.`;
       expect(result.cleanedMarkdown).toBe('First and second words.');
     });
   });
+
+  describe('selectedText from metadata', () => {
+    it('should use selectedText from metadata when available', () => {
+      const markdown = `Some **important**[^comment-1] text.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","selectedText":"important"} -->
+    This is a comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].selectedText).toBe('important');
+    });
+
+    it('should fall back to heuristic when selectedText not in metadata', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].selectedText).toBe('text');
+    });
+  });
+
+  describe('context from metadata', () => {
+    it('should reconstruct context when positional fields are present', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","selectedText":"text","line":5,"section":"Installation","sectionLevel":2,"breadcrumb":["Getting Started","Installation"]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      const ctx = result.comments[0].context;
+      expect(ctx).toBeDefined();
+      expect(ctx!.line).toBe(5);
+      expect(ctx!.section).toBe('Installation');
+      expect(ctx!.sectionLevel).toBe(2);
+      expect(ctx!.breadcrumb).toEqual(['Getting Started', 'Installation']);
+    });
+
+    it('should leave context undefined when no positional fields exist', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].context).toBeUndefined();
+    });
+
+    it('should handle partial context (line only, no section)', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","line":3} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      const ctx = result.comments[0].context;
+      expect(ctx).toBeDefined();
+      expect(ctx!.line).toBe(3);
+      expect(ctx!.section).toBeUndefined();
+      expect(ctx!.sectionLevel).toBeUndefined();
+      expect(ctx!.breadcrumb).toEqual([]);
+    });
+  });
+
+  describe('tags from metadata', () => {
+    it('should parse tags array from metadata', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","tags":["blocking","suggestion"]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].tags).toEqual(['blocking', 'suggestion']);
+    });
+
+    it('should leave tags undefined when not present in metadata', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].tags).toBeUndefined();
+    });
+
+    it('should handle empty tags array as undefined', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","tags":[]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].tags).toBeUndefined();
+    });
+
+    it('should parse single tag', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","tags":["nit"]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].tags).toEqual(['nit']);
+    });
+  });
+
+  describe('replies from metadata', () => {
+    it('should parse replies array from metadata', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].replies).toHaveLength(1);
+      expect(result.comments[0].replies![0].id).toBe('reply-1');
+      expect(result.comments[0].replies![0].author).toBe('bob');
+      expect(result.comments[0].replies![0].body).toBe('Good catch');
+      expect(result.comments[0].replies![0].date).toBe('2026-03-04T10:00:00Z');
+    });
+
+    it('should parse multiple replies', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","replies":[{"id":"reply-1","author":"bob","body":"First","date":"2026-03-04T10:00:00Z"},{"id":"reply-2","author":"carol","body":"Second","date":"2026-03-04T11:00:00Z"}]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments[0].replies).toHaveLength(2);
+      expect(result.comments[0].replies![0].id).toBe('reply-1');
+      expect(result.comments[0].replies![1].id).toBe('reply-2');
+    });
+
+    it('should leave replies undefined when not present in metadata', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments[0].replies).toBeUndefined();
+    });
+
+    it('should handle empty replies array as undefined', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","replies":[]} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments[0].replies).toBeUndefined();
+    });
+  });
+
+  describe('reactions from metadata', () => {
+    it('should parse reactions from metadata', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","reactions":{"\u{1F44D}":["bob","carol"],"\u{2764}\u{FE0F}":["alice"]}} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments[0].reactions).toBeDefined();
+      expect(result.comments[0].reactions!['\u{1F44D}']).toEqual(['bob', 'carol']);
+      expect(result.comments[0].reactions!['\u{2764}\u{FE0F}']).toEqual(['alice']);
+    });
+
+    it('should leave reactions undefined when not present', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments[0].reactions).toBeUndefined();
+    });
+
+    it('should handle empty reactions object as undefined', () => {
+      const markdown = `Some text[^comment-1] here.
+
+<!-- mdview:comments -->
+[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","reactions":{}} -->
+    A comment`;
+
+      const result = parseComments(markdown);
+      expect(result.comments[0].reactions).toBeUndefined();
+    });
+  });
 });

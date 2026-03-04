@@ -13,12 +13,14 @@
  *       for the 404 case.
  */
 
-import type { Comment, CommentMetadata } from '../types';
+import type { Comment, CommentMetadata, CommentReply } from '../types';
+import type { SourcePositionMap, SelectionContext } from './source-position-map';
+import { findInsertionPoint } from './source-position-map';
 
 const COMMENT_SEPARATOR = '<!-- mdview:comments -->';
 const COMMENT_ID_PATTERN = /\[\^comment-(\d+)\]/g;
 const FOOTNOTE_DEF_PATTERN =
-  /^\[\^(comment-\d+)\]: <!-- mdview:comment (\{[^}]+\}) -->/;
+  /^\[\^(comment-\d+)\]: <!-- mdview:comment (.+?) -->/;
 
 /**
  * Scan the markdown for `[^comment-N]` patterns and return `comment-(max+1)`.
@@ -48,6 +50,31 @@ function buildMetadataJson(meta: CommentMetadata): string {
   if (meta.resolved) {
     obj.resolved = true;
   }
+  if (meta.selectedText) {
+    obj.selectedText = meta.selectedText;
+  }
+  // Positional context fields
+  if (meta.line !== undefined) {
+    obj.line = meta.line;
+  }
+  if (meta.section !== undefined) {
+    obj.section = meta.section;
+  }
+  if (meta.sectionLevel !== undefined) {
+    obj.sectionLevel = meta.sectionLevel;
+  }
+  if (meta.breadcrumb !== undefined && meta.breadcrumb.length > 0) {
+    obj.breadcrumb = meta.breadcrumb;
+  }
+  if (meta.tags !== undefined && meta.tags.length > 0) {
+    obj.tags = meta.tags;
+  }
+  if (meta.replies !== undefined && meta.replies.length > 0) {
+    obj.replies = meta.replies;
+  }
+  if (meta.reactions !== undefined && Object.keys(meta.reactions).length > 0) {
+    obj.reactions = meta.reactions;
+  }
   return JSON.stringify(obj);
 }
 
@@ -71,6 +98,24 @@ function buildFootnoteBlock(comment: Comment): string {
   };
   if (comment.resolved) {
     meta.resolved = true;
+  }
+  if (comment.selectedText) {
+    meta.selectedText = comment.selectedText;
+  }
+  if (comment.context) {
+    meta.line = comment.context.line;
+    meta.section = comment.context.section;
+    meta.sectionLevel = comment.context.sectionLevel;
+    meta.breadcrumb = comment.context.breadcrumb;
+  }
+  if (comment.tags && comment.tags.length > 0) {
+    meta.tags = comment.tags;
+  }
+  if (comment.replies && comment.replies.length > 0) {
+    meta.replies = comment.replies;
+  }
+  if (comment.reactions && Object.keys(comment.reactions).length > 0) {
+    meta.reactions = comment.reactions;
   }
   const metaJson = buildMetadataJson(meta);
   const header = `[^${comment.id}]: <!-- mdview:comment ${metaJson} -->`;
@@ -162,6 +207,53 @@ export function addComment(markdown: string, comment: Comment): string {
     );
   } else {
     // No separator yet; add it
+    const trimmedContent = updatedContent.trimEnd();
+    return (
+      trimmedContent +
+      '\n\n' +
+      COMMENT_SEPARATOR +
+      '\n' +
+      footnoteBlock + '\n'
+    );
+  }
+}
+
+/**
+ * Add a comment using a pre-built source position map for accurate insertion.
+ * Falls back to `addComment()` (text-search based) if the map can't find the position.
+ */
+export function addCommentAtOffset(
+  markdown: string,
+  comment: Comment,
+  sourceMap: SourcePositionMap,
+  context?: SelectionContext
+): string {
+  const offset = findInsertionPoint(sourceMap, comment.selectedText, context);
+
+  if (offset === null) {
+    // Fallback to text-search based insertion
+    return addComment(markdown, comment);
+  }
+
+  const [contentSection, existingComments] = splitAtSeparator(markdown);
+
+  // Insert the reference at the exact offset in the content section
+  const ref = `[^${comment.id}]`;
+  const updatedContent =
+    contentSection.slice(0, offset) + ref + contentSection.slice(offset);
+
+  // Build footnote block
+  const footnoteBlock = buildFootnoteBlock(comment);
+
+  if (existingComments !== null) {
+    const trimmedComments = existingComments.trimEnd();
+    return (
+      updatedContent +
+      COMMENT_SEPARATOR +
+      (trimmedComments ? trimmedComments + '\n\n' : '\n') +
+      footnoteBlock + '\n'
+    );
+  } else {
     const trimmedContent = updatedContent.trimEnd();
     return (
       trimmedContent +
@@ -295,6 +387,21 @@ export function updateComment(
  * Resolve a comment: parse the metadata JSON, set resolved:true, re-serialize.
  */
 export function resolveComment(markdown: string, commentId: string): string {
+  return updateCommentMetadata(markdown, commentId, (meta) => {
+    meta.resolved = true;
+  });
+}
+
+/**
+ * Generic metadata updater: parse a comment's metadata JSON, call the updater
+ * function to mutate it, then rebuild the header line. Preserves body and
+ * other comments.
+ */
+export function updateCommentMetadata(
+  markdown: string,
+  commentId: string,
+  updater: (meta: CommentMetadata) => void
+): string {
   const [contentSection, commentsSection] = splitAtSeparator(markdown);
 
   if (commentsSection === null) {
@@ -302,13 +409,15 @@ export function resolveComment(markdown: string, commentId: string): string {
   }
 
   const blocks = parseFootnoteBlocks(commentsSection);
+  let found = false;
+
   const updatedBlocks = blocks.map((b) => {
     if (b.id === commentId) {
-      // Parse the metadata from the header line
       const defMatch = FOOTNOTE_DEF_PATTERN.exec(b.headerLine);
       if (defMatch) {
+        found = true;
         const meta: CommentMetadata = JSON.parse(defMatch[2]);
-        meta.resolved = true;
+        updater(meta);
         const metaJson = buildMetadataJson(meta);
         const newHeader = `[^${b.id}]: <!-- mdview:comment ${metaJson} -->`;
         return { ...b, headerLine: newHeader };
@@ -317,6 +426,10 @@ export function resolveComment(markdown: string, commentId: string): string {
     return b;
   });
 
+  if (!found) {
+    return markdown;
+  }
+
   const serialized = serializeFootnoteBlocks(updatedBlocks);
   return (
     contentSection +
@@ -324,4 +437,70 @@ export function resolveComment(markdown: string, commentId: string): string {
     '\n' +
     serialized + '\n'
   );
+}
+
+/**
+ * Add a reply to a comment. Generates a sequential reply ID scoped to the
+ * parent comment. Returns the updated markdown and the generated reply ID.
+ */
+export function addReply(
+  markdown: string,
+  commentId: string,
+  reply: Omit<CommentReply, 'id'>
+): { markdown: string; replyId: string } {
+  let replyId = '';
+
+  const updated = updateCommentMetadata(markdown, commentId, (meta) => {
+    const replies = meta.replies ?? [];
+    // Generate sequential ID: reply-1, reply-2, ...
+    let maxNum = 0;
+    for (const r of replies) {
+      const match = /^reply-(\d+)$/.exec(r.id);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+    replyId = `reply-${maxNum + 1}`;
+    replies.push({ id: replyId, ...reply });
+    meta.replies = replies;
+  });
+
+  return { markdown: updated, replyId };
+}
+
+/**
+ * Toggle an emoji reaction for an author on a comment.
+ * Adds the author if not present; removes if already present.
+ * Removes the emoji key entirely when no authors remain.
+ */
+export function toggleReaction(
+  markdown: string,
+  commentId: string,
+  emoji: string,
+  author: string
+): string {
+  return updateCommentMetadata(markdown, commentId, (meta) => {
+    const reactions = meta.reactions ?? {};
+    const authors = reactions[emoji] ?? [];
+
+    const idx = authors.indexOf(author);
+    if (idx >= 0) {
+      authors.splice(idx, 1);
+      if (authors.length === 0) {
+        delete reactions[emoji];
+      } else {
+        reactions[emoji] = authors;
+      }
+    } else {
+      reactions[emoji] = [...authors, author];
+    }
+
+    // Only set reactions if non-empty
+    if (Object.keys(reactions).length > 0) {
+      meta.reactions = reactions;
+    } else {
+      delete meta.reactions;
+    }
+  });
 }

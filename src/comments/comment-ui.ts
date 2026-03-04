@@ -1,16 +1,30 @@
 /**
  * Comment UI Module
- * Renders margin comment cards, input form, and overflow menus.
+ * Renders margin comment cards, input form, reply forms, reaction pills,
+ * emoji picker, and overflow menus.
  * Dispatches custom events for all user actions.
  */
 
-import type { Comment } from '../types';
+import type { Comment, CommentTag, CommentReply, CommentReactions } from '../types';
+import { QUICK_EMOJIS, EMOJI_CATEGORIES, searchEmojis } from './emoji-data';
+
+const ALL_TAGS: CommentTag[] = [
+  'blocking', 'nit', 'suggestion', 'question', 'praise', 'todo', 'fyi',
+];
 
 export class CommentUI {
   private gutter: HTMLElement | null = null;
   private cards: HTMLElement[] = [];
   private activeMenu: HTMLElement | null = null;
   private clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
+  private currentAuthor: string = '';
+
+  /**
+   * Set the current author name (used for reaction pill .mine class)
+   */
+  setCurrentAuthor(author: string): void {
+    this.currentAuthor = author;
+  }
 
   /**
    * Create the comment gutter container
@@ -39,7 +53,7 @@ export class CommentUI {
 
     const author = document.createElement('strong');
     author.className = 'comment-author';
-    author.textContent = comment.author;
+    author.textContent = comment.author || 'Anonymous';
 
     const date = document.createElement('span');
     date.className = 'comment-date';
@@ -64,7 +78,47 @@ export class CommentUI {
     body.textContent = comment.body;
 
     card.appendChild(header);
+
+    // Tag pills
+    if (comment.tags && comment.tags.length > 0) {
+      const tagsContainer = document.createElement('div');
+      tagsContainer.className = 'comment-tags';
+      for (const tag of comment.tags) {
+        const pill = document.createElement('span');
+        pill.className = `comment-tag comment-tag--${tag}`;
+        pill.textContent = tag;
+        tagsContainer.appendChild(pill);
+      }
+      card.appendChild(tagsContainer);
+    }
+
     card.appendChild(body);
+
+    // Replies
+    if (comment.replies && comment.replies.length > 0) {
+      card.appendChild(this.renderReplies(comment.replies));
+    }
+
+    // Reply button (non-resolved only)
+    if (!comment.resolved) {
+      const replyBtn = document.createElement('button');
+      replyBtn.className = 'comment-reply-btn';
+      replyBtn.textContent = 'Reply';
+      replyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.dispatchEvent(
+          new CustomEvent('mdview:comment:reply', {
+            detail: { commentId: comment.id },
+          })
+        );
+      });
+      card.appendChild(replyBtn);
+    }
+
+    // Reactions
+    if (this.currentAuthor) {
+      card.appendChild(this.renderReactions(comment.id, comment.reactions ?? {}));
+    }
 
     // Resolved badge
     if (comment.resolved) {
@@ -85,6 +139,242 @@ export class CommentUI {
 
     this.cards.push(card);
     return card;
+  }
+
+  /**
+   * Render replies section
+   */
+  private renderReplies(replies: CommentReply[]): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'comment-replies';
+
+    for (const reply of replies) {
+      const replyEl = document.createElement('div');
+      replyEl.className = 'comment-reply';
+
+      const replyHeader = document.createElement('div');
+      replyHeader.className = 'comment-reply-header';
+
+      const replyAuthor = document.createElement('strong');
+      replyAuthor.className = 'comment-reply-author';
+      replyAuthor.textContent = reply.author || 'Anonymous';
+
+      const replyDate = document.createElement('span');
+      replyDate.className = 'comment-reply-date';
+      replyDate.textContent = this.formatRelativeTime(reply.date);
+
+      replyHeader.appendChild(replyAuthor);
+      replyHeader.appendChild(replyDate);
+
+      const replyBody = document.createElement('div');
+      replyBody.className = 'comment-reply-body';
+      replyBody.textContent = reply.body;
+
+      replyEl.appendChild(replyHeader);
+      replyEl.appendChild(replyBody);
+      container.appendChild(replyEl);
+    }
+
+    return container;
+  }
+
+  /**
+   * Render reaction pills and "+" button
+   */
+  private renderReactions(commentId: string, reactions: CommentReactions): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'comment-reactions';
+
+    const emojis = Object.keys(reactions);
+    for (const emoji of emojis) {
+      const authors = reactions[emoji];
+      if (!authors || authors.length === 0) continue;
+
+      const pill = document.createElement('button');
+      pill.className = 'comment-reaction';
+      if (this.currentAuthor && authors.includes(this.currentAuthor)) {
+        pill.classList.add('mine');
+      }
+      pill.textContent = `${emoji} ${authors.length}`;
+      pill.dataset.emoji = emoji;
+      pill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.dispatchEvent(
+          new CustomEvent('mdview:comment:react', {
+            detail: { commentId, emoji },
+          })
+        );
+      });
+      container.appendChild(pill);
+    }
+
+    // "+" add reaction button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'comment-reaction-add';
+    addBtn.textContent = '+';
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.dispatchEvent(
+        new CustomEvent('mdview:comment:react:picker', {
+          detail: { commentId, anchor: addBtn },
+        })
+      );
+    });
+    container.appendChild(addBtn);
+
+    return container;
+  }
+
+  /**
+   * Render a compact reply form (no tag picker)
+   */
+  renderReplyForm(
+    onSave: (body: string) => void,
+    onCancel: () => void
+  ): HTMLElement {
+    const form = document.createElement('div');
+    form.className = 'comment-reply-form';
+
+    const textarea = document.createElement('textarea');
+    textarea.placeholder = 'Write a reply...';
+    textarea.rows = 2;
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        onSave(textarea.value);
+      }
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'mdview-comment-input-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'mdview-comment-btn-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      onSave(textarea.value);
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'mdview-comment-btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => {
+      onCancel();
+    });
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+
+    form.appendChild(textarea);
+    form.appendChild(actions);
+
+    return form;
+  }
+
+  /**
+   * Render the emoji picker
+   */
+  renderEmojiPicker(
+    _anchor: HTMLElement,
+    onSelect: (emoji: string) => void,
+    onClose: () => void
+  ): HTMLElement {
+    const picker = document.createElement('div');
+    picker.className = 'mdview-emoji-picker';
+
+    // Quick palette row
+    const quickRow = document.createElement('div');
+    quickRow.className = 'emoji-picker-quick';
+    for (const emoji of QUICK_EMOJIS) {
+      const btn = document.createElement('button');
+      btn.textContent = emoji.char;
+      btn.title = emoji.name;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onSelect(emoji.char);
+      });
+      quickRow.appendChild(btn);
+    }
+    picker.appendChild(quickRow);
+
+    // Search input
+    const searchInput = document.createElement('input');
+    searchInput.className = 'emoji-picker-search';
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search emojis...';
+    picker.appendChild(searchInput);
+
+    // Categorized grid
+    const grid = document.createElement('div');
+    grid.className = 'emoji-picker-grid';
+    this.renderEmojiGrid(grid, EMOJI_CATEGORIES, onSelect);
+    picker.appendChild(grid);
+
+    // Search filtering
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim();
+      if (query) {
+        const results = searchEmojis(query);
+        grid.innerHTML = '';
+        const catName = document.createElement('div');
+        catName.className = 'emoji-picker-category-name';
+        catName.textContent = 'Search Results';
+        grid.appendChild(catName);
+        for (const emoji of results) {
+          const btn = document.createElement('button');
+          btn.textContent = emoji.char;
+          btn.title = emoji.name;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onSelect(emoji.char);
+          });
+          grid.appendChild(btn);
+        }
+      } else {
+        grid.innerHTML = '';
+        this.renderEmojiGrid(grid, EMOJI_CATEGORIES, onSelect);
+      }
+    });
+
+    // Click-outside to dismiss
+    const clickOutsideHandler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (!picker.contains(target)) {
+        document.removeEventListener('click', clickOutsideHandler);
+        onClose();
+      }
+    };
+    document.addEventListener('click', clickOutsideHandler);
+
+    return picker;
+  }
+
+  /**
+   * Render the categorized emoji grid into a container
+   */
+  private renderEmojiGrid(
+    container: HTMLElement,
+    categories: typeof EMOJI_CATEGORIES,
+    onSelect: (emoji: string) => void
+  ): void {
+    for (const cat of categories) {
+      const catName = document.createElement('div');
+      catName.className = 'emoji-picker-category-name';
+      catName.textContent = cat.name;
+      container.appendChild(catName);
+
+      for (const emoji of cat.emojis) {
+        const btn = document.createElement('button');
+        btn.textContent = emoji.char;
+        btn.title = emoji.name;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onSelect(emoji.char);
+        });
+        container.appendChild(btn);
+      }
+    }
   }
 
   /**
@@ -158,23 +448,51 @@ export class CommentUI {
    * Render the comment input form
    */
   renderInputForm(
-    onSave: (body: string) => void,
-    onCancel: () => void
+    onSave: (body: string, tags: CommentTag[]) => void,
+    onCancel: () => void,
+    initialTags?: CommentTag[]
   ): HTMLElement {
     const form = document.createElement('div');
     form.className = 'mdview-comment-input';
+
+    const selectedTags = new Set<CommentTag>(initialTags ?? []);
 
     const textarea = document.createElement('textarea');
     textarea.placeholder = 'Add a comment...';
     textarea.rows = 3;
 
+    const getSelectedTags = (): CommentTag[] =>
+      ALL_TAGS.filter((t) => selectedTags.has(t));
+
     // Cmd+Enter or Ctrl+Enter to save
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        onSave(textarea.value);
+        onSave(textarea.value, getSelectedTags());
       }
     });
+
+    // Tag picker
+    const picker = document.createElement('div');
+    picker.className = 'comment-tag-picker';
+    for (const tag of ALL_TAGS) {
+      const pill = document.createElement('span');
+      pill.className = `comment-tag-option comment-tag-option--${tag}`;
+      pill.textContent = tag;
+      if (selectedTags.has(tag)) {
+        pill.classList.add('active');
+      }
+      pill.addEventListener('click', () => {
+        if (selectedTags.has(tag)) {
+          selectedTags.delete(tag);
+          pill.classList.remove('active');
+        } else {
+          selectedTags.add(tag);
+          pill.classList.add('active');
+        }
+      });
+      picker.appendChild(pill);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'mdview-comment-input-actions';
@@ -183,7 +501,7 @@ export class CommentUI {
     saveBtn.className = 'mdview-comment-btn-save';
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', () => {
-      onSave(textarea.value);
+      onSave(textarea.value, getSelectedTags());
     });
 
     const cancelBtn = document.createElement('button');
@@ -197,6 +515,7 @@ export class CommentUI {
     actions.appendChild(cancelBtn);
 
     form.appendChild(textarea);
+    form.appendChild(picker);
     form.appendChild(actions);
 
     return form;

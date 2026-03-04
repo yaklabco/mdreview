@@ -9,11 +9,16 @@ import { describe, it, expect } from 'vitest';
 import {
   generateNextCommentId,
   addComment,
+  addCommentAtOffset,
   removeComment,
   updateComment,
   resolveComment,
+  updateCommentMetadata,
+  addReply,
+  toggleReaction,
 } from '../../../src/comments/comment-serializer';
-import type { Comment } from '../../../src/types';
+import { buildSourceMap } from '../../../src/comments/source-position-map';
+import type { Comment, CommentContext, CommentReply } from '../../../src/types';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -26,6 +31,13 @@ function makeComment(overrides: Partial<Comment> = {}): Comment {
     ...overrides,
   };
 }
+
+const sampleContext: CommentContext = {
+  line: 5,
+  section: 'Installation',
+  sectionLevel: 2,
+  breadcrumb: ['Getting Started', 'Installation'],
+};
 
 describe('generateNextCommentId', () => {
   it('should return "comment-1" for empty markdown', () => {
@@ -89,7 +101,7 @@ describe('addComment', () => {
     expect(result).toContain('Some highlighted text[^comment-1] in context.');
     expect(result).toContain('<!-- mdview:comments -->');
     expect(result).toContain(
-      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->'
+      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","selectedText":"highlighted text"} -->'
     );
     expect(result).toContain('    This is a comment');
   });
@@ -377,5 +389,460 @@ describe('resolveComment', () => {
       .find((l) => l.includes('[^comment-2]:'));
     expect(comment2Line).toBeDefined();
     expect(comment2Line).not.toContain('"resolved"');
+  });
+});
+
+describe('addCommentAtOffset', () => {
+  it('should insert reference after bold text using source map', () => {
+    const md = 'This is **important** for the review.\n';
+    const sourceMap = buildSourceMap(md);
+    const comment = makeComment({ selectedText: 'important' });
+    const result = addCommentAtOffset(md, comment, sourceMap);
+
+    expect(result).toContain('**important**[^comment-1]');
+    expect(result).toContain('[^comment-1]: <!-- mdview:comment');
+  });
+
+  it('should insert reference after link using source map', () => {
+    const md = 'Click [the link](https://example.com) to continue.\n';
+    const sourceMap = buildSourceMap(md);
+    const comment = makeComment({ selectedText: 'the link' });
+    const result = addCommentAtOffset(md, comment, sourceMap);
+
+    expect(result).toContain('[the link](https://example.com)[^comment-1]');
+  });
+
+  it('should fall back to text search when source map fails', () => {
+    const md = 'Some text here.\n';
+    const sourceMap = buildSourceMap(md);
+    const comment = makeComment({ selectedText: 'nonexistent' });
+    const result = addCommentAtOffset(md, comment, sourceMap);
+
+    // Falls back to addComment, which can't find it either, so no reference
+    expect(result).toContain('Some text here.');
+    expect(result).toContain('[^comment-1]: <!-- mdview:comment');
+  });
+
+  it('should disambiguate with context', () => {
+    const md = 'The word test and another test here.\n';
+    const sourceMap = buildSourceMap(md);
+    const comment = makeComment({ selectedText: 'test' });
+    const result = addCommentAtOffset(md, comment, sourceMap, {
+      prefix: 'another ',
+      suffix: ' here',
+    });
+
+    // Should annotate the second "test"
+    expect(result).toContain('another test[^comment-1] here');
+  });
+
+  it('should include selectedText in footnote metadata', () => {
+    const md = 'Some highlighted text in context.\n';
+    const sourceMap = buildSourceMap(md);
+    const comment = makeComment();
+    const result = addCommentAtOffset(md, comment, sourceMap);
+
+    expect(result).toContain('"selectedText":"highlighted text"');
+  });
+});
+
+describe('addComment metadata', () => {
+  it('should include selectedText in footnote metadata', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment();
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"selectedText":"highlighted text"');
+  });
+
+  it('should not include selectedText when it is empty', () => {
+    const md = 'Some text.\n';
+    const comment = makeComment({ selectedText: '' });
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"selectedText"');
+  });
+});
+
+describe('comment context in metadata', () => {
+  it('should include context fields when comment has context', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({ context: sampleContext });
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"line":5');
+    expect(result).toContain('"section":"Installation"');
+    expect(result).toContain('"sectionLevel":2');
+    expect(result).toContain('"breadcrumb":["Getting Started","Installation"]');
+  });
+
+  it('should omit context fields when comment has no context', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment();
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"line"');
+    expect(result).not.toContain('"section"');
+    expect(result).not.toContain('"sectionLevel"');
+    expect(result).not.toContain('"breadcrumb"');
+  });
+
+  it('should omit section/sectionLevel when context has no heading', () => {
+    const md = 'Some highlighted text in context.\n';
+    const noHeadingContext: CommentContext = {
+      line: 1,
+      breadcrumb: [],
+    };
+    const comment = makeComment({ context: noHeadingContext });
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"line":1');
+    expect(result).not.toContain('"section"');
+    expect(result).not.toContain('"sectionLevel"');
+    expect(result).not.toContain('"breadcrumb"');
+  });
+
+  it('should preserve context fields through resolveComment', () => {
+    const md = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","selectedText":"highlighted text","line":5,"section":"Installation","sectionLevel":2,"breadcrumb":["Getting Started","Installation"]} -->`,
+      '    This is a comment',
+    ].join('\n');
+
+    const result = resolveComment(md, 'comment-1');
+
+    // Context fields should survive resolution
+    expect(result).toContain('"resolved":true');
+    expect(result).toContain('"line":5');
+    expect(result).toContain('"section":"Installation"');
+    expect(result).toContain('"sectionLevel":2');
+    expect(result).toContain('"breadcrumb":["Getting Started","Installation"]');
+  });
+
+  it('should handle metadata with array fields (regex safety)', () => {
+    // This tests that the serializer regex can handle breadcrumb arrays
+    const md = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","breadcrumb":["A","B","C"]} -->`,
+      '    A comment',
+    ].join('\n');
+
+    // resolveComment parses then re-serializes — tests the regex
+    const result = resolveComment(md, 'comment-1');
+
+    expect(result).toContain('"resolved":true');
+    expect(result).toContain('"breadcrumb":["A","B","C"]');
+  });
+});
+
+describe('tags in metadata', () => {
+  it('should include tags array when comment has tags', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({ tags: ['blocking', 'suggestion'] });
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"tags":["blocking","suggestion"]');
+  });
+
+  it('should omit tags when comment has no tags', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment();
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"tags"');
+  });
+
+  it('should omit tags when tags array is empty', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({ tags: [] });
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"tags"');
+  });
+
+  it('should preserve tags through resolveComment', () => {
+    const md = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","tags":["blocking","nit"]} -->`,
+      '    A comment',
+    ].join('\n');
+
+    const result = resolveComment(md, 'comment-1');
+
+    expect(result).toContain('"resolved":true');
+    expect(result).toContain('"tags":["blocking","nit"]');
+  });
+
+  it('should include tags alongside other metadata fields', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({
+      context: sampleContext,
+      tags: ['question'],
+    });
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"tags":["question"]');
+    expect(result).toContain('"line":5');
+    expect(result).toContain('"section":"Installation"');
+  });
+});
+
+describe('replies and reactions in metadata', () => {
+  it('should include replies in metadata JSON when comment has replies', () => {
+    const md = 'Some highlighted text in context.\n';
+    const replies: CommentReply[] = [
+      { id: 'reply-1', author: 'bob', body: 'Good catch', date: '2026-03-04T10:00:00Z' },
+    ];
+    const comment = makeComment({ replies });
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]');
+  });
+
+  it('should omit replies when empty array', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({ replies: [] });
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"replies"');
+  });
+
+  it('should omit replies when undefined', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment();
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"replies"');
+  });
+
+  it('should include reactions in metadata JSON', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({ reactions: { '\u{1F44D}': ['bob', 'carol'] } });
+    const result = addComment(md, comment);
+
+    expect(result).toContain('"reactions"');
+    expect(result).toContain('"bob"');
+    expect(result).toContain('"carol"');
+  });
+
+  it('should omit reactions when empty object', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment({ reactions: {} });
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"reactions"');
+  });
+
+  it('should omit reactions when undefined', () => {
+    const md = 'Some highlighted text in context.\n';
+    const comment = makeComment();
+    const result = addComment(md, comment);
+
+    expect(result).not.toContain('"reactions"');
+  });
+
+  it('should preserve replies and reactions through resolveComment', () => {
+    const md = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","replies":[{"id":"reply-1","author":"bob","body":"Nice","date":"2026-03-04T10:00:00Z"}],"reactions":{"\u{1F44D}":["bob"]}} -->`,
+      '    A comment',
+    ].join('\n');
+
+    const result = resolveComment(md, 'comment-1');
+
+    expect(result).toContain('"resolved":true');
+    expect(result).toContain('"replies":[');
+    expect(result).toContain('"reactions":{');
+  });
+});
+
+describe('updateCommentMetadata', () => {
+  const mdWithComment = [
+    'Some highlighted text[^comment-1] in context.',
+    '',
+    '<!-- mdview:comments -->',
+    '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+    '    This is a comment',
+  ].join('\n');
+
+  it('should call updater with parsed metadata and rebuild header', () => {
+    const result = updateCommentMetadata(mdWithComment, 'comment-1', (meta) => {
+      meta.resolved = true;
+    });
+
+    expect(result).toContain('"resolved":true');
+    expect(result).toContain('    This is a comment');
+  });
+
+  it('should preserve body and other comments', () => {
+    const md = [
+      'A[^comment-1] and B[^comment-2] here.',
+      '',
+      '<!-- mdview:comments -->',
+      '[^comment-1]: <!-- mdview:comment {"author":"alice","date":"2026-03-03T14:30:00Z"} -->',
+      '    First comment',
+      '',
+      '[^comment-2]: <!-- mdview:comment {"author":"bob","date":"2026-03-03T15:00:00Z"} -->',
+      '    Second comment',
+    ].join('\n');
+
+    const result = updateCommentMetadata(md, 'comment-1', (meta) => {
+      meta.resolved = true;
+    });
+
+    expect(result).toContain('    First comment');
+    expect(result).toContain('    Second comment');
+    // Only comment-1 should have resolved
+    expect(result).toMatch(/\[\^comment-1\]:.*"resolved":true/);
+    const comment2Line = result.split('\n').find((l) => l.includes('[^comment-2]:'));
+    expect(comment2Line).not.toContain('"resolved"');
+  });
+
+  it('should return unchanged markdown when comment not found', () => {
+    const result = updateCommentMetadata(mdWithComment, 'comment-999', (meta) => {
+      meta.resolved = true;
+    });
+
+    expect(result).toBe(mdWithComment);
+  });
+
+  it('should return unchanged markdown when no comments section', () => {
+    const md = 'No comments here.';
+    const result = updateCommentMetadata(md, 'comment-1', (meta) => {
+      meta.resolved = true;
+    });
+
+    expect(result).toBe(md);
+  });
+});
+
+describe('addReply', () => {
+  const mdWithComment = [
+    'Some highlighted text[^comment-1] in context.',
+    '',
+    '<!-- mdview:comments -->',
+    '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+    '    This is a comment',
+  ].join('\n');
+
+  it('should add a reply to comment metadata', () => {
+    const reply: Omit<CommentReply, 'id'> = {
+      author: 'bob',
+      body: 'Good catch',
+      date: '2026-03-04T10:00:00Z',
+    };
+    const { markdown, replyId } = addReply(mdWithComment, 'comment-1', reply);
+
+    expect(replyId).toBe('reply-1');
+    expect(markdown).toContain('"replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]');
+  });
+
+  it('should generate sequential reply IDs', () => {
+    const reply1: Omit<CommentReply, 'id'> = {
+      author: 'bob',
+      body: 'First reply',
+      date: '2026-03-04T10:00:00Z',
+    };
+    const { markdown: md1 } = addReply(mdWithComment, 'comment-1', reply1);
+
+    const reply2: Omit<CommentReply, 'id'> = {
+      author: 'carol',
+      body: 'Second reply',
+      date: '2026-03-04T11:00:00Z',
+    };
+    const { markdown: md2, replyId } = addReply(md1, 'comment-1', reply2);
+
+    expect(replyId).toBe('reply-2');
+    expect(md2).toContain('"id":"reply-1"');
+    expect(md2).toContain('"id":"reply-2"');
+  });
+
+  it('should preserve comment body and other metadata', () => {
+    const reply: Omit<CommentReply, 'id'> = {
+      author: 'bob',
+      body: 'Reply',
+      date: '2026-03-04T10:00:00Z',
+    };
+    const { markdown } = addReply(mdWithComment, 'comment-1', reply);
+
+    expect(markdown).toContain('    This is a comment');
+    expect(markdown).toContain('"author":"reviewer"');
+    expect(markdown).toContain('"date":"2026-03-03T14:30:00Z"');
+  });
+});
+
+describe('toggleReaction', () => {
+  const mdWithComment = [
+    'Some highlighted text[^comment-1] in context.',
+    '',
+    '<!-- mdview:comments -->',
+    '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+    '    This is a comment',
+  ].join('\n');
+
+  it('should add a reaction when none exist', () => {
+    const result = toggleReaction(mdWithComment, 'comment-1', '\u{1F44D}', 'bob');
+
+    expect(result).toContain('"reactions"');
+    expect(result).toContain('"bob"');
+  });
+
+  it('should add author to existing emoji reaction', () => {
+    const mdWithReaction = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","reactions":{"\u{1F44D}":["alice"]}} -->`,
+      '    This is a comment',
+    ].join('\n');
+
+    const result = toggleReaction(mdWithReaction, 'comment-1', '\u{1F44D}', 'bob');
+
+    expect(result).toContain('"alice"');
+    expect(result).toContain('"bob"');
+  });
+
+  it('should remove author when toggling off existing reaction', () => {
+    const mdWithReaction = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","reactions":{"\u{1F44D}":["bob","alice"]}} -->`,
+      '    This is a comment',
+    ].join('\n');
+
+    const result = toggleReaction(mdWithReaction, 'comment-1', '\u{1F44D}', 'bob');
+
+    expect(result).not.toContain('"bob"');
+    expect(result).toContain('"alice"');
+  });
+
+  it('should remove emoji key when last author is toggled off', () => {
+    const mdWithReaction = [
+      'Some highlighted text[^comment-1] in context.',
+      '',
+      '<!-- mdview:comments -->',
+      `[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","reactions":{"\u{1F44D}":["bob"]}} -->`,
+      '    This is a comment',
+    ].join('\n');
+
+    const result = toggleReaction(mdWithReaction, 'comment-1', '\u{1F44D}', 'bob');
+
+    // Reactions should be removed entirely when empty
+    expect(result).not.toContain('"reactions"');
+  });
+
+  it('should preserve comment body', () => {
+    const result = toggleReaction(mdWithComment, 'comment-1', '\u{1F44D}', 'bob');
+
+    expect(result).toContain('    This is a comment');
   });
 });

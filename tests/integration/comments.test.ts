@@ -6,7 +6,10 @@ import {
   resolveComment,
   updateComment,
   generateNextCommentId,
+  addReply,
+  toggleReaction,
 } from '../../src/comments/comment-serializer';
+import { computeCommentContext } from '../../src/comments/comment-context';
 import type { Comment } from '../../src/types';
 
 describe('Comment System Integration', () => {
@@ -28,9 +31,8 @@ describe('Comment System Integration', () => {
     expect(parsed.comments).toHaveLength(1);
     expect(parsed.comments[0].body).toBe('What species?');
     expect(parsed.comments[0].author).toBe('james');
-    // Parser extracts only the word immediately before the [^comment-N] ref
-    // "brown fox[^comment-1]" -> \S+ captures "fox"
-    expect(parsed.comments[0].selectedText).toBe('fox');
+    // selectedText is now stored in the footnote metadata, so full text survives round-trip
+    expect(parsed.comments[0].selectedText).toBe('brown fox');
     expect(parsed.cleanedMarkdown).toBe(baseMarkdown);
   });
 
@@ -188,5 +190,327 @@ describe('Comment System Integration', () => {
     expect(parsed.comments[0].id).toBe('comment-2');
     expect(parsed.comments[0].body).toBe('More context needed.');
     expect(parsed.cleanedMarkdown).toBe(baseMarkdown);
+  });
+});
+
+describe('Replies and Reactions Integration', () => {
+  const baseMarkdown = '# Test Document\n\nSome content here.\n\nMore content.';
+
+  it('should round-trip: add comment with replies then parse', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'Needs expansion.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+      replies: [
+        { id: 'reply-1', author: 'bob', body: 'I agree', date: '2026-03-03T11:00:00Z' },
+        { id: 'reply-2', author: 'carol', body: 'Me too', date: '2026-03-03T12:00:00Z' },
+      ],
+    };
+
+    const withComment = addComment(baseMarkdown, comment);
+    const parsed = parseComments(withComment);
+
+    expect(parsed.comments).toHaveLength(1);
+    expect(parsed.comments[0].replies).toHaveLength(2);
+    expect(parsed.comments[0].replies![0].author).toBe('bob');
+    expect(parsed.comments[0].replies![0].body).toBe('I agree');
+    expect(parsed.comments[0].replies![1].author).toBe('carol');
+    expect(parsed.cleanedMarkdown).toBe(baseMarkdown);
+  });
+
+  it('should round-trip: add comment with reactions then parse', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'Nice!',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+      reactions: { '👍': ['bob', 'carol'], '❤️': ['alice'] },
+    };
+
+    const withComment = addComment(baseMarkdown, comment);
+    const parsed = parseComments(withComment);
+
+    expect(parsed.comments).toHaveLength(1);
+    expect(parsed.comments[0].reactions).toBeDefined();
+    expect(parsed.comments[0].reactions!['👍']).toEqual(['bob', 'carol']);
+    expect(parsed.comments[0].reactions!['❤️']).toEqual(['alice']);
+    expect(parsed.cleanedMarkdown).toBe(baseMarkdown);
+  });
+
+  it('should round-trip: add reply via addReply then parse', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'Question here.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+    };
+
+    let md = addComment(baseMarkdown, comment);
+    const result1 = addReply(md, 'comment-1', {
+      author: 'bob',
+      body: 'First reply',
+      date: '2026-03-03T11:00:00Z',
+    });
+    md = result1.markdown;
+    expect(result1.replyId).toBe('reply-1');
+
+    const result2 = addReply(md, 'comment-1', {
+      author: 'carol',
+      body: 'Second reply',
+      date: '2026-03-03T12:00:00Z',
+    });
+    md = result2.markdown;
+    expect(result2.replyId).toBe('reply-2');
+
+    const parsed = parseComments(md);
+    expect(parsed.comments).toHaveLength(1);
+    expect(parsed.comments[0].replies).toHaveLength(2);
+    expect(parsed.comments[0].replies![0].id).toBe('reply-1');
+    expect(parsed.comments[0].replies![0].body).toBe('First reply');
+    expect(parsed.comments[0].replies![1].id).toBe('reply-2');
+    expect(parsed.comments[0].replies![1].body).toBe('Second reply');
+    expect(parsed.cleanedMarkdown).toBe(baseMarkdown);
+  });
+
+  it('should round-trip: toggle reaction on then parse', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'A comment.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+    };
+
+    let md = addComment(baseMarkdown, comment);
+    md = toggleReaction(md, 'comment-1', '👍', 'bob');
+    md = toggleReaction(md, 'comment-1', '👍', 'carol');
+    md = toggleReaction(md, 'comment-1', '❤️', 'alice');
+
+    const parsed = parseComments(md);
+    expect(parsed.comments[0].reactions!['👍']).toEqual(['bob', 'carol']);
+    expect(parsed.comments[0].reactions!['❤️']).toEqual(['alice']);
+  });
+
+  it('should round-trip: toggle reaction off then parse', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'A comment.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+    };
+
+    let md = addComment(baseMarkdown, comment);
+    md = toggleReaction(md, 'comment-1', '👍', 'bob');
+    md = toggleReaction(md, 'comment-1', '👍', 'carol');
+
+    // Toggle bob off
+    md = toggleReaction(md, 'comment-1', '👍', 'bob');
+
+    const parsed = parseComments(md);
+    expect(parsed.comments[0].reactions!['👍']).toEqual(['carol']);
+
+    // Toggle carol off too — emoji key should be removed
+    md = toggleReaction(md, 'comment-1', '👍', 'carol');
+
+    const parsed2 = parseComments(md);
+    expect(parsed2.comments[0].reactions).toBeUndefined();
+  });
+
+  it('should round-trip: replies and reactions together', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'Discussion point.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+    };
+
+    let md = addComment(baseMarkdown, comment);
+    const { markdown } = addReply(md, 'comment-1', {
+      author: 'bob',
+      body: 'Interesting point',
+      date: '2026-03-03T11:00:00Z',
+    });
+    md = markdown;
+    md = toggleReaction(md, 'comment-1', '🎉', 'carol');
+
+    const parsed = parseComments(md);
+    expect(parsed.comments[0].replies).toHaveLength(1);
+    expect(parsed.comments[0].replies![0].body).toBe('Interesting point');
+    expect(parsed.comments[0].reactions!['🎉']).toEqual(['carol']);
+    expect(parsed.cleanedMarkdown).toBe(baseMarkdown);
+  });
+
+  it('should preserve replies and reactions through resolve', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'Fix this.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+    };
+
+    let md = addComment(baseMarkdown, comment);
+    const { markdown } = addReply(md, 'comment-1', {
+      author: 'bob',
+      body: 'Done',
+      date: '2026-03-03T11:00:00Z',
+    });
+    md = markdown;
+    md = toggleReaction(md, 'comment-1', '✅', 'alice');
+    md = resolveComment(md, 'comment-1');
+
+    const parsed = parseComments(md);
+    expect(parsed.comments[0].resolved).toBe(true);
+    expect(parsed.comments[0].replies).toHaveLength(1);
+    expect(parsed.comments[0].reactions!['✅']).toEqual(['alice']);
+  });
+
+  it('should handle backward compatibility: old comments without replies/reactions', () => {
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'content',
+      body: 'Old comment.',
+      author: 'alice',
+      date: '2026-03-03T10:00:00Z',
+      resolved: false,
+    };
+
+    const md = addComment(baseMarkdown, comment);
+    const parsed = parseComments(md);
+
+    expect(parsed.comments[0].replies).toBeUndefined();
+    expect(parsed.comments[0].reactions).toBeUndefined();
+  });
+});
+
+describe('Comment Context Integration', () => {
+  const structuredMarkdown = [
+    '# Getting Started',
+    '',
+    '## Installation',
+    '',
+    'Run npm install to get started.',
+    '',
+    '## Configuration',
+    '',
+    'Edit the config file to set options.',
+  ].join('\n');
+
+  it('should round-trip context fields through add and parse', () => {
+    // Compute context for "config file" on line 9
+    const offset = structuredMarkdown.indexOf('config file');
+    const context = computeCommentContext(structuredMarkdown, offset);
+
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'config file',
+      body: 'Needs more detail',
+      author: 'reviewer',
+      date: '2026-03-03T14:30:00Z',
+      resolved: false,
+      context,
+    };
+
+    const withComment = addComment(structuredMarkdown, comment);
+    const parsed = parseComments(withComment);
+
+    expect(parsed.comments).toHaveLength(1);
+    const parsedCtx = parsed.comments[0].context;
+    expect(parsedCtx).toBeDefined();
+    expect(parsedCtx!.line).toBe(9);
+    expect(parsedCtx!.section).toBe('Configuration');
+    expect(parsedCtx!.sectionLevel).toBe(2);
+    expect(parsedCtx!.breadcrumb).toEqual(['Getting Started', 'Configuration']);
+  });
+
+  it('should handle document without headings', () => {
+    const plainMarkdown = 'Just some text here.\n\nAnother paragraph.';
+    const offset = plainMarkdown.indexOf('some text');
+    const context = computeCommentContext(plainMarkdown, offset);
+
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'some text',
+      body: 'Comment',
+      author: 'reviewer',
+      date: '2026-03-03T14:30:00Z',
+      resolved: false,
+      context,
+    };
+
+    const withComment = addComment(plainMarkdown, comment);
+    const parsed = parseComments(withComment);
+
+    expect(parsed.comments).toHaveLength(1);
+    const parsedCtx = parsed.comments[0].context;
+    expect(parsedCtx).toBeDefined();
+    expect(parsedCtx!.line).toBe(1);
+    expect(parsedCtx!.section).toBeUndefined();
+    expect(parsedCtx!.breadcrumb).toEqual([]);
+  });
+
+  it('should preserve context through edit operation', () => {
+    const offset = structuredMarkdown.indexOf('config file');
+    const context = computeCommentContext(structuredMarkdown, offset);
+
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'config file',
+      body: 'Original comment',
+      author: 'reviewer',
+      date: '2026-03-03T14:30:00Z',
+      resolved: false,
+      context,
+    };
+
+    let md = addComment(structuredMarkdown, comment);
+    md = updateComment(md, 'comment-1', 'Updated comment body');
+    const parsed = parseComments(md);
+
+    expect(parsed.comments[0].body).toBe('Updated comment body');
+    const parsedCtx = parsed.comments[0].context;
+    expect(parsedCtx).toBeDefined();
+    expect(parsedCtx!.line).toBe(9);
+    expect(parsedCtx!.section).toBe('Configuration');
+    expect(parsedCtx!.breadcrumb).toEqual(['Getting Started', 'Configuration']);
+  });
+
+  it('should preserve context through resolve operation', () => {
+    const offset = structuredMarkdown.indexOf('npm install');
+    const context = computeCommentContext(structuredMarkdown, offset);
+
+    const comment: Comment = {
+      id: 'comment-1',
+      selectedText: 'npm install',
+      body: 'Which version?',
+      author: 'reviewer',
+      date: '2026-03-03T14:30:00Z',
+      resolved: false,
+      context,
+    };
+
+    let md = addComment(structuredMarkdown, comment);
+    md = resolveComment(md, 'comment-1');
+    const parsed = parseComments(md);
+
+    expect(parsed.comments[0].resolved).toBe(true);
+    const parsedCtx = parsed.comments[0].context;
+    expect(parsedCtx).toBeDefined();
+    expect(parsedCtx!.line).toBe(5);
+    expect(parsedCtx!.section).toBe('Installation');
+    expect(parsedCtx!.breadcrumb).toEqual(['Getting Started', 'Installation']);
   });
 });

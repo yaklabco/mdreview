@@ -4,7 +4,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
+import * as os from 'os';
 import { validatePath, handleMessage, ALLOWED_EXTENSIONS } from '../../../src/native-host/host-logic';
+
+vi.mock('os');
 
 vi.mock('fs');
 
@@ -183,6 +186,30 @@ describe('Native Host Message Handling', () => {
         'utf8',
       );
       expect(result).toEqual({ success: true });
+    });
+
+    it('should return system username for get_username action', () => {
+      vi.mocked(os.userInfo).mockReturnValue({
+        username: 'testuser',
+        uid: 1000,
+        gid: 1000,
+        shell: '/bin/bash',
+        homedir: '/home/testuser',
+      });
+
+      const result = handleMessage({ action: 'get_username' });
+
+      expect(result).toEqual({ success: true, username: 'testuser' });
+    });
+
+    it('should return error when os.userInfo() throws', () => {
+      vi.mocked(os.userInfo).mockImplementation(() => {
+        throw new Error('uv_os_get_passwd failed');
+      });
+
+      const result = handleMessage({ action: 'get_username' });
+
+      expect(result).toEqual({ error: 'uv_os_get_passwd failed' });
     });
   });
 });

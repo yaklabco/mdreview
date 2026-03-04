@@ -571,6 +571,15 @@ class MDViewContentScript {
             return true; // Keep channel open for async response
           }
 
+          case 'ADD_COMMENT': {
+            const addPayload = message.payload as { selectionText: string };
+            if (this.commentManager && addPayload?.selectionText) {
+              this.commentManager.handleAddCommentRequest(addPayload.selectionText);
+            }
+            sendResponse({ success: true });
+            break;
+          }
+
           case 'RELOAD_CONTENT':
             window.location.reload();
             break;

@@ -136,11 +136,41 @@ const stateManager = new StateManager();
 // Initialize immediately when service worker loads
 const initializationPromise = stateManager.initialize();
 
+// Create context menu for commenting
+function setupContextMenu(): void {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: 'mdview-add-comment',
+      title: 'Leave a Comment',
+      contexts: ['selection'],
+      documentUrlPatterns: ['file:///*.md', 'file:///*.markdown'],
+    });
+  });
+}
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === 'mdview-add-comment' && tab?.id) {
+    void chrome.tabs.sendMessage(tab.id, {
+      type: 'ADD_COMMENT',
+      payload: { selectionText: info.selectionText },
+    }).catch(() => {
+      // Tab may not have content script
+    });
+  }
+});
+
 // Initialize on install
 chrome.runtime.onInstalled.addListener((details) => {
   debug.log('MDView', 'Extension installed/updated:', details.reason);
   void (async () => {
     await initializationPromise;
+
+    // Create context menu on install/update
+    const state = await stateManager.getState();
+    if (state.preferences.commentsEnabled !== false) {
+      setupContextMenu();
+    }
 
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
       // First-time installation
@@ -155,6 +185,10 @@ chrome.runtime.onStartup.addListener(() => {
   debug.log('MDView', 'Browser startup, initializing extension');
   void (async () => {
     await initializationPromise;
+    const state = await stateManager.getState();
+    if (state.preferences.commentsEnabled !== false) {
+      setupContextMenu();
+    }
   })();
 });
 
@@ -327,6 +361,20 @@ chrome.runtime.onMessage.addListener(
             } catch (error) {
               debug.error('MDView-Background', 'File check failed:', error);
               sendResponse({ changed: false, error: String(error) });
+            }
+            break;
+          }
+
+          case 'GET_USERNAME': {
+            try {
+              const result = await chrome.runtime.sendNativeMessage(
+                'com.mdview.filewriter',
+                { action: 'get_username' }
+              );
+              sendResponse(result);
+            } catch (error) {
+              debug.error('MDView-Background', 'Native get_username failed:', error);
+              sendResponse({ error: String(error) });
             }
             break;
           }

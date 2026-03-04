@@ -39,6 +39,15 @@ function handleMessage(msg) {
     return writeMessage({ error: 'Invalid message format' });
   }
 
+  if (msg.action === 'get_username') {
+    const os = require('os');
+    try {
+      return writeMessage({ success: true, username: os.userInfo().username });
+    } catch (err) {
+      return writeMessage({ error: err.message });
+    }
+  }
+
   if (msg.action !== 'write') {
     return writeMessage({ error: `Unknown action: ${msg.action}` });
   }

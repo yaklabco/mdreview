@@ -7,7 +7,7 @@
  * the comment section.
  */
 
-import type { Comment, CommentMetadata, CommentParseResult } from '../types';
+import type { Comment, CommentContext, CommentMetadata, CommentParseResult } from '../types';
 
 const COMMENT_SEPARATOR = '<!-- mdview:comments -->';
 const COMMENT_REF_PATTERN = /\[\^comment-(\w+)\]/g;
@@ -99,14 +99,42 @@ function buildComment(
   bodyLines: string[],
   contentSection: string,
 ): Comment {
-  return {
+  const comment: Comment = {
     id: `comment-${id}`,
-    selectedText: extractSelectedText(id, contentSection),
+    selectedText: metadata.selectedText || extractSelectedText(id, contentSection),
     body: bodyLines.join('\n'),
     author: metadata.author,
     date: metadata.date,
     resolved: metadata.resolved ?? false,
   };
+
+  // Reconstruct positional context if fields are present in metadata
+  if (metadata.line !== undefined) {
+    const context: CommentContext = {
+      line: metadata.line,
+      section: metadata.section,
+      sectionLevel: metadata.sectionLevel,
+      breadcrumb: metadata.breadcrumb ?? [],
+    };
+    comment.context = context;
+  }
+
+  // Reconstruct tags if present and non-empty
+  if (metadata.tags !== undefined && metadata.tags.length > 0) {
+    comment.tags = metadata.tags;
+  }
+
+  // Reconstruct replies if present and non-empty
+  if (metadata.replies !== undefined && metadata.replies.length > 0) {
+    comment.replies = metadata.replies;
+  }
+
+  // Reconstruct reactions if present and non-empty
+  if (metadata.reactions !== undefined && Object.keys(metadata.reactions).length > 0) {
+    comment.reactions = metadata.reactions;
+  }
+
+  return comment;
 }
 
 /**
