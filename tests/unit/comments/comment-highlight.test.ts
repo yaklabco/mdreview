@@ -80,6 +80,79 @@ describe('CommentHighlighter', () => {
         'Start of the sentence here and more.'
       );
     });
+
+    it('should highlight text spanning across inline elements', () => {
+      container.innerHTML = '<p>Some <strong>bold</strong> text here.</p>';
+      const comment: Comment = {
+        id: 'comment-1',
+        selectedText: 'bold text',
+        body: 'test',
+        author: 'james',
+        date: '2026-03-03T14:30:00Z',
+        resolved: false,
+      };
+
+      const span = highlighter.highlightComment(container, comment);
+      expect(span).not.toBeNull();
+      expect(span!.dataset.commentId).toBe('comment-1');
+      // The full selected text should be visible
+      expect(container.textContent).toBe('Some bold text here.');
+    });
+
+    it('should highlight text spanning across multiple inline elements', () => {
+      container.innerHTML = '<p>Start <em>italic</em> and <strong>bold</strong> end.</p>';
+      const comment: Comment = {
+        id: 'comment-1',
+        selectedText: 'italic and bold',
+        body: 'test',
+        author: 'james',
+        date: '2026-03-03T14:30:00Z',
+        resolved: false,
+      };
+
+      const span = highlighter.highlightComment(container, comment);
+      expect(span).not.toBeNull();
+      expect(container.textContent).toBe('Start italic and bold end.');
+    });
+
+    it('should highlight text spanning from plain text into an inline element', () => {
+      container.innerHTML = '<p>Hello world <code>code here</code> after.</p>';
+      const comment: Comment = {
+        id: 'comment-1',
+        selectedText: 'world code',
+        body: 'test',
+        author: 'james',
+        date: '2026-03-03T14:30:00Z',
+        resolved: false,
+      };
+
+      const span = highlighter.highlightComment(container, comment);
+      expect(span).not.toBeNull();
+      expect(container.textContent).toBe('Hello world code here after.');
+    });
+
+    it('should return first span for cross-node highlights usable for positioning', () => {
+      container.innerHTML = '<p>Some <strong>bold</strong> text.</p>';
+      document.body.appendChild(container);
+
+      const comment: Comment = {
+        id: 'comment-1',
+        selectedText: 'bold text',
+        body: 'test',
+        author: 'james',
+        date: '2026-03-03T14:30:00Z',
+        resolved: false,
+      };
+
+      highlighter.highlightComment(container, comment);
+
+      // getHighlightElement should find the first span
+      const el = highlighter.getHighlightElement('comment-1');
+      expect(el).not.toBeNull();
+      expect(el!.classList.contains('mdview-comment-highlight')).toBe(true);
+
+      document.body.removeChild(container);
+    });
   });
 
   describe('removeHighlight', () => {
@@ -92,6 +165,21 @@ describe('CommentHighlighter', () => {
 
       expect(container.querySelector('.mdview-comment-highlight')).toBeNull();
       expect(container.textContent).toBe('The brown fox jumps.');
+
+      document.body.removeChild(container);
+    });
+
+    it('should unwrap multiple highlight spans from cross-node highlights', () => {
+      // Simulate cross-node highlight: two spans with same comment ID
+      container.innerHTML =
+        '<p>Some <span class="mdview-comment-highlight" data-comment-id="comment-1">bold</span>' +
+        '<span class="mdview-comment-highlight" data-comment-id="comment-1"> text</span> here.</p>';
+      document.body.appendChild(container);
+
+      highlighter.removeHighlight('comment-1');
+
+      expect(container.querySelector('.mdview-comment-highlight')).toBeNull();
+      expect(container.textContent).toBe('Some bold text here.');
 
       document.body.removeChild(container);
     });

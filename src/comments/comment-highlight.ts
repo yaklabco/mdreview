@@ -8,11 +8,16 @@ const COMMENT_ID_ATTR = 'data-comment-id';
  *
  * Uses TreeWalker to locate text nodes and the Range API to wrap
  * matched substrings without disrupting the surrounding DOM structure.
+ * Supports selections that span across inline element boundaries.
  */
 export class CommentHighlighter {
   /**
-   * Find the first text node within `container` that contains `selectedText`,
-   * wrap the matching portion in a highlight `<span>`, and return it.
+   * Find text within `container` that matches `selectedText`,
+   * wrap the matching portions in highlight `<span>` elements,
+   * and return the first span (used for card positioning).
+   *
+   * Handles text that spans across inline elements (e.g. bold, italic, code)
+   * by wrapping each text node portion separately with the same comment ID.
    *
    * Returns `null` if no matching text is found.
    */
@@ -22,24 +27,54 @@ export class CommentHighlighter {
   ): HTMLElement | null {
     const { selectedText, id, resolved } = comment;
 
+    // Collect all text nodes and build a concatenated string
+    const textNodes: Text[] = [];
     const walker = document.createTreeWalker(
       container,
       NodeFilter.SHOW_TEXT,
       null
     );
-
     let node: Text | null;
     while ((node = walker.nextNode() as Text | null)) {
-      const text = node.textContent ?? '';
-      const index = text.indexOf(selectedText);
-      if (index === -1) {
-        continue;
-      }
+      textNodes.push(node);
+    }
 
-      // Use the Range API to isolate and wrap the matching substring
+    // Build concatenated text with offset mappings
+    let concat = '';
+    const nodeOffsets: Array<{ node: Text; start: number; end: number }> = [];
+    for (const textNode of textNodes) {
+      const text = textNode.textContent ?? '';
+      const start = concat.length;
+      concat += text;
+      nodeOffsets.push({ node: textNode, start, end: concat.length });
+    }
+
+    // Find the selected text in the concatenated string
+    const matchIndex = concat.indexOf(selectedText);
+    if (matchIndex === -1) {
+      return null;
+    }
+
+    const matchEnd = matchIndex + selectedText.length;
+
+    // Find which text nodes overlap with the match
+    const overlapping = nodeOffsets.filter(
+      (entry) => entry.start < matchEnd && entry.end > matchIndex
+    );
+
+    if (overlapping.length === 0) {
+      return null;
+    }
+
+    // Single text node — use the simple Range.surroundContents approach
+    if (overlapping.length === 1) {
+      const entry = overlapping[0];
+      const localStart = matchIndex - entry.start;
+      const localEnd = localStart + selectedText.length;
+
       const range = document.createRange();
-      range.setStart(node, index);
-      range.setEnd(node, index + selectedText.length);
+      range.setStart(entry.node, localStart);
+      range.setEnd(entry.node, localEnd);
 
       const span = document.createElement('span');
       span.className = HIGHLIGHT_CLASS;
@@ -52,32 +87,53 @@ export class CommentHighlighter {
       return span;
     }
 
-    return null;
+    // Cross-node: wrap each overlapping text node's matched portion
+    let firstSpan: HTMLElement | null = null;
+
+    // Process in reverse order so DOM mutations don't shift subsequent nodes
+    for (let i = overlapping.length - 1; i >= 0; i--) {
+      const entry = overlapping[i];
+      const localStart = Math.max(0, matchIndex - entry.start);
+      const localEnd = Math.min(
+        entry.node.textContent?.length ?? 0,
+        matchEnd - entry.start
+      );
+
+      const range = document.createRange();
+      range.setStart(entry.node, localStart);
+      range.setEnd(entry.node, localEnd);
+
+      const span = document.createElement('span');
+      span.className = HIGHLIGHT_CLASS;
+      if (resolved) {
+        span.classList.add('resolved');
+      }
+      span.setAttribute(COMMENT_ID_ATTR, id);
+
+      range.surroundContents(span);
+      firstSpan = span;
+    }
+
+    return firstSpan;
   }
 
   /**
-   * Remove the highlight span for `commentId`, replacing it with its
+   * Remove all highlight spans for `commentId`, replacing each with its
    * plain text content and normalising adjacent text nodes.
    */
   removeHighlight(commentId: string): void {
-    const span = document.querySelector(
+    const spans = document.querySelectorAll(
       `.${HIGHLIGHT_CLASS}[${COMMENT_ID_ATTR}="${commentId}"]`
     );
-    if (!span) {
-      return;
+
+    for (const span of spans) {
+      const parent = span.parentNode;
+      if (!parent) continue;
+
+      const textNode = document.createTextNode(span.textContent ?? '');
+      parent.replaceChild(textNode, span);
+      parent.normalize();
     }
-
-    const parent = span.parentNode;
-    if (!parent) {
-      return;
-    }
-
-    // Replace the span with its text content
-    const textNode = document.createTextNode(span.textContent ?? '');
-    parent.replaceChild(textNode, span);
-
-    // Merge adjacent text nodes so the DOM stays clean
-    parent.normalize();
   }
 
   /**
@@ -111,7 +167,7 @@ export class CommentHighlighter {
   }
 
   /**
-   * Return the highlight `<span>` for the given `commentId`, or `null`
+   * Return the first highlight `<span>` for the given `commentId`, or `null`
    * if it does not exist in the document.
    */
   getHighlightElement(commentId: string): HTMLElement | null {
