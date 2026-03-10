@@ -1979,3 +1979,643 @@ body.toc-visible-right .mdview-export-btn.position-right {
     display: none !important;
   }
 }
+
+/* ============================================
+   Comment System Styles
+   ============================================ */
+
+/* === Floating Comment Cards === */
+
+/* Cards float absolutely in the right margin, aligned with their highlight */
+.mdview-comment-card {
+  position: absolute;
+  right: 16px;
+  width: 260px;
+  background: var(--md-comment-card-bg, var(--md-code-bg));
+  border-left: 3px solid var(--md-link);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px var(--md-shadow);
+  z-index: 100;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+/* Minimized cards show only header + snippet */
+.mdview-comment-card.minimized > :not(.comment-header):not(.comment-snippet) {
+  display: none;
+}
+
+.mdview-comment-card .comment-snippet {
+  display: none;
+  color: var(--md-fg-muted);
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdview-comment-card.minimized .comment-snippet {
+  display: block;
+}
+
+.mdview-comment-card.minimized {
+  cursor: pointer;
+}
+
+.mdview-comment-card:hover,
+.mdview-comment-card.active {
+  box-shadow: 0 4px 16px var(--md-shadow);
+}
+
+.mdview-comment-card.resolved {
+  opacity: 0.5;
+  border-left-color: var(--md-border);
+}
+
+.mdview-comment-card.resolved .comment-body {
+  text-decoration: line-through;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--md-fg);
+}
+
+.comment-date {
+  font-size: 11px;
+  color: var(--md-fg-muted);
+  margin-left: auto;
+}
+
+.comment-body {
+  color: var(--md-fg-muted);
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.comment-menu-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: var(--md-fg-muted);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background-color 0.15s ease;
+}
+
+.comment-menu-btn:hover {
+  background: var(--md-selection);
+}
+
+.resolved-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--md-success);
+  color: #fff;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+/* === Comment Tag Pills === */
+.comment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.comment-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.5;
+  color: #fff;
+}
+
+.comment-tag--blocking {
+  background: var(--md-error);
+}
+
+.comment-tag--nit {
+  background: var(--md-fg-muted);
+}
+
+.comment-tag--suggestion {
+  background: var(--md-link);
+}
+
+.comment-tag--question {
+  background: var(--md-warning);
+}
+
+.comment-tag--praise {
+  background: var(--md-success);
+}
+
+.comment-tag--todo {
+  background: transparent;
+  color: var(--md-fg);
+  border: 1px solid var(--md-fg);
+}
+
+.comment-tag--fyi {
+  background: var(--md-link);
+  opacity: 0.8;
+}
+
+/* === Comment Tag Picker === */
+.comment-tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+
+.comment-tag-option {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+  background: transparent;
+  color: var(--md-fg-muted);
+  border: 1px solid var(--md-border);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.comment-tag-option:hover {
+  border-color: var(--md-fg-muted);
+}
+
+.comment-tag-option--blocking.active {
+  background: var(--md-error);
+  color: #fff;
+  border-color: var(--md-error);
+}
+
+.comment-tag-option--nit.active {
+  background: var(--md-fg-muted);
+  color: #fff;
+  border-color: var(--md-fg-muted);
+}
+
+.comment-tag-option--suggestion.active {
+  background: var(--md-link);
+  color: #fff;
+  border-color: var(--md-link);
+}
+
+.comment-tag-option--question.active {
+  background: var(--md-warning);
+  color: #fff;
+  border-color: var(--md-warning);
+}
+
+.comment-tag-option--praise.active {
+  background: var(--md-success);
+  color: #fff;
+  border-color: var(--md-success);
+}
+
+.comment-tag-option--todo.active {
+  background: transparent;
+  color: var(--md-fg);
+  border-color: var(--md-fg);
+}
+
+.comment-tag-option--fyi.active {
+  background: var(--md-link);
+  color: #fff;
+  border-color: var(--md-link);
+  opacity: 0.8;
+}
+
+/* === Overflow Menu === */
+.mdview-comment-menu {
+  position: absolute;
+  right: 4px;
+  top: 100%;
+  background: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px var(--md-shadow);
+  z-index: 200;
+  min-width: 120px;
+  padding: 4px 0;
+}
+
+.mdview-comment-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--md-fg);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.1s ease;
+}
+
+.mdview-comment-menu-item:hover {
+  background: var(--md-selection);
+}
+
+/* === Text Highlighting === */
+.mdview-comment-highlight {
+  background-color: var(--md-comment-highlight, rgba(255, 212, 59, 0.35));
+  border-radius: 2px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.mdview-comment-highlight:hover,
+.mdview-comment-highlight.active {
+  filter: brightness(1.15);
+}
+
+.mdview-comment-highlight.resolved {
+  background-color: var(--md-comment-highlight-resolved, rgba(155, 155, 155, 0.2));
+}
+
+/* === Comment Input Form === */
+.mdview-comment-input {
+  position: absolute;
+  right: 16px;
+  width: 260px;
+  background: var(--md-comment-card-bg, var(--md-code-bg));
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 4px 16px var(--md-shadow);
+  z-index: 200;
+}
+
+.mdview-comment-input textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-family);
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mdview-comment-input textarea:focus {
+  outline: none;
+  border-color: var(--md-link);
+  box-shadow: 0 0 0 3px var(--md-selection);
+}
+
+.mdview-comment-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mdview-comment-input-actions button {
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--md-border);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mdview-comment-btn-cancel {
+  background: var(--md-bg);
+  color: var(--md-fg);
+}
+
+.mdview-comment-btn-cancel:hover {
+  background: var(--md-bg-secondary);
+}
+
+.mdview-comment-btn-save {
+  background: var(--md-link);
+  color: #fff;
+  border-color: var(--md-link);
+}
+
+.mdview-comment-btn-save:hover {
+  filter: brightness(1.1);
+}
+
+/* === Comment Toast Notification === */
+.mdview-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  background: var(--md-fg, #333);
+  color: var(--md-bg, #fff);
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.mdview-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* === Comment Replies === */
+.comment-replies {
+  margin: 8px 0 4px;
+  padding-left: 10px;
+  border-left: 2px solid var(--md-border);
+}
+
+.comment-reply {
+  margin-bottom: 6px;
+}
+
+.comment-reply:last-child {
+  margin-bottom: 0;
+}
+
+.comment-reply-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.comment-reply-author {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--md-fg);
+}
+
+.comment-reply-date {
+  font-size: 10px;
+  color: var(--md-fg-muted);
+}
+
+.comment-reply-body {
+  font-size: 12px;
+  color: var(--md-fg-muted);
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* === Reply Button === */
+.comment-reply-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  color: var(--md-link);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.comment-reply-btn:hover {
+  color: var(--md-link-hover);
+}
+
+/* === Reply Form === */
+.comment-reply-form {
+  margin: 6px 0;
+}
+
+.comment-reply-form textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-family);
+  font-size: 12px;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.comment-reply-form textarea:focus {
+  outline: none;
+  border-color: var(--md-link);
+  box-shadow: 0 0 0 2px var(--md-selection);
+}
+
+/* === Comment Reactions === */
+.comment-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 2px;
+  align-items: center;
+}
+
+.comment-reaction {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--md-border);
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  line-height: 1.3;
+}
+
+.comment-reaction:hover {
+  background: var(--md-selection);
+  border-color: var(--md-fg-muted);
+}
+
+.comment-reaction.mine {
+  background: var(--md-selection);
+  border-color: var(--md-link);
+}
+
+.comment-reaction-add {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px dashed var(--md-border);
+  background: none;
+  color: var(--md-fg-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  line-height: 1;
+}
+
+.comment-reaction-add:hover {
+  background: var(--md-selection);
+  border-color: var(--md-fg-muted);
+  color: var(--md-fg);
+}
+
+/* === Emoji Picker === */
+.mdview-emoji-picker {
+  position: absolute;
+  width: 280px;
+  max-height: 360px;
+  background: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--md-shadow);
+  z-index: 300;
+  padding: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.emoji-picker-quick {
+  display: flex;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--md-border);
+  margin-bottom: 6px;
+}
+
+.emoji-picker-quick button {
+  appearance: none;
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  line-height: 1;
+}
+
+.emoji-picker-quick button:hover {
+  background: var(--md-selection);
+}
+
+.emoji-picker-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-size: 12px;
+  margin-bottom: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.emoji-picker-search:focus {
+  outline: none;
+  border-color: var(--md-link);
+}
+
+.emoji-picker-grid {
+  overflow-y: auto;
+  max-height: 220px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-content: flex-start;
+}
+
+.emoji-picker-category-name {
+  width: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--md-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 2px 4px;
+}
+
+.emoji-picker-grid button {
+  appearance: none;
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-picker-grid button:hover {
+  background: var(--md-selection);
+}
+
+/* === Comment System Responsive === */
+@media (max-width: 1024px) {
+  /* Hide floating cards on narrow viewports */
+  .mdview-comment-card,
+  .mdview-comment-input {
+    display: none;
+  }
+}
+
+/* === Comment System Print === */
+@media print {
+  .mdview-comment-card,
+  .mdview-comment-input,
+  .mdview-toast,
+  .comment-menu-btn {
+    display: none !important;
+  }
+
+  .mdview-comment-highlight {
+    background-color: transparent !important;
+  }
+}

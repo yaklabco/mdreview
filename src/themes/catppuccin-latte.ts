@@ -42,6 +42,9 @@ const catppuccinLatte: Theme = {
     warning: '#df8e1d',
     error: '#d20f39',
     info: '#1e66f5',
+    commentHighlight: 'rgba(223, 142, 29, 0.25)',
+    commentHighlightResolved: 'rgba(223, 142, 29, 0.08)',
+    commentCardBg: '#e6e9ef',
   },
 
   typography: {

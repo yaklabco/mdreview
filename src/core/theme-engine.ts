@@ -236,6 +236,9 @@ export class ThemeEngine {
       '--md-warning': theme.colors.warning,
       '--md-error': theme.colors.error,
       '--md-info': theme.colors.info,
+      '--md-comment-highlight': theme.colors.commentHighlight,
+      '--md-comment-highlight-resolved': theme.colors.commentHighlightResolved,
+      '--md-comment-card-bg': theme.colors.commentCardBg,
 
       // Typography (with overrides)
       '--md-font-family': overrides.fontFamily || theme.typography.fontFamily,

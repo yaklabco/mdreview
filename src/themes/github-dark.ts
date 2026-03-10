@@ -42,6 +42,9 @@ const githubDark: Theme = {
     warning: '#d29922',
     error: '#f85149',
     info: '#58a6ff',
+    commentHighlight: 'rgba(255, 183, 77, 0.25)',
+    commentHighlightResolved: 'rgba(255, 183, 77, 0.08)',
+    commentCardBg: '#161b22',
   },
 
   typography: {

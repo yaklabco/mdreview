@@ -49,6 +49,9 @@ export interface AppState {
     tocAutoCollapse?: boolean; // Auto-collapse nested sections
     tocPosition?: 'left' | 'right'; // Position of TOC
     tocStyle?: 'floating' | 'fixed'; // Style of TOC (floating card or fixed sidebar)
+    // Comments
+    commentsEnabled?: boolean; // Enable/disable comments feature
+    commentAuthor?: string; // Author name for new comments
     // Export settings
     exportDefaultFormat?: 'docx' | 'pdf';
     exportDefaultPageSize?: PaperSize;
@@ -114,6 +117,10 @@ export interface ThemeColors {
   warning: string;
   error: string;
   info: string;
+  // Comment highlighting
+  commentHighlight: string;
+  commentHighlightResolved: string;
+  commentCardBg: string;
 }
 
 export interface ThemeTypography {
@@ -476,3 +483,97 @@ export type FilenameTemplateVar =
   | '{year}' // YYYY
   | '{month}' // MM
   | '{day}'; // DD
+
+// Comment feature types
+
+/**
+ * A reply within a comment thread
+ */
+export interface CommentReply {
+  id: string;        // "reply-1", "reply-2", scoped within parent
+  author: string;
+  body: string;
+  date: string;      // ISO 8601
+}
+
+/**
+ * Emoji reactions on a comment: emoji char → author names
+ */
+export type CommentReactions = Record<string, string[]>;
+
+/**
+ * Tag that can be applied to a comment to signal severity/intent.
+ */
+export type CommentTag =
+  | 'blocking'
+  | 'nit'
+  | 'suggestion'
+  | 'question'
+  | 'praise'
+  | 'todo'
+  | 'fyi';
+
+/**
+ * Positional context for a comment within the document structure.
+ * Computed at comment-creation time from the source offset and document headings.
+ * Stored in the footnote metadata so AI agents can read it directly from the file.
+ */
+export interface CommentContext {
+  /** 1-based line number where the commented text appears */
+  line: number;
+  /** Nearest heading text above the comment (undefined if before any heading) */
+  section?: string;
+  /** Heading level of the nearest heading (1-6, undefined if before any heading) */
+  sectionLevel?: number;
+  /** Heading hierarchy from root to the containing section */
+  breadcrumb: string[];
+}
+
+/**
+ * A single comment attached to text in the markdown
+ */
+export interface Comment {
+  id: string; // e.g. "comment-1"
+  selectedText: string; // The text the comment is anchored to
+  body: string; // The comment content
+  author: string; // From extension settings
+  date: string; // ISO 8601 timestamp
+  resolved: boolean; // Whether the comment has been resolved
+  /** Positional context within the document; undefined for legacy comments */
+  context?: CommentContext;
+  /** Tags for categorizing comment severity/intent */
+  tags?: CommentTag[];
+  /** Threaded replies */
+  replies?: CommentReply[];
+  /** Emoji reactions */
+  reactions?: CommentReactions;
+}
+
+/**
+ * Result of parsing comments from raw markdown
+ */
+export interface CommentParseResult {
+  cleanedMarkdown: string; // Markdown with comment footnotes stripped
+  comments: Comment[]; // Extracted comments
+}
+
+/**
+ * Comment metadata stored in the footnote HTML comment
+ */
+export interface CommentMetadata {
+  author: string;
+  date: string;
+  resolved?: boolean;
+  selectedText?: string;
+  // Positional context fields (optional for backward compatibility)
+  line?: number;
+  section?: string;
+  sectionLevel?: number;
+  breadcrumb?: string[];
+  /** Tags for categorizing comment severity/intent */
+  tags?: CommentTag[];
+  /** Threaded replies */
+  replies?: CommentReply[];
+  /** Emoji reactions */
+  reactions?: CommentReactions;
+}

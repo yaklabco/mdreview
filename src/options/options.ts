@@ -97,6 +97,9 @@ class OptionsManager {
     this.setValue('line-height', preferences.lineHeight || '');
     this.setValue('max-width', preferences.maxWidth || '');
 
+    // Comments
+    this.setValue('comment-author', preferences.commentAuthor || '');
+
     // Table of Contents
     this.setValue('show-toc', !!preferences.showToc);
     this.setValue('toc-max-depth', preferences.tocMaxDepth || 6);
@@ -277,6 +280,9 @@ class OptionsManager {
         codeFontFamily: this.getInputValue('code-font-family'),
         lineHeight: this.getNumberValue('line-height'),
         maxWidth: this.getNumberValue('max-width'),
+
+        // Comments
+        commentAuthor: this.getInputValue('comment-author'),
 
         // Table of Contents
         showToc: this.getCheckboxValue('show-toc'),
@@ -474,6 +480,9 @@ class OptionsManager {
         exportDefaultPageSize: 'A4',
         exportIncludeToc: true,
         exportFilenameTemplate: '{title}',
+        // Comments defaults
+        commentsEnabled: true,
+        commentAuthor: '',
         // Blocklist defaults
         blockedSites: [],
       };

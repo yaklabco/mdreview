@@ -42,6 +42,9 @@ const githubLight: Theme = {
     warning: '#9a6700',
     error: '#cf222e',
     info: '#0969da',
+    commentHighlight: 'rgba(255, 212, 59, 0.3)',
+    commentHighlightResolved: 'rgba(255, 212, 59, 0.1)',
+    commentCardBg: '#f6f8fa',
   },
 
   typography: {

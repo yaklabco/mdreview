@@ -1,0 +1,7 @@
+{
+  "name": "com.mdview.filewriter",
+  "description": "MDView native messaging host for writing markdown files",
+  "path": "HOST_PATH_PLACEHOLDER",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://EXTENSION_ID/"]
+}
