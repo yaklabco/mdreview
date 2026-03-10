@@ -1981,6 +1981,69 @@ body.toc-visible-right .mdview-export-btn.position-right {
 }
 
 /* ============================================
+   Frontmatter Card
+   ============================================ */
+
+.frontmatter-card {
+  background: var(--md-bg-secondary);
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.frontmatter-card > summary {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--md-fg);
+  user-select: none;
+  list-style: revert;
+}
+
+.frontmatter-card > summary:hover {
+  background: var(--md-selection);
+  border-radius: 6px 6px 0 0;
+}
+
+.frontmatter-card[open] > summary {
+  border-bottom: 1px solid var(--md-border);
+}
+
+.frontmatter-card table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.frontmatter-card tr:not(:last-child) {
+  border-bottom: 1px solid var(--md-border);
+}
+
+.frontmatter-card td {
+  padding: 6px 16px;
+  vertical-align: top;
+}
+
+.frontmatter-key {
+  font-weight: 600;
+  color: var(--md-fg);
+  white-space: nowrap;
+  width: 1%;
+}
+
+.frontmatter-value {
+  color: var(--md-fg-muted);
+  font-family: var(--md-font-family-code);
+  word-break: break-word;
+}
+
+@media print {
+  .frontmatter-card {
+    break-inside: avoid;
+  }
+}
+
+/* ============================================
    Comment System Styles
    ============================================ */
 

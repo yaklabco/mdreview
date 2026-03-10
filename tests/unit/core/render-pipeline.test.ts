@@ -21,6 +21,7 @@ vi.mock('../../../src/workers/worker-pool', () => ({
         mermaidBlocks: [],
         images: [],
         links: [],
+        frontmatter: null,
       },
     }),
     terminate: vi.fn(),

@@ -4,6 +4,7 @@
  */
 
 import { MarkdownConverter } from './markdown-converter';
+import { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extractor';
 import { domPurifier } from '../utils/dom-purifier';
 import { workerPool } from '../workers/worker-pool';
 import type {
@@ -136,11 +137,16 @@ export class RenderPipeline {
         return;
       }
 
-      // Preprocess: Strip existing TOC if custom TOC is enabled
+      // Preprocess: Extract frontmatter before any other processing
       let processedMarkdown = markdown;
+      const frontmatterResult = extractFrontmatter(processedMarkdown);
+      const frontmatterData = frontmatterResult.frontmatter;
+      processedMarkdown = frontmatterResult.cleanedMarkdown;
+
+      // Preprocess: Strip existing TOC if custom TOC is enabled
       if ((preferences as { showToc?: boolean }).showToc) {
         const { stripTableOfContents } = await import('../utils/toc-stripper');
-        const stripResult = stripTableOfContents(markdown);
+        const stripResult = stripTableOfContents(processedMarkdown);
         processedMarkdown = stripResult.markdown;
         if (stripResult.tocFound) {
           debug.info('RenderPipeline', 'Stripped original TOC from markdown');
@@ -228,7 +234,10 @@ export class RenderPipeline {
         message: 'Processing content...',
       });
 
-      const transformed = this.transformContent(sanitized, result, preferences);
+      const transformed = this.transformContent(sanitized, result, preferences, frontmatterData);
+
+      // Store frontmatter in metadata
+      result.metadata.frontmatter = frontmatterData;
 
       if (this.cancelRequested) return;
 
@@ -554,11 +563,16 @@ export class RenderPipeline {
       enableHtml: !!(preferences as { enableHtml?: boolean }).enableHtml,
     });
 
-    // Preprocess: Strip existing TOC if custom TOC is enabled
+    // Preprocess: Extract frontmatter before any other processing
     let processedMarkdown = markdown;
+    const frontmatterResult = extractFrontmatter(processedMarkdown);
+    const frontmatterData = frontmatterResult.frontmatter;
+    processedMarkdown = frontmatterResult.cleanedMarkdown;
+
+    // Preprocess: Strip existing TOC if custom TOC is enabled
     if ((preferences as { showToc?: boolean }).showToc) {
       const { stripTableOfContents } = await import('../utils/toc-stripper');
-      const stripResult = stripTableOfContents(markdown);
+      const stripResult = stripTableOfContents(processedMarkdown);
       processedMarkdown = stripResult.markdown;
       if (stripResult.tocFound) {
         debug.info('RenderPipeline', 'Stripped original TOC from markdown (progressive hydration)');
@@ -594,8 +608,9 @@ export class RenderPipeline {
       message: 'Rendering structure...',
     });
 
+    const frontmatterHtml = frontmatterData ? renderFrontmatterHtml(frontmatterData) : '';
     const skeletonHtml = SkeletonRenderer.generateSkeleton(sections);
-    container.innerHTML = skeletonHtml;
+    container.innerHTML = frontmatterHtml + skeletonHtml;
 
     debug.debug('RenderPipeline', 'Skeleton rendered (structure visible)');
 
@@ -723,7 +738,8 @@ export class RenderPipeline {
   private transformContent(
     html: string,
     result: ConversionResult,
-    preferences: Record<string, unknown> = {}
+    preferences: Record<string, unknown> = {},
+    frontmatter: Record<string, string> | null = null
   ): string {
     debug.debug(
       'RenderPipeline',
@@ -731,6 +747,11 @@ export class RenderPipeline {
       JSON.stringify(preferences)
     );
     let transformed = html;
+
+    // Prepend frontmatter card if present
+    if (frontmatter) {
+      transformed = renderFrontmatterHtml(frontmatter) + transformed;
+    }
 
     // Add language badges and line numbers to code blocks
     transformed = this.addCodeBlockFeatures(transformed, result, preferences);
