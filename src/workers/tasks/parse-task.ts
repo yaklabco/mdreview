@@ -32,6 +32,7 @@ export function handleParseTask(payload: unknown): ParseTaskResult {
     mermaidBlocks: [] as MermaidBlockInfo[],
     images: [] as ImageInfo[],
     links: [] as LinkInfo[],
+    frontmatter: null as Record<string, string> | null,
   };
 
   // Initialize markdown-it

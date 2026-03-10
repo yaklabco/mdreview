@@ -97,6 +97,7 @@ export function createMockWorkerPool() {
             mermaidBlocks: [],
             images: [],
             links: [],
+            frontmatter: null,
           },
         };
       }
@@ -120,6 +121,7 @@ export function createMockConverter() {
         mermaidBlocks: [],
         images: [],
         links: [],
+        frontmatter: null,
       },
       errors: [],
     } as ConversionResult),
@@ -260,6 +262,7 @@ export function createMockCachedResult(overrides?: Partial<CachedResult>): Cache
       mermaidBlocks: [],
       images: [],
       links: [],
+      frontmatter: null,
     },
     highlightedBlocks: new Map(),
     mermaidSVGs: new Map(),

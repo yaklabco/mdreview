@@ -28,6 +28,7 @@ export class MarkdownConverter {
     mermaidBlocks: [],
     images: [],
     links: [],
+    frontmatter: null,
   };
 
   constructor(options?: ConvertOptions) {
@@ -236,6 +237,7 @@ export class MarkdownConverter {
       mermaidBlocks: [],
       images: [],
       links: [],
+      frontmatter: null,
     };
 
     const errors: ParseError[] = [];

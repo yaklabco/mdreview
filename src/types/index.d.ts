@@ -173,6 +173,7 @@ export interface ConversionResult {
     mermaidBlocks: MermaidBlockInfo[];
     images: ImageInfo[];
     links: LinkInfo[];
+    frontmatter: Record<string, string> | null;
   };
   errors: ParseError[];
 }
