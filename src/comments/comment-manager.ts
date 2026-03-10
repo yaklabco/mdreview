@@ -46,8 +46,10 @@ export class CommentManager {
     handler: EventListener;
   }> = [];
 
-  /** Grace period (ms) after native write before clearing writeInProgress */
-  private static readonly WRITE_GUARD_DELAY = 1000;
+  /** Grace period (ms) after native write before clearing writeInProgress.
+   *  Must exceed file-watcher poll interval (1000ms) + debounce (500ms)
+   *  to prevent the auto-reload from triggering on our own write. */
+  private static readonly WRITE_GUARD_DELAY = 2000;
 
   /**
    * Parse existing comments from raw markdown, set up UI and highlights,
@@ -160,6 +162,10 @@ export class CommentManager {
       }
     });
 
+    this.addEventHandler('mdview:comment:reposition', () => {
+      this.repositionAllCards();
+    });
+
     this.addEventHandler('mdview:comment:react:picker', (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.commentId) {
@@ -227,6 +233,12 @@ export class CommentManager {
       `.mdview-comment-card[data-comment-id="${commentId}"]`
     );
     if (!card) return;
+
+    // Expand the card if it's minimized so the edit form is visible
+    if (card.classList.contains('minimized')) {
+      card.classList.remove('minimized');
+      this.repositionAllCards();
+    }
 
     const form = this.ui.renderInputForm(
       (newBody: string, tags: CommentTag[]) => {
@@ -697,10 +709,14 @@ export class CommentManager {
     );
     if (!oldCard) return;
 
-    // Replace the card with a freshly rendered one, preserving position
+    // Replace the card with a freshly rendered one, preserving position and minimized state
     const topStyle = (oldCard as HTMLElement).style.top;
+    const wasMinimized = oldCard.classList.contains('minimized');
     const newCard = this.ui.renderCard(comment);
     newCard.style.top = topStyle;
+    if (!wasMinimized) {
+      newCard.classList.remove('minimized');
+    }
     oldCard.replaceWith(newCard);
   }
 

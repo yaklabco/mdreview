@@ -40,7 +40,7 @@ export class CommentUI {
    */
   renderCard(comment: Comment): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'mdview-comment-card';
+    card.className = 'mdview-comment-card minimized';
     card.dataset.commentId = comment.id;
 
     if (comment.resolved) {
@@ -78,6 +78,15 @@ export class CommentUI {
     body.textContent = comment.body;
 
     card.appendChild(header);
+
+    // Snippet (visible only when minimized, via CSS)
+    const snippet = document.createElement('div');
+    snippet.className = 'comment-snippet';
+    const maxLen = 60;
+    snippet.textContent = comment.body.length > maxLen
+      ? comment.body.slice(0, maxLen) + '...'
+      : comment.body;
+    card.appendChild(snippet);
 
     // Tag pills
     if (comment.tags && comment.tags.length > 0) {
@@ -128,13 +137,22 @@ export class CommentUI {
       card.appendChild(badge);
     }
 
-    // Click on card dispatches focus event
+    // Click toggles minimized/expanded state
     card.addEventListener('click', () => {
-      document.dispatchEvent(
-        new CustomEvent('mdview:comment:focus', {
-          detail: { commentId: comment.id },
-        })
-      );
+      const wasMinimized = card.classList.contains('minimized');
+      card.classList.toggle('minimized');
+
+      // Only focus the highlight when expanding
+      if (wasMinimized) {
+        document.dispatchEvent(
+          new CustomEvent('mdview:comment:focus', {
+            detail: { commentId: comment.id },
+          })
+        );
+      }
+
+      // Always reposition after size change
+      document.dispatchEvent(new CustomEvent('mdview:comment:reposition'));
     });
 
     this.cards.push(card);

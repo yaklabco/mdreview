@@ -510,6 +510,13 @@ class MDViewContentScript {
       }
 
       reloadTimeout = window.setTimeout(() => {
+        // Re-check write guard inside the debounce window — the guard
+        // may have been set between the outer check and this callback.
+        if (this.commentManager?.isWriteInProgress()) {
+          debug.debug('MDView', 'Skipping reload (debounced) - comment write in progress');
+          return;
+        }
+
         // Update reload tracking
         const currentCount = parseInt(sessionStorage.getItem(reloadKey) || '0');
         sessionStorage.setItem(reloadKey, (currentCount + 1).toString());

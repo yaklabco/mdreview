@@ -243,6 +243,109 @@ describe('CommentUI', () => {
     });
   });
 
+  describe('minimized cards', () => {
+    test('should render with .minimized class by default', () => {
+      const card = ui.renderCard(sampleComment);
+
+      expect(card.classList.contains('minimized')).toBe(true);
+    });
+
+    test('should have .comment-snippet with truncated body text', () => {
+      const card = ui.renderCard(sampleComment);
+
+      const snippet = card.querySelector('.comment-snippet');
+      expect(snippet).not.toBeNull();
+      expect(snippet?.textContent).toBe('This is a comment body');
+    });
+
+    test('should truncate snippet to ~60 chars with ellipsis for long bodies', () => {
+      const longComment: Comment = {
+        ...sampleComment,
+        body: 'This is a very long comment body that exceeds sixty characters and should be truncated with an ellipsis at the end',
+      };
+      const card = ui.renderCard(longComment);
+
+      const snippet = card.querySelector('.comment-snippet');
+      expect(snippet?.textContent!.length).toBeLessThanOrEqual(63); // 60 + "..."
+      expect(snippet?.textContent).toMatch(/\.\.\.$/);
+    });
+
+    test('should not add ellipsis for short bodies', () => {
+      const card = ui.renderCard(sampleComment);
+
+      const snippet = card.querySelector('.comment-snippet');
+      expect(snippet?.textContent).not.toMatch(/\.\.\.$/);
+    });
+
+    test('should place snippet after header', () => {
+      const card = ui.renderCard(sampleComment);
+
+      const children = Array.from(card.children);
+      const headerIdx = children.findIndex((el) => el.classList.contains('comment-header'));
+      const snippetIdx = children.findIndex((el) => el.classList.contains('comment-snippet'));
+
+      expect(snippetIdx).toBe(headerIdx + 1);
+    });
+
+    test('clicking card should remove .minimized (expand)', () => {
+      const card = ui.renderCard(sampleComment);
+      document.body.appendChild(card);
+
+      expect(card.classList.contains('minimized')).toBe(true);
+      card.click();
+      expect(card.classList.contains('minimized')).toBe(false);
+    });
+
+    test('clicking expanded card should add .minimized (collapse)', () => {
+      const card = ui.renderCard(sampleComment);
+      document.body.appendChild(card);
+
+      // Expand first
+      card.click();
+      expect(card.classList.contains('minimized')).toBe(false);
+
+      // Collapse
+      card.click();
+      expect(card.classList.contains('minimized')).toBe(true);
+    });
+
+    test('should dispatch mdview:comment:focus only on expand', () => {
+      const card = ui.renderCard(sampleComment);
+      document.body.appendChild(card);
+
+      const handler = vi.fn();
+      document.addEventListener('mdview:comment:focus', handler);
+
+      // Expand — should fire focus
+      card.click();
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      // Collapse — should NOT fire focus again
+      card.click();
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      document.removeEventListener('mdview:comment:focus', handler);
+    });
+
+    test('should dispatch mdview:comment:reposition on every toggle', () => {
+      const card = ui.renderCard(sampleComment);
+      document.body.appendChild(card);
+
+      const handler = vi.fn();
+      document.addEventListener('mdview:comment:reposition', handler);
+
+      // Expand
+      card.click();
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      // Collapse
+      card.click();
+      expect(handler).toHaveBeenCalledTimes(2);
+
+      document.removeEventListener('mdview:comment:reposition', handler);
+    });
+  });
+
   describe('overflow menu', () => {
     test('should show dropdown when menu button is clicked', () => {
       const card = ui.renderCard(sampleComment);

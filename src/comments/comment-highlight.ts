@@ -39,23 +39,86 @@ export class CommentHighlighter {
       textNodes.push(node);
     }
 
-    // Build concatenated text with offset mappings
+    // Build concatenated text with offset mappings.
+    // Insert a synthetic space between text nodes in different block-level
+    // parents so cross-block selections can match even when the DOM has no
+    // whitespace text node between adjacent block elements.
+    const BLOCK_TAGS = new Set([
+      'ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DD', 'DETAILS', 'DIV',
+      'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM',
+      'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR',
+      'LI', 'MAIN', 'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'UL',
+    ]);
+
+    const closestBlock = (node: Node): Element | null => {
+      let el: Node | null = node.parentNode;
+      while (el && el !== container) {
+        if (el.nodeType === Node.ELEMENT_NODE && BLOCK_TAGS.has((el as Element).tagName)) {
+          return el as Element;
+        }
+        el = el.parentNode;
+      }
+      return null;
+    };
+
     let concat = '';
     const nodeOffsets: Array<{ node: Text; start: number; end: number }> = [];
+    let prevBlock: Element | null = null;
     for (const textNode of textNodes) {
       const text = textNode.textContent ?? '';
+      const block = closestBlock(textNode);
+      // Insert a space when crossing block boundaries (if concat doesn't
+      // already end with whitespace)
+      if (
+        prevBlock !== null &&
+        block !== prevBlock &&
+        concat.length > 0 &&
+        !/\s$/.test(concat)
+      ) {
+        concat += ' ';
+      }
+      prevBlock = block;
       const start = concat.length;
       concat += text;
       nodeOffsets.push({ node: textNode, start, end: concat.length });
     }
 
-    // Find the selected text in the concatenated string
-    const matchIndex = concat.indexOf(selectedText);
-    if (matchIndex === -1) {
-      return null;
-    }
+    // Find the selected text in the concatenated string.
+    // Try exact match first; fall back to whitespace-normalized match
+    // for cross-block selections where the browser inserts \n between
+    // block elements that may differ from the DOM text nodes.
+    let matchIndex = concat.indexOf(selectedText);
+    let matchEnd: number;
 
-    const matchEnd = matchIndex + selectedText.length;
+    if (matchIndex !== -1) {
+      matchEnd = matchIndex + selectedText.length;
+    } else {
+      // Build a mapping from normalized offsets back to original offsets
+      const normalizedChars: number[] = []; // normalizedChars[i] = original index
+      let prevWs = false;
+      for (let i = 0; i < concat.length; i++) {
+        const isWs = /\s/.test(concat[i]);
+        if (isWs && prevWs) continue; // collapse consecutive whitespace
+        normalizedChars.push(i);
+        prevWs = isWs;
+      }
+      const normalizedConcat = normalizedChars
+        .map((i) => (/\s/.test(concat[i]) ? ' ' : concat[i]))
+        .join('');
+      const normalizedSearch = selectedText.replace(/\s+/g, ' ');
+
+      const normIdx = normalizedConcat.indexOf(normalizedSearch);
+      if (normIdx === -1) {
+        return null;
+      }
+
+      matchIndex = normalizedChars[normIdx];
+      // Map the end: normIdx + normalizedSearch.length may be past the end
+      const normEnd = normIdx + normalizedSearch.length;
+      matchEnd = normEnd < normalizedChars.length
+        ? normalizedChars[normEnd]
+        : concat.length;
+    }
 
     // Find which text nodes overlap with the match
     const overlapping = nodeOffsets.filter(

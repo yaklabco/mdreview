@@ -635,8 +635,8 @@ describe('CommentManager', () => {
       // Should still be true during the grace period
       expect(manager.isWriteInProgress()).toBe(true);
 
-      // Advance past the grace period (1000ms)
-      vi.advanceTimersByTime(1000);
+      // Advance past the grace period (2000ms)
+      vi.advanceTimersByTime(2000);
 
       // Now should be false
       expect(manager.isWriteInProgress()).toBe(false);
@@ -982,6 +982,160 @@ describe('CommentManager', () => {
       };
 
       expect(mockUIInstance.setCurrentAuthor).toHaveBeenCalledWith('Test Author');
+    });
+  });
+
+  // ── minimized card support ──────────────────────────────────────────────
+
+  describe('minimized card support', () => {
+    test('handles mdview:comment:reposition event by repositioning cards', async () => {
+      const { CommentHighlighter } = await import(
+        '../../../src/comments/comment-highlight'
+      );
+      const { CommentUI } = await import('../../../src/comments/comment-ui');
+
+      const mgr = new CommentManager();
+
+      // Create a highlight element for the card
+      const highlight = document.createElement('span');
+      document.body.appendChild(highlight);
+      highlight.getBoundingClientRect = vi.fn(() => ({
+        top: 100, bottom: 120, left: 0, right: 100,
+        width: 100, height: 20, x: 0, y: 100, toJSON: () => ({}),
+      }));
+
+      // Mock highlighter
+      const mockHighlighter = vi.mocked(CommentHighlighter);
+      mockHighlighter.mockImplementation(() => ({
+        highlightComment: vi.fn(),
+        removeHighlight: vi.fn(),
+        setActive: vi.fn(),
+        clearActive: vi.fn(),
+        setResolved: vi.fn(),
+        getHighlightElement: vi.fn(() => highlight),
+      }) as any);
+
+      // Mock UI to produce real card elements
+      vi.mocked(CommentUI).mockImplementation(() => ({
+        createGutter: vi.fn(() => document.createElement('div')),
+        renderCard: vi.fn((comment: Comment) => {
+          const card = document.createElement('div');
+          card.className = 'mdview-comment-card';
+          card.dataset.commentId = comment.id;
+          Object.defineProperty(card, 'offsetHeight', { value: 40, configurable: true });
+          return card;
+        }),
+        renderInputForm: vi.fn(() => document.createElement('div')),
+        renderReplyForm: vi.fn(() => document.createElement('div')),
+        renderEmojiPicker: vi.fn(() => document.createElement('div')),
+        setCurrentAuthor: vi.fn(),
+        showToast: vi.fn(),
+        destroy: vi.fn(),
+      }) as any);
+
+      await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
+
+      // Get the card and record its initial position
+      const card = document.querySelector('.mdview-comment-card') as HTMLElement;
+      expect(card).not.toBeNull();
+      const initialTop = card.style.top;
+
+      // Change the highlight position
+      highlight.getBoundingClientRect = vi.fn(() => ({
+        top: 200, bottom: 220, left: 0, right: 100,
+        width: 100, height: 20, x: 0, y: 200, toJSON: () => ({}),
+      }));
+
+      // Dispatch reposition event
+      document.dispatchEvent(new CustomEvent('mdview:comment:reposition'));
+
+      // Card should have been repositioned
+      expect(card.style.top).toBe('200px');
+      expect(card.style.top).not.toBe(initialTop);
+
+      mgr.destroy();
+      highlight.remove();
+    });
+
+    test('refreshCardContent preserves minimized state on old card', async () => {
+      const { CommentUI } = await import('../../../src/comments/comment-ui');
+
+      const mgr = new CommentManager();
+
+      // Mock renderCard to produce cards with correct structure
+      let renderCallCount = 0;
+      vi.mocked(CommentUI).mockImplementation(() => ({
+        createGutter: vi.fn(() => document.createElement('div')),
+        renderCard: vi.fn((comment: Comment) => {
+          renderCallCount++;
+          const card = document.createElement('div');
+          card.className = 'mdview-comment-card';
+          card.dataset.commentId = comment.id;
+          return card;
+        }),
+        renderInputForm: vi.fn(() => document.createElement('div')),
+        renderReplyForm: vi.fn(() => document.createElement('div')),
+        renderEmojiPicker: vi.fn(() => document.createElement('div')),
+        setCurrentAuthor: vi.fn(),
+        showToast: vi.fn(),
+        destroy: vi.fn(),
+      }) as any);
+
+      await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
+
+      // Simulate the user expanding the card (remove .minimized)
+      const card = document.querySelector('.mdview-comment-card') as HTMLElement;
+      card.classList.remove('minimized');
+
+      // Trigger a reply which calls refreshCardContent internally
+      await mgr.addReply('comment-1', 'A reply');
+
+      // New card should NOT have .minimized (state preserved from expanded old card)
+      const newCard = document.querySelector(
+        '.mdview-comment-card[data-comment-id="comment-1"]'
+      ) as HTMLElement;
+      expect(newCard.classList.contains('minimized')).toBe(false);
+
+      mgr.destroy();
+    });
+
+    test('refreshCardContent preserves minimized state when card was minimized', async () => {
+      const { CommentUI } = await import('../../../src/comments/comment-ui');
+
+      const mgr = new CommentManager();
+
+      vi.mocked(CommentUI).mockImplementation(() => ({
+        createGutter: vi.fn(() => document.createElement('div')),
+        renderCard: vi.fn((comment: Comment) => {
+          const card = document.createElement('div');
+          card.className = 'mdview-comment-card minimized';
+          card.dataset.commentId = comment.id;
+          return card;
+        }),
+        renderInputForm: vi.fn(() => document.createElement('div')),
+        renderReplyForm: vi.fn(() => document.createElement('div')),
+        renderEmojiPicker: vi.fn(() => document.createElement('div')),
+        setCurrentAuthor: vi.fn(),
+        showToast: vi.fn(),
+        destroy: vi.fn(),
+      }) as any);
+
+      await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
+
+      // Card starts minimized (from renderCard mock)
+      const card = document.querySelector('.mdview-comment-card') as HTMLElement;
+      expect(card.classList.contains('minimized')).toBe(true);
+
+      // Trigger refreshCardContent via addReply
+      await mgr.addReply('comment-1', 'A reply');
+
+      // New card should still have .minimized
+      const newCard = document.querySelector(
+        '.mdview-comment-card[data-comment-id="comment-1"]'
+      ) as HTMLElement;
+      expect(newCard.classList.contains('minimized')).toBe(true);
+
+      mgr.destroy();
     });
   });
 

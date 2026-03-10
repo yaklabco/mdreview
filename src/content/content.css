@@ -2001,6 +2001,29 @@ body.toc-visible-right .mdview-export-btn.position-right {
   transition: box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
+/* Minimized cards show only header + snippet */
+.mdview-comment-card.minimized > :not(.comment-header):not(.comment-snippet) {
+  display: none;
+}
+
+.mdview-comment-card .comment-snippet {
+  display: none;
+  color: var(--md-fg-muted);
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdview-comment-card.minimized .comment-snippet {
+  display: block;
+}
+
+.mdview-comment-card.minimized {
+  cursor: pointer;
+}
+
 .mdview-comment-card:hover,
 .mdview-comment-card.active {
   box-shadow: 0 4px 16px var(--md-shadow);

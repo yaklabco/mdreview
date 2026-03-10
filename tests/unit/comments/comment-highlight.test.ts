@@ -131,6 +131,37 @@ describe('CommentHighlighter', () => {
       expect(container.textContent).toBe('Hello world code here after.');
     });
 
+    it('should highlight text spanning across block elements with whitespace normalization', () => {
+      container.innerHTML = '<h2>Migration path</h2><p>to the new platform requires careful planning.</p>';
+      const comment: Comment = {
+        id: 'comment-1',
+        selectedText: 'Migration path\nto the new platform',
+        body: 'test',
+        author: 'james',
+        date: '2026-03-03T14:30:00Z',
+        resolved: false,
+      };
+
+      const span = highlighter.highlightComment(container, comment);
+      expect(span).not.toBeNull();
+      expect(span!.dataset.commentId).toBe('comment-1');
+    });
+
+    it('should highlight text when selection has extra whitespace between blocks', () => {
+      container.innerHTML = '<h3>Section Title</h3>\n<p>Body text follows here.</p>';
+      const comment: Comment = {
+        id: 'comment-1',
+        selectedText: 'Section Title\n\nBody text follows',
+        body: 'test',
+        author: 'james',
+        date: '2026-03-03T14:30:00Z',
+        resolved: false,
+      };
+
+      const span = highlighter.highlightComment(container, comment);
+      expect(span).not.toBeNull();
+    });
+
     it('should return first span for cross-node highlights usable for positioning', () => {
       container.innerHTML = '<p>Some <strong>bold</strong> text.</p>';
       document.body.appendChild(container);
