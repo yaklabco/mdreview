@@ -27,14 +27,28 @@ export interface SelectionContext {
   suffix: string;
 }
 
-const COMMENT_SEPARATOR = '<!-- mdview:comments -->';
+const V1_SENTINEL = '<!-- mdview:comments -->';
+const V2_SENTINEL_PREFIX = '<!-- mdview:annotations';
+
+/**
+ * Find the annotation/comment boundary in the markdown.
+ * Returns the index of the earlier of v1 or v2 sentinel, or -1 if neither.
+ */
+function findAnnotationBoundary(markdown: string): number {
+  const v1 = markdown.indexOf(V1_SENTINEL);
+  const v2 = markdown.indexOf(V2_SENTINEL_PREFIX);
+  if (v1 === -1 && v2 === -1) return -1;
+  if (v1 === -1) return v2;
+  if (v2 === -1) return v1;
+  return Math.min(v1, v2);
+}
 
 /**
  * Build a source position map from raw markdown.
- * Processes only the content section (above `<!-- mdview:comments -->`).
+ * Processes only the content section (above annotation/comment boundary).
  */
 export function buildSourceMap(rawMarkdown: string): SourcePositionMap {
-  const sepIdx = rawMarkdown.indexOf(COMMENT_SEPARATOR);
+  const sepIdx = findAnnotationBoundary(rawMarkdown);
   const rawSource = sepIdx === -1 ? rawMarkdown : rawMarkdown.slice(0, sepIdx);
 
   const result = buildSourceMapRange(rawSource, 0, rawSource.length, 0);

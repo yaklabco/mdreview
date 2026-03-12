@@ -1,5 +1,5 @@
 /**
- * Comment Serializer
+ * Comment Serializer (v1)
  *
  * Generates markdown with footnote references injected and footnote bodies appended.
  * Handles add, update, delete, and resolve operations on raw markdown strings.
@@ -11,6 +11,9 @@
  *   [^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
  *       This API endpoint needs error handling
  *       for the 404 case.
+ *
+ * @deprecated Use `annotation-serializer.ts` instead. This module is no longer
+ * imported by production code.
  */
 
 import type { Comment, CommentMetadata, CommentReply } from '../types';

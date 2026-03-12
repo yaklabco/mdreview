@@ -9,7 +9,7 @@
 import type { Comment, CommentParseResult, AppState, CommentTag } from '../types';
 import { CommentUI } from './comment-ui';
 import { CommentHighlighter } from './comment-highlight';
-import { parseComments } from './comment-parser';
+import { parseComments } from './annotation-parser';
 import {
   addComment as serializerAddComment,
   addCommentAtOffset as serializerAddCommentAtOffset,
@@ -20,7 +20,7 @@ import {
   addReply as serializerAddReply,
   toggleReaction as serializerToggleReaction,
   generateNextCommentId,
-} from './comment-serializer';
+} from './annotation-serializer';
 import { buildSourceMap, findInsertionPoint } from './source-position-map';
 import type { SourcePositionMap, SelectionContext } from './source-position-map';
 import { computeCommentContext } from './comment-context';
@@ -307,6 +307,8 @@ export class CommentManager {
       resolved: false,
       context,
       ...(tags && tags.length > 0 ? { tags } : {}),
+      ...(this.pendingContext?.prefix ? { anchorPrefix: this.pendingContext.prefix } : {}),
+      ...(this.pendingContext?.suffix ? { anchorSuffix: this.pendingContext.suffix } : {}),
     };
 
     // Serialize into markdown using source map for accurate placement
@@ -752,8 +754,11 @@ export class CommentManager {
    * Extract the content section of markdown (above the comments separator).
    */
   private getContentSection(): string {
-    const sepIdx = this.rawMarkdown.indexOf('<!-- mdview:comments -->');
-    return sepIdx === -1 ? this.rawMarkdown : this.rawMarkdown.slice(0, sepIdx);
+    const v1 = this.rawMarkdown.indexOf('<!-- mdview:comments -->');
+    const v2 = this.rawMarkdown.indexOf('<!-- mdview:annotations');
+    const boundaries = [v1, v2].filter(i => i !== -1);
+    if (boundaries.length === 0) return this.rawMarkdown;
+    return this.rawMarkdown.slice(0, Math.min(...boundaries));
   }
 
   /**

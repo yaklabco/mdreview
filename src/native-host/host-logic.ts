@@ -88,10 +88,48 @@ export function handleMessage(msg: HostMessage | null | string): HostResponse {
   }
 
   try {
-    fs.writeFileSync(msg.path, msg.content, 'utf8');
+    const existing = fs.readFileSync(msg.path, 'utf8');
+    const newContent = msg.content;
+
+    // Content boundary: earlier of v1 or v2 sentinel
+    const V1_SEP = '<!-- mdview:comments -->';
+    const V2_PREFIX = '<!-- mdview:annotations';
+
+    const existingBound = findContentBoundary(existing, V1_SEP, V2_PREFIX);
+    const newBound = findContentBoundary(newContent, V1_SEP, V2_PREFIX);
+
+    const existingBody = existingBound !== -1
+      ? existing.substring(0, existingBound).trimEnd()
+      : existing.trimEnd();
+    const newBody = newBound !== -1
+      ? newContent.substring(0, newBound).trimEnd()
+      : newContent.trimEnd();
+
+    // Strip both v1 and v2 marker formats for comparison
+    const V1_REF = /\[\^comment-\d+\]/g;
+    const V2_REF = /\[@\d+\]/g;
+    const existingClean = existingBody.replace(V1_REF, '').replace(V2_REF, '');
+    const newClean = newBody.replace(V1_REF, '').replace(V2_REF, '');
+
+    if (existingClean !== newClean) {
+      return {
+        error: 'Refused: write would modify document content beyond comment markers. Only comment changes are allowed.',
+      };
+    }
+
+    fs.writeFileSync(msg.path, newContent, 'utf8');
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return { error: message };
   }
+}
+
+function findContentBoundary(text: string, v1Sep: string, v2Prefix: string): number {
+  const v1 = text.indexOf(v1Sep);
+  const v2 = text.indexOf(v2Prefix);
+  if (v1 === -1 && v2 === -1) return -1;
+  if (v1 === -1) return v2;
+  if (v2 === -1) return v1;
+  return Math.min(v1, v2);
 }

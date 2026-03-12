@@ -119,6 +119,7 @@ describe('Native Host Message Handling', () => {
     });
 
     it('should write file and return success for valid message', () => {
+      vi.mocked(fs.readFileSync).mockReturnValue('# Hello World');
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
       const result = handleMessage({
@@ -132,7 +133,7 @@ describe('Native Host Message Handling', () => {
     });
 
     it('should return error when writeFileSync throws', () => {
-      vi.mocked(fs.writeFileSync).mockImplementation(() => {
+      vi.mocked(fs.readFileSync).mockImplementation(() => {
         throw new Error('EACCES: permission denied');
       });
 
@@ -146,6 +147,7 @@ describe('Native Host Message Handling', () => {
     });
 
     it('should accept empty string as content', () => {
+      vi.mocked(fs.readFileSync).mockReturnValue('');
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
       const result = handleMessage({
@@ -159,6 +161,7 @@ describe('Native Host Message Handling', () => {
     });
 
     it('should work with .markdown extension', () => {
+      vi.mocked(fs.readFileSync).mockReturnValue('content');
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
       const result = handleMessage({
@@ -172,6 +175,7 @@ describe('Native Host Message Handling', () => {
     });
 
     it('should work with .mdx extension', () => {
+      vi.mocked(fs.readFileSync).mockReturnValue('import { Component } from "react"');
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
       const result = handleMessage({
@@ -185,6 +189,109 @@ describe('Native Host Message Handling', () => {
         'import { Component } from "react"',
         'utf8',
       );
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should accept v1 comment marker changes', () => {
+      const existing = '# Doc\n\nSome text here.';
+      const withComment = '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\n[^comment-1]: <!-- mdview:comment {"author":"a","date":"2026-01-01T00:00:00Z"} -->\n    note';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: withComment,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should accept v2 annotation marker changes', () => {
+      const existing = '# Doc\n\nSome text here.';
+      const withAnnotation = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1,"anchor":{"text":"text"},"body":"note","author":"a","date":"2026-01-01T00:00:00Z"}] -->';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: withAnnotation,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should detect v2 sentinel as content boundary', () => {
+      const existing = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1}] -->';
+      const updated = '# Doc\n\nSome text[@1][@2] here.\n\n<!-- mdview:annotations [{"id":1},{"id":2}] -->';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: updated,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should accept v1 to v2 migration write', () => {
+      const existing = '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\n[^comment-1]: stuff';
+      const migrated = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1}] -->';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: migrated,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should reject body-only changes', () => {
+      const existing = '# Doc\n\nOriginal text here.';
+      const modified = '# Doc\n\nModified text here.';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: modified,
+      });
+
+      expect((result as { error: string }).error).toContain('Refused');
+    });
+
+    it('should handle plain markdown with no annotations', () => {
+      const existing = '# Doc\n\nSome text.';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: existing,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should handle mixed v1 existing with v2 new markers', () => {
+      const existing = '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\nstuff';
+      const updated = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1}] -->';
+      vi.mocked(fs.readFileSync).mockReturnValue(existing);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: updated,
+      });
+
       expect(result).toEqual({ success: true });
     });
 
