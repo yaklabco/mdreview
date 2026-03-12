@@ -548,6 +548,10 @@ export interface Comment {
   replies?: CommentReply[];
   /** Emoji reactions */
   reactions?: CommentReactions;
+  /** Prefix context for TextQuoteSelector anchoring */
+  anchorPrefix?: string;
+  /** Suffix context for TextQuoteSelector anchoring */
+  anchorSuffix?: string;
 }
 
 /**

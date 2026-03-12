@@ -163,6 +163,35 @@ describe('buildSourceMap', () => {
     expect(map.rawSource).toBe('Content **here**\n\n');
   });
 
+  it('should stop at v2 annotation sentinel', () => {
+    const md = 'Content **here**\n\n<!-- mdview:annotations [{"id":1}] -->';
+    const map = buildSourceMap(md);
+    expect(map.plainText).toBe('Content here\n\n');
+    expect(map.rawSource).toBe('Content **here**\n\n');
+  });
+
+  it('should pick the earlier of v1 or v2 sentinel', () => {
+    const md = 'Content here\n\n<!-- mdview:comments -->\nstuff\n<!-- mdview:annotations [] -->';
+    const map = buildSourceMap(md);
+    expect(map.plainText).toBe('Content here\n\n');
+    expect(map.rawSource).toBe('Content here\n\n');
+  });
+
+  it('should pick v2 sentinel when it comes first', () => {
+    const md = 'Content here\n\n<!-- mdview:annotations [] -->\n<!-- mdview:comments -->';
+    const map = buildSourceMap(md);
+    expect(map.plainText).toBe('Content here\n\n');
+    expect(map.rawSource).toBe('Content here\n\n');
+  });
+
+  it('should handle [@N] markers in source text', () => {
+    // [@N] markers are part of the source but should map through normally
+    const md = 'Text[@1] here';
+    const map = buildSourceMap(md);
+    // The marker is literal text in the source, so it appears in plainText
+    expect(map.plainText).toContain('[@1]');
+  });
+
   it('should handle empty string', () => {
     const map = buildSourceMap('');
     expect(map.plainText).toBe('');

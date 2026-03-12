@@ -11,11 +11,11 @@ import type { Comment, CommentParseResult, AppState, CommentTag } from '../../..
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-vi.mock('../../../src/comments/comment-parser', () => ({
+vi.mock('../../../src/comments/annotation-parser', () => ({
   parseComments: vi.fn(),
 }));
 
-vi.mock('../../../src/comments/comment-serializer', () => ({
+vi.mock('../../../src/comments/annotation-serializer', () => ({
   generateNextCommentId: vi.fn(),
   addComment: vi.fn(),
   addCommentAtOffset: vi.fn(),
@@ -70,7 +70,7 @@ vi.mock('../../../src/comments/comment-highlight', () => ({
   })),
 }));
 
-import { parseComments } from '../../../src/comments/comment-parser';
+import { parseComments } from '../../../src/comments/annotation-parser';
 import {
   generateNextCommentId,
   addComment as serializerAddComment,
@@ -81,7 +81,7 @@ import {
   resolveComment as serializerResolveComment,
   addReply as serializerAddReply,
   toggleReaction as serializerToggleReaction,
-} from '../../../src/comments/comment-serializer';
+} from '../../../src/comments/annotation-serializer';
 import { computeCommentContext } from '../../../src/comments/comment-context';
 import { findInsertionPoint } from '../../../src/comments/source-position-map';
 

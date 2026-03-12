@@ -5,6 +5,9 @@
  * content, with metadata embedded in HTML comments following the `<!-- mdview:comment {...} -->`
  * pattern. A `<!-- mdview:comments -->` separator divides the document content from
  * the comment section.
+ *
+ * @deprecated Use `annotation-parser.ts` instead. This module is kept only for
+ * v1 backward compatibility delegation from the annotation parser.
  */
 
 import type { Comment, CommentContext, CommentMetadata, CommentParseResult } from '../types';

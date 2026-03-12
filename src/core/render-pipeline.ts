@@ -156,7 +156,7 @@ export class RenderPipeline {
       // Preprocess: Strip comment footnotes before parsing
       this.lastCommentParseResult = null;
       if ((preferences as { commentsEnabled?: boolean }).commentsEnabled !== false) {
-        const { parseComments } = await import('../comments/comment-parser');
+        const { parseComments } = await import('../comments/annotation-parser');
         this.lastCommentParseResult = parseComments(processedMarkdown);
         processedMarkdown = this.lastCommentParseResult.cleanedMarkdown;
         if (this.lastCommentParseResult.comments.length > 0) {
@@ -582,7 +582,7 @@ export class RenderPipeline {
     // Preprocess: Strip comment footnotes before parsing
     this.lastCommentParseResult = null;
     if ((preferences as { commentsEnabled?: boolean }).commentsEnabled !== false) {
-      const { parseComments } = await import('../comments/comment-parser');
+      const { parseComments } = await import('../comments/annotation-parser');
       this.lastCommentParseResult = parseComments(processedMarkdown);
       processedMarkdown = this.lastCommentParseResult.cleanedMarkdown;
       if (this.lastCommentParseResult.comments.length > 0) {
