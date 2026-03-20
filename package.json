@@ -10,6 +10,8 @@
     "dev": "npm -w @mdview/chrome-ext run dev",
     "build": "npm -w @mdview/chrome-ext run build",
     "build:ext": "npm -w @mdview/chrome-ext run build",
+    "dev:electron": "npm -w @mdview/electron run dev",
+    "build:electron": "npm -w @mdview/electron run build",
     "export:docx": "tsx scripts/export-docx-mermaid-cli.ts",
     "preview": "vite preview",
     "test": "vitest",

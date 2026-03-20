@@ -1,0 +1,178 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { IPC_CHANNELS } from '../shared/ipc-channels';
+
+// Track registered handlers
+const handlers = new Map<string, (...args: unknown[]) => unknown>();
+
+vi.mock('electron', () => ({
+  ipcMain: {
+    handle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
+      handlers.set(channel, handler);
+    }),
+    removeHandler: vi.fn(),
+  },
+}));
+
+// Import after mock
+const { registerIpcHandlers } = await import('./ipc-handlers');
+
+function createMockDeps() {
+  return {
+    stateManager: {
+      getState: vi.fn().mockReturnValue({
+        preferences: { theme: 'github-light' },
+        document: { path: '' },
+        ui: { theme: null },
+      }),
+      updatePreferences: vi.fn(),
+    },
+    cacheManager: {
+      generateKey: vi.fn().mockResolvedValue('cache-key-123'),
+      get: vi.fn().mockReturnValue(null),
+      set: vi.fn(),
+    },
+    fileAdapter: {
+      readFile: vi.fn().mockResolvedValue('# Hello'),
+      writeFile: vi.fn().mockResolvedValue({ success: true }),
+      checkChanged: vi.fn().mockResolvedValue({ changed: false }),
+      watch: vi.fn().mockReturnValue(vi.fn()),
+      dispose: vi.fn(),
+    },
+    identityAdapter: {
+      getUsername: vi.fn().mockResolvedValue('testuser'),
+    },
+    exportAdapter: {
+      saveFile: vi.fn(),
+      printToPDF: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+    },
+    getWindow: vi.fn().mockReturnValue({
+      webContents: { send: vi.fn() },
+    }),
+    getOpenFilePath: vi.fn().mockReturnValue('/tmp/test.md'),
+  };
+}
+
+describe('IPC Handlers', () => {
+  let deps: ReturnType<typeof createMockDeps>;
+
+  beforeEach(() => {
+    handlers.clear();
+    deps = createMockDeps();
+    registerIpcHandlers(deps as never);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should register all expected channels', () => {
+    const expectedChannels = [
+      IPC_CHANNELS.GET_STATE,
+      IPC_CHANNELS.UPDATE_PREFERENCES,
+      IPC_CHANNELS.CACHE_GENERATE_KEY,
+      IPC_CHANNELS.CACHE_GET,
+      IPC_CHANNELS.CACHE_SET,
+      IPC_CHANNELS.READ_FILE,
+      IPC_CHANNELS.WRITE_FILE,
+      IPC_CHANNELS.CHECK_FILE_CHANGED,
+      IPC_CHANNELS.WATCH_FILE,
+      IPC_CHANNELS.UNWATCH_FILE,
+      IPC_CHANNELS.GET_USERNAME,
+      IPC_CHANNELS.SAVE_FILE,
+      IPC_CHANNELS.PRINT_TO_PDF,
+      IPC_CHANNELS.GET_OPEN_FILE_PATH,
+    ];
+    for (const channel of expectedChannels) {
+      expect(handlers.has(channel)).toBe(true);
+    }
+  });
+
+  it('GET_STATE should return state from stateManager', async () => {
+    const handler = handlers.get(IPC_CHANNELS.GET_STATE);
+    const result = await handler?.();
+    expect(deps.stateManager.getState).toHaveBeenCalled();
+    expect(result).toEqual(deps.stateManager.getState());
+  });
+
+  it('UPDATE_PREFERENCES should update and notify renderer', async () => {
+    const handler = handlers.get(IPC_CHANNELS.UPDATE_PREFERENCES);
+    const prefs = { theme: 'github-dark' };
+    await handler?.({}, prefs);
+    expect(deps.stateManager.updatePreferences).toHaveBeenCalledWith(prefs);
+    expect(deps.getWindow).toHaveBeenCalled();
+    const mockWin = deps.getWindow() as { webContents: { send: ReturnType<typeof vi.fn> } };
+    expect(mockWin.webContents.send).toHaveBeenCalledWith(IPC_CHANNELS.PREFERENCES_UPDATED, prefs);
+  });
+
+  it('CACHE_GENERATE_KEY should delegate to cacheManager', async () => {
+    const handler = handlers.get(IPC_CHANNELS.CACHE_GENERATE_KEY);
+    const result = await handler?.({}, 'path', 'hash', 'theme', {});
+    expect(result).toBe('cache-key-123');
+  });
+
+  it('READ_FILE should delegate to fileAdapter', async () => {
+    const handler = handlers.get(IPC_CHANNELS.READ_FILE);
+    const result = await handler?.({}, '/tmp/test.md');
+    expect(result).toBe('# Hello');
+    expect(deps.fileAdapter.readFile).toHaveBeenCalledWith('/tmp/test.md');
+  });
+
+  it('WRITE_FILE should delegate to fileAdapter', async () => {
+    const handler = handlers.get(IPC_CHANNELS.WRITE_FILE);
+    const result = await handler?.({}, '/tmp/out.md', 'content');
+    expect(result).toEqual({ success: true });
+  });
+
+  it('GET_USERNAME should delegate to identityAdapter', async () => {
+    const handler = handlers.get(IPC_CHANNELS.GET_USERNAME);
+    const result = await handler?.();
+    expect(result).toBe('testuser');
+  });
+
+  it('GET_OPEN_FILE_PATH should return path from deps', async () => {
+    const handler = handlers.get(IPC_CHANNELS.GET_OPEN_FILE_PATH);
+    const result = await handler?.();
+    expect(result).toBe('/tmp/test.md');
+  });
+
+  it('WATCH_FILE should set up watcher and notify on change', async () => {
+    let watchCallback: (() => void) | undefined;
+    deps.fileAdapter.watch.mockImplementation((_path: string, cb: () => void) => {
+      watchCallback = cb;
+      return vi.fn();
+    });
+
+    // Re-register with new mock
+    handlers.clear();
+    registerIpcHandlers(deps as never);
+
+    const watchHandler = handlers.get(IPC_CHANNELS.WATCH_FILE);
+    await watchHandler?.({}, '/tmp/test.md');
+
+    expect(deps.fileAdapter.watch).toHaveBeenCalledWith('/tmp/test.md', expect.any(Function));
+
+    // Simulate file change
+    watchCallback?.();
+    const mockWin = deps.getWindow() as { webContents: { send: ReturnType<typeof vi.fn> } };
+    expect(mockWin.webContents.send).toHaveBeenCalledWith(
+      IPC_CHANNELS.FILE_CHANGED,
+      '/tmp/test.md'
+    );
+  });
+
+  it('UNWATCH_FILE should clean up watcher', async () => {
+    const unwatchFn = vi.fn();
+    deps.fileAdapter.watch.mockReturnValue(unwatchFn);
+
+    handlers.clear();
+    registerIpcHandlers(deps as never);
+
+    const watchHandler = handlers.get(IPC_CHANNELS.WATCH_FILE);
+    await watchHandler?.({}, '/tmp/test.md');
+
+    const unwatchHandler = handlers.get(IPC_CHANNELS.UNWATCH_FILE);
+    await unwatchHandler?.({}, '/tmp/test.md');
+
+    expect(unwatchFn).toHaveBeenCalled();
+  });
+});
