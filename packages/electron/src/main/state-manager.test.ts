@@ -93,4 +93,176 @@ describe('StateManager', () => {
       expect(p1).not.toBe(p2);
     });
   });
+
+  describe('workspace state', () => {
+    it('should return default workspace state', () => {
+      const ws = manager.getWorkspaceState();
+      expect(ws.tabs).toEqual([]);
+      expect(ws.activeTabId).toBeNull();
+      expect(ws.sidebarVisible).toBe(true);
+      expect(ws.statusBarVisible).toBe(true);
+    });
+
+    it('should return a deep copy of workspace state', () => {
+      const ws1 = manager.getWorkspaceState();
+      const ws2 = manager.getWorkspaceState();
+      expect(ws1).not.toBe(ws2);
+      expect(ws1).toEqual(ws2);
+    });
+
+    describe('openTab', () => {
+      it('should create a new tab and set it active', () => {
+        const tab = manager.openTab('/tmp/test.md');
+        expect(tab.filePath).toBe('/tmp/test.md');
+        expect(tab.title).toBe('test.md');
+        expect(tab.scrollPosition).toBe(0);
+        expect(tab.renderState).toBe('pending');
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs).toHaveLength(1);
+        expect(ws.activeTabId).toBe(tab.id);
+      });
+
+      it('should deduplicate by file path', () => {
+        const tab1 = manager.openTab('/tmp/test.md');
+        const tab2 = manager.openTab('/tmp/test.md');
+        expect(tab2.id).toBe(tab1.id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs).toHaveLength(1);
+      });
+
+      it('should open multiple different files', () => {
+        manager.openTab('/tmp/a.md');
+        manager.openTab('/tmp/b.md');
+        const tab3 = manager.openTab('/tmp/c.md');
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs).toHaveLength(3);
+        expect(ws.activeTabId).toBe(tab3.id);
+      });
+    });
+
+    describe('closeTab', () => {
+      it('should remove the tab', () => {
+        const tab = manager.openTab('/tmp/test.md');
+        manager.closeTab(tab.id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs).toHaveLength(0);
+        expect(ws.activeTabId).toBeNull();
+      });
+
+      it('should activate adjacent tab when closing active tab', () => {
+        const tab1 = manager.openTab('/tmp/a.md');
+        manager.openTab('/tmp/b.md');
+        manager.openTab('/tmp/c.md');
+
+        // Activate middle tab then close it
+        manager.setActiveTab(manager.getWorkspaceState().tabs[1].id);
+        manager.closeTab(manager.getWorkspaceState().tabs[1].id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs).toHaveLength(2);
+        // Should activate the tab at the same index (which is now c.md)
+        expect(ws.activeTabId).not.toBe(tab1.id);
+      });
+
+      it('should activate previous tab when closing last tab in list', () => {
+        manager.openTab('/tmp/a.md');
+        const tab2 = manager.openTab('/tmp/b.md');
+
+        // tab2 is active (last opened), close it
+        manager.closeTab(tab2.id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs).toHaveLength(1);
+        expect(ws.activeTabId).toBe(ws.tabs[0].id);
+      });
+
+      it('should ignore closing nonexistent tab', () => {
+        manager.openTab('/tmp/a.md');
+        manager.closeTab('nonexistent');
+        expect(manager.getWorkspaceState().tabs).toHaveLength(1);
+      });
+    });
+
+    describe('setActiveTab', () => {
+      it('should change the active tab', () => {
+        const tab1 = manager.openTab('/tmp/a.md');
+        manager.openTab('/tmp/b.md');
+
+        manager.setActiveTab(tab1.id);
+        expect(manager.getWorkspaceState().activeTabId).toBe(tab1.id);
+      });
+
+      it('should ignore nonexistent tab id', () => {
+        const tab1 = manager.openTab('/tmp/a.md');
+        manager.setActiveTab('nonexistent');
+        expect(manager.getWorkspaceState().activeTabId).toBe(tab1.id);
+      });
+    });
+
+    describe('updateTabMetadata', () => {
+      it('should update tab metadata', () => {
+        const tab = manager.openTab('/tmp/test.md');
+        manager.updateTabMetadata(tab.id, {
+          wordCount: 100,
+          headingCount: 5,
+          renderState: 'complete',
+        });
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabs[0].wordCount).toBe(100);
+        expect(ws.tabs[0].headingCount).toBe(5);
+        expect(ws.tabs[0].renderState).toBe('complete');
+      });
+
+      it('should not overwrite tab id', () => {
+        const tab = manager.openTab('/tmp/test.md');
+        manager.updateTabMetadata(tab.id, { id: 'hacked' } as never);
+        expect(manager.getWorkspaceState().tabs[0].id).toBe(tab.id);
+      });
+    });
+
+    describe('updateTabScrollPosition', () => {
+      it('should update scroll position', () => {
+        const tab = manager.openTab('/tmp/test.md');
+        manager.updateTabScrollPosition(tab.id, 500);
+        expect(manager.getWorkspaceState().tabs[0].scrollPosition).toBe(500);
+      });
+    });
+
+    describe('setSidebarVisible', () => {
+      it('should toggle sidebar visibility', () => {
+        manager.setSidebarVisible(false);
+        expect(manager.getWorkspaceState().sidebarVisible).toBe(false);
+        manager.setSidebarVisible(true);
+        expect(manager.getWorkspaceState().sidebarVisible).toBe(true);
+      });
+    });
+
+    describe('setOpenFolder', () => {
+      it('should set open folder path', () => {
+        manager.setOpenFolder('/tmp/docs');
+        expect(manager.getWorkspaceState().openFolderPath).toBe('/tmp/docs');
+      });
+
+      it('should allow clearing folder path', () => {
+        manager.setOpenFolder('/tmp/docs');
+        manager.setOpenFolder(null);
+        expect(manager.getWorkspaceState().openFolderPath).toBeNull();
+      });
+    });
+
+    describe('workspace persistence', () => {
+      it('should persist workspace settings on change', async () => {
+        manager.setSidebarVisible(false);
+        // Allow async persistence to complete
+        await new Promise((r) => setTimeout(r, 10));
+        const stored = await storage.getLocal(['workspace']);
+        expect(stored.workspace).toBeDefined();
+      });
+    });
+  });
 });

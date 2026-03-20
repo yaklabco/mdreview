@@ -31,6 +31,30 @@ const api: MdviewPreloadAPI = {
   // File path
   getOpenFilePath: () => ipcRenderer.invoke(IPC_CHANNELS.GET_OPEN_FILE_PATH),
 
+  // File dialogs
+  showOpenFileDialog: () => ipcRenderer.invoke(IPC_CHANNELS.SHOW_OPEN_FILE_DIALOG),
+  showOpenFolderDialog: () => ipcRenderer.invoke(IPC_CHANNELS.SHOW_OPEN_FOLDER_DIALOG),
+  getRecentFiles: () => ipcRenderer.invoke(IPC_CHANNELS.GET_RECENT_FILES),
+  addRecentFile: (path) => ipcRenderer.invoke(IPC_CHANNELS.ADD_RECENT_FILE, path),
+  clearRecentFiles: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_RECENT_FILES),
+
+  // Workspace state
+  getWorkspaceState: () => ipcRenderer.invoke(IPC_CHANNELS.GET_WORKSPACE_STATE),
+  openTab: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_TAB, filePath),
+  closeTab: (tabId) => ipcRenderer.invoke(IPC_CHANNELS.CLOSE_TAB, tabId),
+  setActiveTab: (tabId) => ipcRenderer.invoke(IPC_CHANNELS.SET_ACTIVE_TAB, tabId),
+  updateTabMetadata: (tabId, metadata) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_TAB_METADATA, tabId, metadata),
+  updateTabScroll: (tabId, position) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_TAB_SCROLL, tabId, position),
+  setSidebarVisible: (visible) => ipcRenderer.invoke(IPC_CHANNELS.SET_SIDEBAR_VISIBLE, visible),
+  setOpenFolder: (path) => ipcRenderer.invoke(IPC_CHANNELS.SET_OPEN_FOLDER, path),
+
+  // Directory
+  listDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.LIST_DIRECTORY, dirPath),
+  watchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.WATCH_DIRECTORY, dirPath),
+  unwatchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.UNWATCH_DIRECTORY, dirPath),
+
   // Event listeners
   onFileChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);
@@ -47,6 +71,47 @@ const api: MdviewPreloadAPI = {
     const listener = (_event: Electron.IpcRendererEvent, theme: string) => callback(theme);
     ipcRenderer.on(IPC_CHANNELS.THEME_CHANGED, listener);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.THEME_CHANGED, listener);
+  },
+  onOpenFile: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);
+    ipcRenderer.on(IPC_CHANNELS.OPEN_FILE, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.OPEN_FILE, listener);
+  },
+  onOpenFolder: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);
+    ipcRenderer.on(IPC_CHANNELS.OPEN_FOLDER, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.OPEN_FOLDER, listener);
+  },
+  onMenuCommand: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, command: string) => callback(command);
+    ipcRenderer.on(IPC_CHANNELS.MENU_COMMAND, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.MENU_COMMAND, listener);
+  },
+  onWorkspaceUpdated: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, state: unknown) =>
+      callback(state as never);
+    ipcRenderer.on(IPC_CHANNELS.WORKSPACE_UPDATED, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WORKSPACE_UPDATED, listener);
+  },
+  onTabOpened: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, tab: unknown) => callback(tab as never);
+    ipcRenderer.on(IPC_CHANNELS.TAB_OPENED, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.TAB_OPENED, listener);
+  },
+  onTabClosed: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, tabId: string) => callback(tabId);
+    ipcRenderer.on(IPC_CHANNELS.TAB_CLOSED, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.TAB_CLOSED, listener);
+  },
+  onActiveTabChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, tabId: string) => callback(tabId);
+    ipcRenderer.on(IPC_CHANNELS.ACTIVE_TAB_CHANGED, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.ACTIVE_TAB_CHANGED, listener);
+  },
+  onDirectoryChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, dirPath: string) => callback(dirPath);
+    ipcRenderer.on(IPC_CHANNELS.DIRECTORY_CHANGED, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.DIRECTORY_CHANGED, listener);
   },
 };
 
