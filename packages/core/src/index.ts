@@ -30,6 +30,9 @@ export {
 } from './comments/annotation-serializer';
 // v1 comment format (legacy)
 export { parseComments } from './comments/comment-parser';
+// Comment manager
+export { CommentManager } from './comments/comment-manager';
+export type { CommentManagerAdapters } from './comments/comment-manager';
 // Context & utilities
 export * from './comments/comment-context';
 export * from './comments/source-position-map';
@@ -54,9 +57,17 @@ export type { CacheOptions } from './cache-manager';
 export { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extractor';
 export type { FrontmatterResult } from './frontmatter-extractor';
 
+// Debug logger
+export { DebugLogger, createDebugLogger, createDebug } from './utils/debug-logger';
+export type { DebugHelpers } from './utils/debug-logger';
+
 // Theme engine
 export { ThemeEngine } from './theme-engine';
 export type { ThemeInfo, ThemeOverrides } from './theme-engine';
+
+// Render pipeline
+export { RenderPipeline } from './render-pipeline';
+export type { RenderOptions, RenderProgress, ProgressCallback, RenderPipelineOptions } from './render-pipeline';
 
 // Platform adapters
 export * from './adapters';
