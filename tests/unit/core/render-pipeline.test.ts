@@ -3,13 +3,13 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { RenderPipeline } from '../../../src/core/render-pipeline';
+import { RenderPipeline } from '../../../packages/chrome-ext/src/core/render-pipeline';
 import { markdownSamples } from '../../helpers/fixtures';
 import { mockChromeRuntime, waitFor } from '../../helpers/mocks';
 import { createTestContainer, cleanupTestContainer, mockConsole } from '../../helpers/test-utils';
 
-// Mock the worker pool module
-vi.mock('../../../src/workers/worker-pool', () => ({
+// Mock the worker pool module (internal to core's render-pipeline)
+vi.mock('../../../packages/core/src/workers/worker-pool', () => ({
   workerPool: {
     initialize: vi.fn().mockResolvedValue(undefined),
     execute: vi.fn().mockResolvedValue({
@@ -36,11 +36,11 @@ describe('RenderPipeline', () => {
   beforeEach(() => {
     // Suppress console output during tests to keep run clean
     consoleMock = mockConsole();
-    
+
     pipeline = new RenderPipeline();
     container = createTestContainer();
     mockChromeRuntime();
-    
+
     // Mock window.crypto for hash generation
     Object.defineProperty(global, 'crypto', {
       value: {
@@ -98,7 +98,7 @@ describe('RenderPipeline', () => {
 
     test('should sanitize HTML content', async () => {
       const malicious = '<script>alert("xss")</script>\n# Safe Content';
-      
+
       await pipeline.render({
         container,
         markdown: malicious,
@@ -182,7 +182,7 @@ describe('RenderPipeline', () => {
     test('should support multiple progress listeners', async () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
-      
+
       pipeline.onProgress(callback1);
       pipeline.onProgress(callback2);
 
@@ -200,7 +200,7 @@ describe('RenderPipeline', () => {
     test('should cleanup listener on unsubscribe', async () => {
       const callback = vi.fn();
       const unsubscribe = pipeline.onProgress(callback);
-      
+
       unsubscribe();
 
       await pipeline.render({
@@ -234,7 +234,7 @@ describe('RenderPipeline', () => {
     test('should trigger progressive mode for large files', async () => {
       const largeMarkdown = 'a'.repeat(50000);
       const progressStages: string[] = [];
-      
+
       pipeline.onProgress((progress) => {
         progressStages.push(progress.stage);
       });
@@ -454,7 +454,7 @@ describe('RenderPipeline', () => {
     test('should escape HTML in error messages', async () => {
       // This test verifies the escapeHtml private method works
       const errorWithHtml = '<script>alert("xss")</script>';
-      
+
       // The pipeline should handle this safely
       expect(() => {
         (pipeline as any).escapeHtml(errorWithHtml);
@@ -563,14 +563,14 @@ describe('RenderPipeline', () => {
   describe('Performance', () => {
     test('should render small files quickly', async () => {
       const start = Date.now();
-      
+
       await pipeline.render({
         container,
         markdown: '# Small file\n\nSome content.',
         useCache: false,
         useWorkers: false,
       });
-      
+
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(1000); // Should be much faster, but allowing margin
     });
@@ -589,4 +589,3 @@ describe('RenderPipeline', () => {
     });
   });
 });
-

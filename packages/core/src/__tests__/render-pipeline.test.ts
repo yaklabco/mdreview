@@ -8,30 +8,30 @@ vi.mock('../utils/dom-purifier', () => ({
   },
 }));
 
-vi.mock('../../../../src/workers/worker-pool', () => ({
+vi.mock('../workers/worker-pool', () => ({
   workerPool: {
     initialize: vi.fn().mockResolvedValue(undefined),
     execute: vi.fn(),
   },
 }));
 
-vi.mock('../../../../src/renderers/syntax-highlighter', () => ({
+vi.mock('../renderers/syntax-highlighter', () => ({
   syntaxHighlighter: {
     highlightVisible: vi.fn(),
   },
 }));
 
-vi.mock('../../../../src/renderers/mermaid-renderer', () => ({
+vi.mock('../renderers/mermaid-renderer', () => ({
   mermaidRenderer: {
     renderAll: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
-vi.mock('../../../../src/utils/toc-stripper', () => ({
+vi.mock('../utils/toc-stripper', () => ({
   stripTableOfContents: vi.fn((md: string) => ({ markdown: md, tocFound: false })),
 }));
 
-vi.mock('../../../../src/comments/annotation-parser', () => ({
+vi.mock('../comments/annotation-parser', () => ({
   parseComments: vi.fn((md: string) => ({
     cleanedMarkdown: md,
     comments: [],
@@ -58,20 +58,19 @@ describe('RenderPipeline', () => {
 
   describe('with MessagingAdapter', () => {
     it('sends CACHE_GENERATE_KEY and CACHE_GET when useCache is true', async () => {
-      const mockMessaging: MessagingAdapter = {
-        send: vi.fn().mockImplementation(async (msg: IPCMessage) => {
-          if (msg.type === 'CACHE_GENERATE_KEY') {
-            return { key: 'test-cache-key' };
-          }
-          if (msg.type === 'CACHE_GET') {
-            return { result: null };
-          }
-          if (msg.type === 'CACHE_SET') {
-            return {};
-          }
-          return {};
-        }),
-      };
+      const sendMock = vi.fn().mockImplementation((msg: IPCMessage) => {
+        if (msg.type === 'CACHE_GENERATE_KEY') {
+          return Promise.resolve({ key: 'test-cache-key' });
+        }
+        if (msg.type === 'CACHE_GET') {
+          return Promise.resolve({ result: null });
+        }
+        if (msg.type === 'CACHE_SET') {
+          return Promise.resolve({});
+        }
+        return Promise.resolve({});
+      });
+      const mockMessaging: MessagingAdapter = { send: sendMock };
 
       const pipeline = new RenderPipeline({ messaging: mockMessaging });
 
@@ -84,38 +83,43 @@ describe('RenderPipeline', () => {
       });
 
       // Should have called CACHE_GENERATE_KEY
-      expect(mockMessaging.send).toHaveBeenCalledWith(
+      expect(sendMock).toHaveBeenCalledWith(
         expect.objectContaining({ type: 'CACHE_GENERATE_KEY' })
       );
 
       // Should have called CACHE_GET
-      expect(mockMessaging.send).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'CACHE_GET' })
-      );
+      expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'CACHE_GET' }));
     });
 
     it('uses cached result when adapter returns a cache hit', async () => {
       const cachedHtml = '<div class="mdview-rendered"><p>Cached content</p></div>';
-      const mockMessaging: MessagingAdapter = {
-        send: vi.fn().mockImplementation(async (msg: IPCMessage) => {
-          if (msg.type === 'CACHE_GENERATE_KEY') {
-            return { key: 'cached-key' };
-          }
-          if (msg.type === 'CACHE_GET') {
-            return {
-              result: {
-                html: cachedHtml,
-                metadata: { headings: [], codeBlocks: [], mermaidBlocks: [], images: [], links: [], wordCount: 0, frontmatter: null },
-                highlightedBlocks: new Map(),
-                mermaidSVGs: new Map(),
-                timestamp: Date.now(),
-                cacheKey: 'cached-key',
+      const sendMock = vi.fn().mockImplementation((msg: IPCMessage) => {
+        if (msg.type === 'CACHE_GENERATE_KEY') {
+          return Promise.resolve({ key: 'cached-key' });
+        }
+        if (msg.type === 'CACHE_GET') {
+          return Promise.resolve({
+            result: {
+              html: cachedHtml,
+              metadata: {
+                headings: [],
+                codeBlocks: [],
+                mermaidBlocks: [],
+                images: [],
+                links: [],
+                wordCount: 0,
+                frontmatter: null,
               },
-            };
-          }
-          return {};
-        }),
-      };
+              highlightedBlocks: new Map(),
+              mermaidSVGs: new Map(),
+              timestamp: Date.now(),
+              cacheKey: 'cached-key',
+            },
+          });
+        }
+        return Promise.resolve({});
+      });
+      const mockMessaging: MessagingAdapter = { send: sendMock };
 
       const pipeline = new RenderPipeline({ messaging: mockMessaging });
 
@@ -135,20 +139,19 @@ describe('RenderPipeline', () => {
     });
 
     it('sends CACHE_SET after successful render', async () => {
-      const mockMessaging: MessagingAdapter = {
-        send: vi.fn().mockImplementation(async (msg: IPCMessage) => {
-          if (msg.type === 'CACHE_GENERATE_KEY') {
-            return { key: 'new-cache-key' };
-          }
-          if (msg.type === 'CACHE_GET') {
-            return { result: null };
-          }
-          if (msg.type === 'CACHE_SET') {
-            return {};
-          }
-          return {};
-        }),
-      };
+      const sendMock = vi.fn().mockImplementation((msg: IPCMessage) => {
+        if (msg.type === 'CACHE_GENERATE_KEY') {
+          return Promise.resolve({ key: 'new-cache-key' });
+        }
+        if (msg.type === 'CACHE_GET') {
+          return Promise.resolve({ result: null });
+        }
+        if (msg.type === 'CACHE_SET') {
+          return Promise.resolve({});
+        }
+        return Promise.resolve({});
+      });
+      const mockMessaging: MessagingAdapter = { send: sendMock };
 
       const pipeline = new RenderPipeline({ messaging: mockMessaging });
 
@@ -160,9 +163,7 @@ describe('RenderPipeline', () => {
         useWorkers: false,
       });
 
-      expect(mockMessaging.send).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'CACHE_SET' })
-      );
+      expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'CACHE_SET' }));
     });
   });
 

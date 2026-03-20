@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { FilenameGenerator } from '../../../src/utils/filename-generator';
+import { FilenameGenerator } from '@mdview/core';
 
 describe('FilenameGenerator', () => {
   beforeEach(() => {
@@ -180,4 +180,3 @@ describe('FilenameGenerator', () => {
     });
   });
 });
-

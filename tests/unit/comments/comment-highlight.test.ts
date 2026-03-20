@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommentHighlighter } from '../../../src/comments/comment-highlight';
-import type { Comment } from '../../../src/types';
+import { CommentHighlighter } from '@mdview/core';
+import type { Comment } from '@mdview/core';
 
 describe('CommentHighlighter', () => {
   let container: HTMLElement;
@@ -76,9 +76,7 @@ describe('CommentHighlighter', () => {
       const span = highlighter.highlightComment(container, comment);
       expect(span!.textContent).toBe('sentence here');
       // The surrounding text should still be there
-      expect(container.textContent).toBe(
-        'Start of the sentence here and more.'
-      );
+      expect(container.textContent).toBe('Start of the sentence here and more.');
     });
 
     it('should highlight text spanning across inline elements', () => {
@@ -132,7 +130,8 @@ describe('CommentHighlighter', () => {
     });
 
     it('should highlight text spanning across block elements with whitespace normalization', () => {
-      container.innerHTML = '<h2>Migration path</h2><p>to the new platform requires careful planning.</p>';
+      container.innerHTML =
+        '<h2>Migration path</h2><p>to the new platform requires careful planning.</p>';
       const comment: Comment = {
         id: 'comment-1',
         selectedText: 'Migration path\nto the new platform',
@@ -223,9 +222,7 @@ describe('CommentHighlighter', () => {
       document.body.appendChild(container);
 
       highlighter.setActive('comment-1');
-      const span = container.querySelector(
-        '[data-comment-id="comment-1"]'
-      ) as HTMLElement;
+      const span = container.querySelector('[data-comment-id="comment-1"]') as HTMLElement;
       expect(span.classList.contains('active')).toBe(true);
 
       highlighter.clearActive();
@@ -242,9 +239,7 @@ describe('CommentHighlighter', () => {
       document.body.appendChild(container);
 
       highlighter.setResolved('comment-1');
-      const span = container.querySelector(
-        '[data-comment-id="comment-1"]'
-      ) as HTMLElement;
+      const span = container.querySelector('[data-comment-id="comment-1"]') as HTMLElement;
       expect(span.classList.contains('resolved')).toBe(true);
 
       document.body.removeChild(container);

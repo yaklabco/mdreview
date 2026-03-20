@@ -16,10 +16,10 @@ import {
   updateCommentMetadata,
   addReply,
   toggleReaction,
-} from '../../../src/comments/annotation-serializer';
-import { parseAnnotations } from '../../../src/comments/annotation-parser';
-import { buildSourceMap } from '../../../src/comments/source-position-map';
-import type { Comment, CommentContext, CommentReply } from '../../../src/types';
+} from '@mdview/core';
+import { parseAnnotations } from '@mdview/core';
+import { buildSourceMap } from '@mdview/core';
+import type { Comment, CommentContext, CommentReply } from '@mdview/core';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -796,9 +796,7 @@ describe('round-trip: serialize then parse', () => {
     const comment = makeComment({
       context: sampleContext,
       tags: ['blocking', 'nit'],
-      replies: [
-        { id: 'reply-1', author: 'bob', body: 'Nice', date: '2026-03-04T10:00:00Z' },
-      ],
+      replies: [{ id: 'reply-1', author: 'bob', body: 'Nice', date: '2026-03-04T10:00:00Z' }],
       reactions: { '\u{1F44D}': ['bob'] },
       anchorPrefix: 'Some ',
       anchorSuffix: ' in',
@@ -842,7 +840,7 @@ describe('v1 input migration', () => {
     // All existing comments should be migrated
     const parsed = parseAnnotations(result);
     expect(parsed.comments.length).toBeGreaterThanOrEqual(2);
-    const migratedFirst = parsed.comments.find(c => c.id === 'comment-1');
+    const migratedFirst = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migratedFirst).toBeDefined();
     expect(migratedFirst!.selectedText).toBe('text');
     expect(migratedFirst!.body).toBe('First comment.');
@@ -863,7 +861,7 @@ describe('v1 input migration', () => {
 
     const result = addComment(v1Md, newComment);
     const parsed = parseAnnotations(result);
-    const migratedFirst = parsed.comments.find(c => c.id === 'comment-1');
+    const migratedFirst = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migratedFirst!.replies).toHaveLength(1);
     expect(migratedFirst!.reactions).toBeDefined();
   });
@@ -883,7 +881,7 @@ describe('v1 input migration', () => {
 
     const result = addComment(v1Md, newComment);
     const parsed = parseAnnotations(result);
-    const migratedFirst = parsed.comments.find(c => c.id === 'comment-1');
+    const migratedFirst = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migratedFirst!.resolved).toBe(true);
   });
 
@@ -902,7 +900,7 @@ describe('v1 input migration', () => {
 
     const result = addComment(v1Md, newComment);
     const parsed = parseAnnotations(result);
-    const migratedFirst = parsed.comments.find(c => c.id === 'comment-1');
+    const migratedFirst = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migratedFirst!.context).toBeDefined();
     expect(migratedFirst!.context!.line).toBe(3);
     expect(migratedFirst!.context!.section).toBe('Setup');
@@ -923,7 +921,7 @@ describe('v1 input migration', () => {
 
     const result = addComment(v1Md, newComment);
     const parsed = parseAnnotations(result);
-    const migratedFirst = parsed.comments.find(c => c.id === 'comment-1');
+    const migratedFirst = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migratedFirst!.tags).toEqual(['blocking', 'nit']);
   });
 });

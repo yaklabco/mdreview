@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { stripTableOfContents } from '../../../src/utils/toc-stripper';
+import { stripTableOfContents } from '@mdview/core';
 
 describe('stripTableOfContents', () => {
   describe('Basic TOC Detection', () => {

@@ -8,19 +8,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeCommentContext } from '../../../src/comments/comment-context';
+import { computeCommentContext } from '@mdview/core';
 
 // ─── Simple documents ────────────────────────────────────────────────
 
 describe('computeCommentContext', () => {
   it('should return line number and section for offset in a section', () => {
-    const md = [
-      '# Title',
-      '',
-      '## Installation',
-      '',
-      'Run npm install to get started.',
-    ].join('\n');
+    const md = ['# Title', '', '## Installation', '', 'Run npm install to get started.'].join('\n');
 
     // Offset pointing to "npm" on line 5 (0-indexed line 4)
     const offset = md.indexOf('npm');
@@ -51,11 +45,7 @@ describe('computeCommentContext', () => {
   });
 
   it('should handle document with no headings', () => {
-    const md = [
-      'Just some plain text.',
-      '',
-      'Another paragraph of text.',
-    ].join('\n');
+    const md = ['Just some plain text.', '', 'Another paragraph of text.'].join('\n');
 
     const offset = md.indexOf('Another');
     const ctx = computeCommentContext(md, offset);
@@ -83,11 +73,7 @@ describe('computeCommentContext', () => {
     expect(ctx.line).toBe(7);
     expect(ctx.section).toBe('Prerequisites');
     expect(ctx.sectionLevel).toBe(3);
-    expect(ctx.breadcrumb).toEqual([
-      'Getting Started',
-      'Installation',
-      'Prerequisites',
-    ]);
+    expect(ctx.breadcrumb).toEqual(['Getting Started', 'Installation', 'Prerequisites']);
   });
 
   it('should handle offset at the very start of document (offset 0)', () => {
@@ -102,13 +88,7 @@ describe('computeCommentContext', () => {
   });
 
   it('should handle offset at the end of document', () => {
-    const md = [
-      '# Title',
-      '',
-      '## Section',
-      '',
-      'Last word.',
-    ].join('\n');
+    const md = ['# Title', '', '## Section', '', 'Last word.'].join('\n');
 
     const offset = md.length;
     const ctx = computeCommentContext(md, offset);
@@ -120,13 +100,7 @@ describe('computeCommentContext', () => {
   });
 
   it('should handle skipped heading levels (h1 > h3, no h2)', () => {
-    const md = [
-      '# Title',
-      '',
-      '### Deep Section',
-      '',
-      'Content in deep section.',
-    ].join('\n');
+    const md = ['# Title', '', '### Deep Section', '', 'Content in deep section.'].join('\n');
 
     const offset = md.indexOf('Content');
     const ctx = computeCommentContext(md, offset);
@@ -164,13 +138,7 @@ describe('computeCommentContext', () => {
   });
 
   it('should handle offset on a heading line itself', () => {
-    const md = [
-      '# Title',
-      '',
-      '## Section Name',
-      '',
-      'Content.',
-    ].join('\n');
+    const md = ['# Title', '', '## Section Name', '', 'Content.'].join('\n');
 
     const offset = md.indexOf('## Section Name');
     const ctx = computeCommentContext(md, offset);

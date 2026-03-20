@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { MarkdownConverter } from '../../../src/core/markdown-converter';
+import { MarkdownConverter } from '@mdview/core';
 import { markdownSamples, expectedHtml } from '../../helpers/fixtures';
 import { assertHtmlMatches } from '../../helpers/test-utils';
 
@@ -316,7 +316,7 @@ describe('MarkdownConverter', () => {
   describe('Complex Document', () => {
     test('should render complex document with all features', async () => {
       const result = await converter.convert(markdownSamples.complex);
-      
+
       // Check all features are present
       expect(result.html).toContain('<h1');
       expect(result.html).toContain('<h2');
@@ -329,7 +329,7 @@ describe('MarkdownConverter', () => {
       expect(result.html).toContain('<blockquote>');
       expect(result.html).toContain('<a href');
       expect(result.html).toContain('<img');
-      
+
       // Check metadata
       expect(result.metadata.headings.length).toBeGreaterThan(0);
       expect(result.metadata.codeBlocks.length).toBeGreaterThan(0);
@@ -339,4 +339,3 @@ describe('MarkdownConverter', () => {
     });
   });
 });
-

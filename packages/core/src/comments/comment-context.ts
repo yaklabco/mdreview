@@ -8,16 +8,13 @@
  */
 
 import type { CommentContext } from '../types/index';
-import { splitIntoSections, type MarkdownSection } from '../../../../src/utils/section-splitter';
+import { splitIntoSections, type MarkdownSection } from '../utils/section-splitter';
 
 /**
  * Compute positional context for a comment at a given character offset
  * in the content section of markdown (above the comment separator).
  */
-export function computeCommentContext(
-  contentMarkdown: string,
-  charOffset: number
-): CommentContext {
+export function computeCommentContext(contentMarkdown: string, charOffset: number): CommentContext {
   const line = offsetToLine(contentMarkdown, charOffset);
   const sections = splitIntoSections(contentMarkdown);
   const { section, sectionLevel, breadcrumb } = findSectionContext(sections, line);
@@ -83,10 +80,7 @@ function findSectionContext(
  * when encountering a heading at level N, pop all headings at level >= N,
  * then push. The final stack is the breadcrumb.
  */
-function buildBreadcrumb(
-  sections: MarkdownSection[],
-  target: MarkdownSection
-): string[] {
+function buildBreadcrumb(sections: MarkdownSection[], target: MarkdownSection): string[] {
   const stack: Array<{ heading: string; level: number }> = [];
 
   for (const s of sections) {

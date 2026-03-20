@@ -3,8 +3,8 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CommentUI } from '../../../src/comments/comment-ui';
-import type { Comment, CommentReply, CommentReactions } from '../../../src/types';
+import { CommentUI } from '@mdview/core';
+import type { Comment, CommentReply, CommentReactions } from '@mdview/core';
 
 describe('CommentUI', () => {
   let ui: CommentUI;
@@ -604,7 +604,13 @@ describe('CommentUI', () => {
       const tagPills = form.querySelectorAll('.comment-tag-picker .comment-tag-option');
       const tagNames = Array.from(tagPills).map((p) => p.textContent);
       expect(tagNames).toEqual([
-        'blocking', 'nit', 'suggestion', 'question', 'praise', 'todo', 'fyi',
+        'blocking',
+        'nit',
+        'suggestion',
+        'question',
+        'praise',
+        'todo',
+        'fyi',
       ]);
     });
 
@@ -692,7 +698,9 @@ describe('CommentUI', () => {
       const children = Array.from(form.children);
       const textareaIdx = children.findIndex((el) => el.tagName === 'TEXTAREA');
       const pickerIdx = children.findIndex((el) => el.classList.contains('comment-tag-picker'));
-      const actionsIdx = children.findIndex((el) => el.classList.contains('mdview-comment-input-actions'));
+      const actionsIdx = children.findIndex((el) =>
+        el.classList.contains('mdview-comment-input-actions')
+      );
 
       expect(textareaIdx).toBeLessThan(pickerIdx);
       expect(pickerIdx).toBeLessThan(actionsIdx);
@@ -970,11 +978,13 @@ describe('CommentUI', () => {
       const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
       textarea.value = 'Keyboard reply';
 
-      textarea.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'Enter',
-        metaKey: true,
-        bubbles: true,
-      }));
+      textarea.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          metaKey: true,
+          bubbles: true,
+        })
+      );
 
       expect(onSave).toHaveBeenCalledWith('Keyboard reply');
     });
@@ -1107,11 +1117,7 @@ describe('CommentUI', () => {
     });
 
     test('should render search input', () => {
-      const picker = ui.renderEmojiPicker(
-        document.createElement('div'),
-        vi.fn(),
-        vi.fn()
-      );
+      const picker = ui.renderEmojiPicker(document.createElement('div'), vi.fn(), vi.fn());
 
       const searchInput = picker.querySelector('.emoji-picker-search');
       expect(searchInput).not.toBeNull();
@@ -1119,11 +1125,7 @@ describe('CommentUI', () => {
     });
 
     test('should render categorized grid', () => {
-      const picker = ui.renderEmojiPicker(
-        document.createElement('div'),
-        vi.fn(),
-        vi.fn()
-      );
+      const picker = ui.renderEmojiPicker(document.createElement('div'), vi.fn(), vi.fn());
 
       const grid = picker.querySelector('.emoji-picker-grid');
       expect(grid).not.toBeNull();
@@ -1135,11 +1137,7 @@ describe('CommentUI', () => {
 
     test('should call onSelect with emoji char when clicked', () => {
       const onSelect = vi.fn();
-      const picker = ui.renderEmojiPicker(
-        document.createElement('div'),
-        onSelect,
-        vi.fn()
-      );
+      const picker = ui.renderEmojiPicker(document.createElement('div'), onSelect, vi.fn());
       document.body.appendChild(picker);
 
       const firstQuickEmoji = picker.querySelector('.emoji-picker-quick button') as HTMLElement;
@@ -1150,11 +1148,7 @@ describe('CommentUI', () => {
     });
 
     test('should have correct class name', () => {
-      const picker = ui.renderEmojiPicker(
-        document.createElement('div'),
-        vi.fn(),
-        vi.fn()
-      );
+      const picker = ui.renderEmojiPicker(document.createElement('div'), vi.fn(), vi.fn());
 
       expect(picker.classList.contains('mdview-emoji-picker')).toBe(true);
     });

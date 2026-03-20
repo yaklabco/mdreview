@@ -12,7 +12,9 @@ vi.mock('mermaid', () => ({
   default: {
     initialize: vi.fn(),
     parse: vi.fn().mockResolvedValue({ diagramType: 'flowchart-v2', config: {} }),
-    render: vi.fn().mockResolvedValue({ svg: '<svg id="test">mock</svg>', diagramType: 'flowchart-v2' }),
+    render: vi
+      .fn()
+      .mockResolvedValue({ svg: '<svg id="test">mock</svg>', diagramType: 'flowchart-v2' }),
   },
 }));
 
@@ -30,7 +32,7 @@ vi.mock('panzoom', () => ({
 // Import after mocks are set up
 import mermaid from 'mermaid';
 import Panzoom from 'panzoom';
-import { MermaidRenderer } from '../../../src/renderers/mermaid-renderer';
+import { MermaidRenderer } from '@mdview/core';
 
 describe('MermaidRenderer', () => {
   let renderer: MermaidRenderer;
@@ -44,7 +46,10 @@ describe('MermaidRenderer', () => {
 
     // Reset mermaid mocks to success state
     vi.mocked(mermaid.parse).mockResolvedValue({ diagramType: 'flowchart-v2', config: {} });
-    vi.mocked(mermaid.render).mockResolvedValue({ svg: '<svg id="test">mock diagram</svg>', diagramType: 'flowchart-v2' });
+    vi.mocked(mermaid.render).mockResolvedValue({
+      svg: '<svg id="test">mock diagram</svg>',
+      diagramType: 'flowchart-v2',
+    });
 
     renderer = new MermaidRenderer();
   });
@@ -140,7 +145,10 @@ describe('MermaidRenderer', () => {
       let resolveFirst!: (value: { svg: string; diagramType: string }) => void;
       vi.mocked(mermaid.render)
         .mockImplementationOnce(
-          () => new Promise((resolve) => { resolveFirst = resolve; })
+          () =>
+            new Promise((resolve) => {
+              resolveFirst = resolve;
+            })
         )
         .mockResolvedValueOnce({ svg: '<svg>second</svg>', diagramType: 'flowchart-v2' });
 

@@ -3,7 +3,7 @@
  */
 
 import { vi } from 'vitest';
-import type { Theme, ConversionResult, CachedResult } from '../../src/types';
+import type { Theme, ConversionResult, CachedResult } from '@mdview/core';
 import { mockTheme } from './fixtures';
 
 /**
@@ -175,7 +175,7 @@ export function createMockElement(tag: string = 'div'): HTMLElement {
  */
 export function createMockIntersectionObserver() {
   const observers: Array<{ element: Element; isIntersecting: boolean }> = [];
-  
+
   class MockIntersectionObserver implements IntersectionObserver {
     callback: IntersectionObserverCallback;
     options?: IntersectionObserverInit;
@@ -271,4 +271,3 @@ export function createMockCachedResult(overrides?: Partial<CachedResult>): Cache
     ...overrides,
   };
 }
-

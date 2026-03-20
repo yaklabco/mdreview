@@ -17,10 +17,10 @@
     "types": ["chrome", "vite/client", "vitest/globals"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["packages/chrome-ext/src/*"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["packages/*/src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }
 

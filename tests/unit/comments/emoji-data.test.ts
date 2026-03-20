@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { QUICK_EMOJIS, EMOJI_CATEGORIES, searchEmojis } from '../../../src/comments/emoji-data';
+import { QUICK_EMOJIS, EMOJI_CATEGORIES, searchEmojis } from '@mdview/core';
 
 describe('QUICK_EMOJIS', () => {
   it('should have exactly 12 entries', () => {

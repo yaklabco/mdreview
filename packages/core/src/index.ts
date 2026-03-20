@@ -74,10 +74,19 @@ export type { ThemeInfo, ThemeOverrides } from './theme-engine';
 
 // Render pipeline
 export { RenderPipeline } from './render-pipeline';
-export type { RenderOptions, RenderProgress, ProgressCallback, RenderPipelineOptions } from './render-pipeline';
+export type {
+  RenderOptions,
+  RenderProgress,
+  ProgressCallback,
+  RenderPipelineOptions,
+} from './render-pipeline';
 
 // Renderers
-export { SyntaxHighlighter, syntaxHighlighter, SYNTAX_THEME_MAP } from './renderers/syntax-highlighter';
+export {
+  SyntaxHighlighter,
+  syntaxHighlighter,
+  SYNTAX_THEME_MAP,
+} from './renderers/syntax-highlighter';
 export type { HighlightResult, DetectionResult } from './renderers/syntax-highlighter';
 export { MermaidRenderer, mermaidRenderer } from './renderers/mermaid-renderer';
 export type { MermaidOptions, DiagramControls } from './renderers/mermaid-renderer';
@@ -91,6 +100,8 @@ export { ExportController } from './export-controller';
 
 // UI
 export { TocRenderer } from './ui/toc-renderer';
+export { ExportUI } from './ui/export-ui';
+export type { CoreExportUIOptions } from './ui/export-ui';
 
 // Lazy section renderer
 export { LazySectionRenderer } from './lazy-section-renderer';

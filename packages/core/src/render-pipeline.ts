@@ -9,7 +9,7 @@
 import { MarkdownConverter } from './markdown-converter';
 import { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extractor';
 import { domPurifier } from './utils/dom-purifier';
-import { workerPool } from '../../../src/workers/worker-pool';
+import { workerPool } from './workers/worker-pool';
 import type {
   ConversionResult,
   ThemeName,
@@ -164,7 +164,7 @@ export class RenderPipeline {
 
       // Preprocess: Strip existing TOC if custom TOC is enabled
       if ((preferences as { showToc?: boolean }).showToc) {
-        const { stripTableOfContents } = await import('../../../src/utils/toc-stripper');
+        const { stripTableOfContents } = await import('./utils/toc-stripper');
         const stripResult = stripTableOfContents(processedMarkdown);
         processedMarkdown = stripResult.markdown;
         if (stripResult.tocFound) {
@@ -175,7 +175,7 @@ export class RenderPipeline {
       // Preprocess: Strip comment footnotes before parsing
       this.lastCommentParseResult = null;
       if ((preferences as { commentsEnabled?: boolean }).commentsEnabled !== false) {
-        const { parseComments } = await import('../../../src/comments/annotation-parser');
+        const { parseComments } = await import('./comments/annotation-parser');
         this.lastCommentParseResult = parseComments(processedMarkdown);
         processedMarkdown = this.lastCommentParseResult.cleanedMarkdown;
         if (this.lastCommentParseResult.comments.length > 0) {
@@ -372,7 +372,7 @@ export class RenderPipeline {
 
     if (pendingMermaid.length > 0 || readyMermaid.length > 0) {
       try {
-        const { mermaidRenderer } = await import('../../../src/renderers/mermaid-renderer');
+        const { mermaidRenderer } = await import('./renderers/mermaid-renderer');
 
         // Re-render any pending diagrams that were cached before rendering completed
         if (pendingMermaid.length > 0) {
@@ -448,7 +448,7 @@ export class RenderPipeline {
     // Even with workers available, use lazy loading for instant content display
     // Only visible code blocks are highlighted immediately, rest on scroll
     try {
-      const { syntaxHighlighter } = await import('../../../src/renderers/syntax-highlighter');
+      const { syntaxHighlighter } = await import('./renderers/syntax-highlighter');
       syntaxHighlighter.highlightVisible(container);
     } catch (error) {
       debug.error('RenderPipeline', 'Syntax highlighting error:', error);
@@ -608,7 +608,7 @@ export class RenderPipeline {
 
     // Preprocess: Strip existing TOC if custom TOC is enabled
     if ((preferences as { showToc?: boolean }).showToc) {
-      const { stripTableOfContents } = await import('../../../src/utils/toc-stripper');
+      const { stripTableOfContents } = await import('./utils/toc-stripper');
       const stripResult = stripTableOfContents(processedMarkdown);
       processedMarkdown = stripResult.markdown;
       if (stripResult.tocFound) {
@@ -619,7 +619,7 @@ export class RenderPipeline {
     // Preprocess: Strip comment footnotes before parsing
     this.lastCommentParseResult = null;
     if ((preferences as { commentsEnabled?: boolean }).commentsEnabled !== false) {
-      const { parseComments } = await import('../../../src/comments/annotation-parser');
+      const { parseComments } = await import('./comments/annotation-parser');
       this.lastCommentParseResult = parseComments(processedMarkdown);
       processedMarkdown = this.lastCommentParseResult.cleanedMarkdown;
       if (this.lastCommentParseResult.comments.length > 0) {
@@ -807,7 +807,7 @@ export class RenderPipeline {
    */
   private async applySyntaxHighlighting(container: HTMLElement): Promise<void> {
     try {
-      const { syntaxHighlighter } = await import('../../../src/renderers/syntax-highlighter');
+      const { syntaxHighlighter } = await import('./renderers/syntax-highlighter');
       syntaxHighlighter.highlightVisible(container);
     } catch (error) {
       debug.error('RenderPipeline', 'Syntax highlighting error:', error);
@@ -970,7 +970,7 @@ export class RenderPipeline {
    */
   private async renderMermaidDiagrams(container: HTMLElement): Promise<void> {
     try {
-      const { mermaidRenderer } = await import('../../../src/renderers/mermaid-renderer');
+      const { mermaidRenderer } = await import('./renderers/mermaid-renderer');
       await mermaidRenderer.renderAll(container);
     } catch (error) {
       debug.error('RenderPipeline', 'Mermaid rendering error:', error);

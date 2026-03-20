@@ -3,20 +3,37 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { PDFGenerator } from '../../../src/utils/pdf-generator';
+import { PDFGenerator } from '@mdview/core';
 
-// Mock the debug logger
-vi.mock('../../../src/utils/debug-logger', () => ({
-  debug: {
+// Mock the debug logger (core internal)
+vi.mock('../../../packages/core/src/utils/debug-logger', () => {
+  const mockHelpers = {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
-  },
-}));
+    log: vi.fn(),
+  };
+  return {
+    debug: mockHelpers,
+    createDebug: vi.fn(() => mockHelpers),
+    createDebugLogger: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
+    DebugLogger: vi.fn().mockImplementation(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
+  };
+});
 
-// Mock SVGConverter
-vi.mock('../../../src/utils/svg-converter', () => ({
+// Mock SVGConverter (core internal dependency of PDFGenerator)
+vi.mock('../../../packages/core/src/utils/svg-converter', () => ({
   SVGConverter: vi.fn().mockImplementation(() => ({
     convert: vi.fn().mockResolvedValue({
       id: 'test-svg',
@@ -28,8 +45,8 @@ vi.mock('../../../src/utils/svg-converter', () => ({
   })),
 }));
 
-// Mock mermaid renderer
-vi.mock('../../../src/renderers/mermaid-renderer', () => ({
+// Mock mermaid renderer (core internal dependency)
+vi.mock('../../../packages/core/src/renderers/mermaid-renderer', () => ({
   mermaidRenderer: {
     renderAllImmediate: vi.fn().mockResolvedValue(undefined),
   },
@@ -76,7 +93,9 @@ describe('PDFGenerator', () => {
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
       drawImage: vi.fn(),
     });
-    HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue('data:image/png;base64,mockdata');
+    HTMLCanvasElement.prototype.toDataURL = vi
+      .fn()
+      .mockReturnValue('data:image/png;base64,mockdata');
 
     // Mock getBoundingClientRect for SVGs
     Element.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
@@ -247,7 +266,7 @@ describe('PDFGenerator', () => {
       svgContainer.appendChild(mermaidDiv);
 
       // Mock converter to throw error
-      const { SVGConverter } = await import('../../../src/utils/svg-converter');
+      const { SVGConverter } = await import('@mdview/core');
       (SVGConverter as any).mockImplementationOnce(() => ({
         convert: vi.fn().mockRejectedValue(new Error('Conversion failed')),
       }));
@@ -310,9 +329,7 @@ describe('PDFGenerator', () => {
         throw new Error('Print failed');
       });
 
-      await expect(
-        generator.print(svgContainer, { convertSvgsToImages: true })
-      ).rejects.toThrow();
+      await expect(generator.print(svgContainer, { convertSvgsToImages: true })).rejects.toThrow();
 
       // SVGs should be restored even on error
       const restoredSvg = mermaidDiv.querySelector('svg');
@@ -320,4 +337,3 @@ describe('PDFGenerator', () => {
     });
   });
 });
-

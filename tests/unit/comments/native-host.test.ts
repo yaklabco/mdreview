@@ -5,7 +5,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
-import { validatePath, handleMessage, ALLOWED_EXTENSIONS } from '../../../src/native-host/host-logic';
+import {
+  validatePath,
+  handleMessage,
+  ALLOWED_EXTENSIONS,
+} from '../../../packages/chrome-ext/src/native-host/host-logic';
 
 vi.mock('os');
 
@@ -187,14 +191,15 @@ describe('Native Host Message Handling', () => {
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         '/docs/page.mdx',
         'import { Component } from "react"',
-        'utf8',
+        'utf8'
       );
       expect(result).toEqual({ success: true });
     });
 
     it('should accept v1 comment marker changes', () => {
       const existing = '# Doc\n\nSome text here.';
-      const withComment = '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\n[^comment-1]: <!-- mdview:comment {"author":"a","date":"2026-01-01T00:00:00Z"} -->\n    note';
+      const withComment =
+        '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\n[^comment-1]: <!-- mdview:comment {"author":"a","date":"2026-01-01T00:00:00Z"} -->\n    note';
       vi.mocked(fs.readFileSync).mockReturnValue(existing);
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
@@ -209,7 +214,8 @@ describe('Native Host Message Handling', () => {
 
     it('should accept v2 annotation marker changes', () => {
       const existing = '# Doc\n\nSome text here.';
-      const withAnnotation = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1,"anchor":{"text":"text"},"body":"note","author":"a","date":"2026-01-01T00:00:00Z"}] -->';
+      const withAnnotation =
+        '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1,"anchor":{"text":"text"},"body":"note","author":"a","date":"2026-01-01T00:00:00Z"}] -->';
       vi.mocked(fs.readFileSync).mockReturnValue(existing);
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
@@ -224,7 +230,8 @@ describe('Native Host Message Handling', () => {
 
     it('should detect v2 sentinel as content boundary', () => {
       const existing = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1}] -->';
-      const updated = '# Doc\n\nSome text[@1][@2] here.\n\n<!-- mdview:annotations [{"id":1},{"id":2}] -->';
+      const updated =
+        '# Doc\n\nSome text[@1][@2] here.\n\n<!-- mdview:annotations [{"id":1},{"id":2}] -->';
       vi.mocked(fs.readFileSync).mockReturnValue(existing);
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
@@ -238,7 +245,8 @@ describe('Native Host Message Handling', () => {
     });
 
     it('should accept v1 to v2 migration write', () => {
-      const existing = '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\n[^comment-1]: stuff';
+      const existing =
+        '# Doc\n\nSome text[^comment-1] here.\n\n<!-- mdview:comments -->\n[^comment-1]: stuff';
       const migrated = '# Doc\n\nSome text[@1] here.\n\n<!-- mdview:annotations [{"id":1}] -->';
       vi.mocked(fs.readFileSync).mockReturnValue(existing);
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);

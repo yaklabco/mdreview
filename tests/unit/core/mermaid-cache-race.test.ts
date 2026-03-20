@@ -8,22 +8,24 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RenderPipeline } from '../../../src/core/render-pipeline';
+import { RenderPipeline } from '../../../packages/chrome-ext/src/core/render-pipeline';
 import { createTestContainer, cleanupTestContainer, mockConsole } from '../../helpers/test-utils';
 import { mockChromeRuntime, waitFor } from '../../helpers/mocks';
 
 // The mock renderAll should simulate what the real one does: change classes on containers
-const mockRenderAll = vi.fn().mockImplementation(async (container: HTMLElement) => {
-  // Simulate successful rendering: remove pending, add ready
-  const pending = container.querySelectorAll('.mermaid-container.mermaid-pending');
-  pending.forEach((el) => {
-    el.classList.remove('mermaid-pending');
-    el.classList.add('mermaid-ready');
-    el.innerHTML = '<div class="mermaid-rendered"><svg>rendered</svg></div>';
-  });
-});
+const { mockRenderAll } = vi.hoisted(() => ({
+  mockRenderAll: vi.fn().mockImplementation(async (container: HTMLElement) => {
+    // Simulate successful rendering: remove pending, add ready
+    const pending = container.querySelectorAll('.mermaid-container.mermaid-pending');
+    pending.forEach((el) => {
+      el.classList.remove('mermaid-pending');
+      el.classList.add('mermaid-ready');
+      el.innerHTML = '<div class="mermaid-rendered"><svg>rendered</svg></div>';
+    });
+  }),
+}));
 
-vi.mock('../../../src/renderers/mermaid-renderer', () => ({
+vi.mock('../../../packages/core/src/renderers/mermaid-renderer', () => ({
   mermaidRenderer: {
     renderAll: mockRenderAll,
     renderAllImmediate: vi.fn().mockResolvedValue(undefined),
@@ -32,7 +34,7 @@ vi.mock('../../../src/renderers/mermaid-renderer', () => ({
   },
 }));
 
-vi.mock('../../../src/renderers/syntax-highlighter', () => ({
+vi.mock('../../../packages/core/src/renderers/syntax-highlighter', () => ({
   syntaxHighlighter: {
     highlightVisible: vi.fn(),
     highlightAll: vi.fn(),
@@ -40,7 +42,7 @@ vi.mock('../../../src/renderers/syntax-highlighter', () => ({
   },
 }));
 
-vi.mock('../../../src/workers/worker-pool', () => ({
+vi.mock('../../../packages/core/src/workers/worker-pool', () => ({
   workerPool: {
     initialize: vi.fn().mockRejectedValue(new Error('file:// not supported')),
     execute: vi.fn(),

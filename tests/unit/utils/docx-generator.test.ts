@@ -3,8 +3,8 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { DOCXGenerator } from '../../../src/utils/docx-generator';
-import type { ContentNode, CollectedContent, ConvertedImage } from '../../../src/types';
+import { DOCXGenerator } from '@mdview/core';
+import type { ContentNode, CollectedContent, ConvertedImage } from '@mdview/core';
 
 describe('DOCXGenerator', () => {
   let generator: DOCXGenerator;
@@ -49,7 +49,9 @@ describe('DOCXGenerator', () => {
       const blob = await generator.generate(content, new Map());
 
       expect(blob).toBeInstanceOf(Blob);
-      expect(blob.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      expect(blob.type).toBe(
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      );
       expect(blob.size).toBeGreaterThan(0);
     });
 
@@ -394,7 +396,10 @@ describe('DOCXGenerator', () => {
     });
 
     test('should apply borders', async () => {
-      const tableData = [['A', 'B'], ['C', 'D']];
+      const tableData = [
+        ['A', 'B'],
+        ['C', 'D'],
+      ];
 
       const content = createTestContent([
         {
@@ -575,4 +580,3 @@ describe('DOCXGenerator', () => {
     });
   });
 });
-

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseComments } from '../../src/comments/comment-parser';
+import { parseComments } from '@mdview/core';
 import {
   addComment,
   removeComment,
@@ -8,12 +8,13 @@ import {
   generateNextCommentId,
   addReply,
   toggleReaction,
-} from '../../src/comments/comment-serializer';
-import { computeCommentContext } from '../../src/comments/comment-context';
-import type { Comment } from '../../src/types';
+} from '../../packages/core/src/comments/comment-serializer';
+import { computeCommentContext } from '@mdview/core';
+import type { Comment } from '@mdview/core';
 
 describe('Comment System Integration', () => {
-  const baseMarkdown = '# Test Document\n\nThe quick brown fox jumps over the lazy dog.\n\nAnother paragraph here.';
+  const baseMarkdown =
+    '# Test Document\n\nThe quick brown fox jumps over the lazy dog.\n\nAnother paragraph here.';
 
   it('should round-trip: add comment then parse it back', () => {
     const comment: Comment = {
