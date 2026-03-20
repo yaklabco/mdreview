@@ -3,16 +3,21 @@
 import { TabManager } from './tab-manager';
 import { DocumentContext } from './document-context';
 import { StatusBar } from './status-bar';
+import { registerKeyboardShortcuts } from './keyboard-shortcuts';
+import { setupDragAndDrop } from './drag-drop';
+import { FileTree } from './file-tree';
 
 export class MDViewElectronViewer {
   private tabManager: TabManager;
   private statusBar: StatusBar;
+  private fileTree: FileTree;
   private documents = new Map<string, DocumentContext>();
   private cleanupListeners: (() => void)[] = [];
 
   constructor() {
     this.tabManager = new TabManager();
     this.statusBar = new StatusBar();
+    this.fileTree = new FileTree();
   }
 
   async initialize(): Promise<void> {
@@ -40,6 +45,15 @@ export class MDViewElectronViewer {
       this.statusBar.render(statusBarEl);
     }
 
+    // File tree sidebar
+    const sidebarEl = document.getElementById('mdview-sidebar');
+    if (sidebarEl) {
+      this.fileTree.render(sidebarEl);
+      this.fileTree.onFileSelected((path) => {
+        void this.openFile(path);
+      });
+    }
+
     // Wire tab callbacks
     this.tabManager.onTabClick((tabId) => {
       this.switchTab(tabId);
@@ -48,6 +62,26 @@ export class MDViewElectronViewer {
     this.tabManager.onTabClose((tabId) => {
       void this.closeFile(tabId);
     });
+
+    // Keyboard shortcuts
+    const cleanupShortcuts = registerKeyboardShortcuts({
+      nextTab: () => this.cycleTab(1),
+      prevTab: () => this.cycleTab(-1),
+      switchToTab: (index) => this.switchToTabByIndex(index),
+    });
+    this.cleanupListeners.push(cleanupShortcuts);
+
+    // Drag and drop
+    const workspace = document.getElementById('mdview-workspace') ?? document.body;
+    const cleanupDragDrop = setupDragAndDrop({
+      target: workspace,
+      onFilesDropped: (paths) => {
+        for (const p of paths) {
+          void this.openFile(p);
+        }
+      },
+    });
+    this.cleanupListeners.push(cleanupDragDrop);
 
     // Listen for IPC events from main process
     this.setupIPCListeners();
@@ -165,6 +199,22 @@ export class MDViewElectronViewer {
     return this.documents.get(tabId);
   }
 
+  private cycleTab(direction: number): void {
+    const tabIds = this.tabManager.getTabIds();
+    if (tabIds.length <= 1) return;
+    const currentIndex = tabIds.indexOf(this.tabManager.getActiveTab() ?? '');
+    if (currentIndex === -1) return;
+    const newIndex = (currentIndex + direction + tabIds.length) % tabIds.length;
+    this.switchTab(tabIds[newIndex]);
+  }
+
+  private switchToTabByIndex(index: number): void {
+    const tabIds = this.tabManager.getTabIds();
+    if (index < tabIds.length) {
+      this.switchTab(tabIds[index]);
+    }
+  }
+
   private updateStatusBar(ctx: DocumentContext): void {
     const metadata = ctx.getMetadata();
     this.statusBar.update({
@@ -191,9 +241,21 @@ export class MDViewElectronViewer {
         if (activeTab) {
           void this.closeFile(activeTab);
         }
+      } else if (command === 'toggle-sidebar') {
+        const sidebarEl = document.getElementById('mdview-sidebar');
+        if (sidebarEl) {
+          const isVisible = sidebarEl.style.display !== 'none';
+          this.fileTree.setVisible(!isVisible);
+          void window.mdview.setSidebarVisible(!isVisible);
+        }
       }
     });
     this.cleanupListeners.push(unsubMenuCommand);
+
+    const unsubOpenFolder = window.mdview.onOpenFolder((folderPath: string) => {
+      void this.loadFolder(folderPath);
+    });
+    this.cleanupListeners.push(unsubOpenFolder);
 
     const unsubPrefs = window.mdview.onPreferencesUpdated(() => {
       // Preferences changes could trigger re-renders
@@ -260,8 +322,15 @@ export class MDViewElectronViewer {
   private async handleOpenFolderDialog(): Promise<void> {
     const folderPath = await window.mdview.showOpenFolderDialog();
     if (folderPath) {
-      await window.mdview.setOpenFolder(folderPath);
+      await this.loadFolder(folderPath);
     }
+  }
+
+  private async loadFolder(folderPath: string): Promise<void> {
+    await window.mdview.setOpenFolder(folderPath);
+    const entries = await window.mdview.listDirectory(folderPath);
+    this.fileTree.loadDirectory(entries);
+    this.fileTree.setVisible(true);
   }
 
   private dispose(): void {
@@ -274,5 +343,6 @@ export class MDViewElectronViewer {
     }
     this.cleanupListeners = [];
     this.tabManager.dispose();
+    this.fileTree.dispose();
   }
 }
