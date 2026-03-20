@@ -1,0 +1,52 @@
+appId: net.mdview.app
+productName: mdview
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+  - '!out/**/*.map'
+
+fileAssociations:
+  - ext: md
+    name: Markdown
+    role: Viewer
+    mimeType: text/markdown
+  - ext: markdown
+    name: Markdown
+    role: Viewer
+    mimeType: text/markdown
+  - ext: mdown
+    name: Markdown
+    role: Viewer
+  - ext: mkd
+    name: Markdown
+    role: Viewer
+  - ext: mkdn
+    name: Markdown
+    role: Viewer
+  - ext: mdx
+    name: MDX
+    role: Viewer
+
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.developer-tools
+  icon: build/icon.icns
+
+linux:
+  target:
+    - AppImage
+  category: Development
+  icon: build/icon.png
+
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
