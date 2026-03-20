@@ -11,9 +11,14 @@ import {
   ALLOWED_EXTENSIONS,
 } from '../../../packages/chrome-ext/src/native-host/host-logic';
 
-vi.mock('os');
+vi.mock('fs', () => ({
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+}));
 
-vi.mock('fs');
+vi.mock('os', () => ({
+  userInfo: vi.fn(),
+}));
 
 describe('Native Host Message Handling', () => {
   describe('ALLOWED_EXTENSIONS', () => {
