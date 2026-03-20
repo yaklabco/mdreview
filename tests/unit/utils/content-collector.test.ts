@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ContentCollector } from '../../../src/utils/content-collector';
+import { ContentCollector } from '@mdview/core';
 
 /**
  * Helper to create a test container with HTML
@@ -545,5 +545,3 @@ line 3</code></pre>
     });
   });
 });
-
-

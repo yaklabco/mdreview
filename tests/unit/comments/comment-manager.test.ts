@@ -6,16 +6,16 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CommentManager } from '../../../src/comments/comment-manager';
-import type { Comment, CommentParseResult, AppState, CommentTag } from '../../../src/types';
+import { CommentManager } from '../../../packages/chrome-ext/src/comments/comment-manager';
+import type { Comment, CommentParseResult, AppState, CommentTag } from '@mdview/core';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-vi.mock('../../../src/comments/annotation-parser', () => ({
+vi.mock('../../../packages/core/src/comments/annotation-parser', () => ({
   parseComments: vi.fn(),
 }));
 
-vi.mock('../../../src/comments/annotation-serializer', () => ({
+vi.mock('../../../packages/core/src/comments/annotation-serializer', () => ({
   generateNextCommentId: vi.fn(),
   addComment: vi.fn(),
   addCommentAtOffset: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock('../../../src/comments/annotation-serializer', () => ({
   toggleReaction: vi.fn(),
 }));
 
-vi.mock('../../../src/comments/source-position-map', () => ({
+vi.mock('../../../packages/core/src/comments/source-position-map', () => ({
   buildSourceMap: vi.fn(() => ({
     rawSource: '',
     plainText: '',
@@ -37,7 +37,7 @@ vi.mock('../../../src/comments/source-position-map', () => ({
   findInsertionPoint: vi.fn(() => 10),
 }));
 
-vi.mock('../../../src/comments/comment-context', () => ({
+vi.mock('../../../packages/core/src/comments/comment-context', () => ({
   computeCommentContext: vi.fn(() => ({
     line: 3,
     section: 'Title',
@@ -46,31 +46,31 @@ vi.mock('../../../src/comments/comment-context', () => ({
   })),
 }));
 
-vi.mock('../../../src/comments/comment-ui', () => ({
-  CommentUI: vi.fn().mockImplementation(() => ({
-    createGutter: vi.fn(() => document.createElement('div')),
-    renderCard: vi.fn(() => document.createElement('div')),
-    renderInputForm: vi.fn(() => document.createElement('div')),
-    renderReplyForm: vi.fn(() => document.createElement('div')),
-    renderEmojiPicker: vi.fn(() => document.createElement('div')),
-    setCurrentAuthor: vi.fn(),
-    showToast: vi.fn(),
-    destroy: vi.fn(),
-  })),
-}));
+vi.mock('../../../packages/core/src/comments/comment-ui', () => {
+  const CommentUI = vi.fn();
+  CommentUI.prototype.createGutter = vi.fn(() => document.createElement('div'));
+  CommentUI.prototype.renderCard = vi.fn(() => document.createElement('div'));
+  CommentUI.prototype.renderInputForm = vi.fn(() => document.createElement('div'));
+  CommentUI.prototype.renderReplyForm = vi.fn(() => document.createElement('div'));
+  CommentUI.prototype.renderEmojiPicker = vi.fn(() => document.createElement('div'));
+  CommentUI.prototype.setCurrentAuthor = vi.fn();
+  CommentUI.prototype.showToast = vi.fn();
+  CommentUI.prototype.destroy = vi.fn();
+  return { CommentUI };
+});
 
-vi.mock('../../../src/comments/comment-highlight', () => ({
-  CommentHighlighter: vi.fn().mockImplementation(() => ({
-    highlightComment: vi.fn(() => document.createElement('span')),
-    removeHighlight: vi.fn(),
-    setActive: vi.fn(),
-    clearActive: vi.fn(),
-    setResolved: vi.fn(),
-    getHighlightElement: vi.fn(),
-  })),
-}));
+vi.mock('../../../packages/core/src/comments/comment-highlight', () => {
+  const CommentHighlighter = vi.fn();
+  CommentHighlighter.prototype.highlightComment = vi.fn(() => document.createElement('span'));
+  CommentHighlighter.prototype.removeHighlight = vi.fn();
+  CommentHighlighter.prototype.setActive = vi.fn();
+  CommentHighlighter.prototype.clearActive = vi.fn();
+  CommentHighlighter.prototype.setResolved = vi.fn();
+  CommentHighlighter.prototype.getHighlightElement = vi.fn();
+  return { CommentHighlighter };
+});
 
-import { parseComments } from '../../../src/comments/annotation-parser';
+import { parseComments } from '../../../packages/core/src/comments/annotation-parser';
 import {
   generateNextCommentId,
   addComment as serializerAddComment,
@@ -81,9 +81,9 @@ import {
   resolveComment as serializerResolveComment,
   addReply as serializerAddReply,
   toggleReaction as serializerToggleReaction,
-} from '../../../src/comments/annotation-serializer';
-import { computeCommentContext } from '../../../src/comments/comment-context';
-import { findInsertionPoint } from '../../../src/comments/source-position-map';
+} from '../../../packages/core/src/comments/annotation-serializer';
+import { computeCommentContext } from '../../../packages/core/src/comments/comment-context';
+import { findInsertionPoint } from '../../../packages/core/src/comments/source-position-map';
 
 const mockParseComments = vi.mocked(parseComments);
 const mockGenerateNextId = vi.mocked(generateNextCommentId);
@@ -158,7 +158,10 @@ describe('CommentManager', () => {
     mockSerializerUpdate.mockReturnValue('updated markdown after update');
     mockSerializerUpdateMetadata.mockImplementation((md) => md + ' with metadata');
     mockSerializerResolve.mockReturnValue('updated markdown after resolve');
-    mockSerializerAddReply.mockReturnValue({ markdown: 'updated markdown after reply', replyId: 'reply-1' });
+    mockSerializerAddReply.mockReturnValue({
+      markdown: 'updated markdown after reply',
+      replyId: 'reply-1',
+    });
     mockSerializerToggleReaction.mockReturnValue('updated markdown after reaction');
 
     manager = new CommentManager();
@@ -183,11 +186,7 @@ describe('CommentManager', () => {
     });
 
     test('stores author from preferences', async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Verify the stored author is used when adding a new comment
       await manager.addComment('some text', 'new comment body');
@@ -199,13 +198,14 @@ describe('CommentManager', () => {
     });
 
     test('queries system username when commentAuthor is empty', async () => {
-      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>)
-        .mockImplementation((msg: { type: string }) => {
+      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
+        (msg: { type: string }) => {
           if (msg.type === 'GET_USERNAME') {
             return Promise.resolve({ username: 'systemuser' });
           }
           return Promise.resolve({ success: true });
-        });
+        }
+      );
 
       const prefsWithNoAuthor = { ...defaultPreferences, commentAuthor: '' };
       await manager.initialize(sampleMarkdown, '/path/to/file.md', prefsWithNoAuthor);
@@ -221,13 +221,14 @@ describe('CommentManager', () => {
     });
 
     test('uses empty author if GET_USERNAME fails', async () => {
-      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>)
-        .mockImplementation((msg: { type: string }) => {
+      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
+        (msg: { type: string }) => {
           if (msg.type === 'GET_USERNAME') {
             return Promise.reject(new Error('native host not installed'));
           }
           return Promise.resolve({ success: true });
-        });
+        }
+      );
 
       const prefsWithNoAuthor = { ...defaultPreferences, commentAuthor: '' };
       await manager.initialize(sampleMarkdown, '/path/to/file.md', prefsWithNoAuthor);
@@ -255,11 +256,7 @@ describe('CommentManager', () => {
 
   describe('addComment()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('generates next ID and serializes into markdown', async () => {
@@ -370,11 +367,7 @@ describe('CommentManager', () => {
 
   describe('editComment()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('updates body in serialized markdown and writes', async () => {
@@ -412,11 +405,7 @@ describe('CommentManager', () => {
         cleanedMarkdown: '# Title\n\nhello world\n',
         comments: [taggedComment],
       });
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('updates tags on existing comment in memory', async () => {
@@ -467,20 +456,13 @@ describe('CommentManager', () => {
 
   describe('resolveComment()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('sets resolved flag and writes', async () => {
       await manager.resolveComment('comment-1');
 
-      expect(mockSerializerResolve).toHaveBeenCalledWith(
-        sampleMarkdown,
-        'comment-1'
-      );
+      expect(mockSerializerResolve).toHaveBeenCalledWith(sampleMarkdown, 'comment-1');
 
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         type: 'WRITE_FILE',
@@ -501,20 +483,13 @@ describe('CommentManager', () => {
 
   describe('deleteComment()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('removes comment and writes', async () => {
       await manager.deleteComment('comment-1');
 
-      expect(mockSerializerRemove).toHaveBeenCalledWith(
-        sampleMarkdown,
-        'comment-1'
-      );
+      expect(mockSerializerRemove).toHaveBeenCalledWith(sampleMarkdown, 'comment-1');
 
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         type: 'WRITE_FILE',
@@ -534,16 +509,12 @@ describe('CommentManager', () => {
 
   describe('handleAddCommentRequest()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('shows input form and adds comment on save', async () => {
       // Import the mock UI to check renderInputForm was called
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
       const mockUIInstance = vi.mocked(CommentUI).mock.results[0].value as {
         renderInputForm: ReturnType<typeof vi.fn>;
         renderCard: ReturnType<typeof vi.fn>;
@@ -575,7 +546,7 @@ describe('CommentManager', () => {
     });
 
     test('does not add comment if body is empty on save', async () => {
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
       const mockUIInstance = vi.mocked(CommentUI).mock.results[0].value as {
         renderInputForm: ReturnType<typeof vi.fn>;
       };
@@ -599,11 +570,7 @@ describe('CommentManager', () => {
 
   describe('isWriteInProgress()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('returns true during writes and stays true during grace period', async () => {
@@ -618,9 +585,7 @@ describe('CommentManager', () => {
         resolveSendMessage = resolve;
       });
 
-      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockReturnValue(
-        sendMessagePromise
-      );
+      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockReturnValue(sendMessagePromise);
 
       // Start the write but don't await it yet
       const writePromise = manager.addComment('text', 'body');
@@ -649,11 +614,7 @@ describe('CommentManager', () => {
 
   describe('getComments()', () => {
     test('returns a copy of comments array', async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       const comments1 = manager.getComments();
       const comments2 = manager.getComments();
@@ -671,14 +632,14 @@ describe('CommentManager', () => {
   describe('repositionAllCards()', () => {
     test('positions cards based on highlight Y and cascades overlaps', async () => {
       const { CommentHighlighter } = await import(
-        '../../../src/comments/comment-highlight'
+        '../../../packages/core/src/comments/comment-highlight'
       );
 
       // We need fresh initialization to get a highlighter instance
       const mgr = new CommentManager();
 
       // Set up card rendering to produce real elements with measurable height
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       // Create two comments at similar positions
       const comment1: Comment = {
@@ -736,45 +697,38 @@ describe('CommentManager', () => {
 
       // Mock highlighter to return these elements
       const mockHighlighter = vi.mocked(CommentHighlighter);
-      mockHighlighter.mockImplementation(
-        () =>
-          ({
-            highlightComment: vi.fn(),
-            removeHighlight: vi.fn(),
-            setActive: vi.fn(),
-            clearActive: vi.fn(),
-            setResolved: vi.fn(),
-            getHighlightElement: vi.fn((id: string) => {
-              if (id === 'comment-1') return highlight1;
-              if (id === 'comment-2') return highlight2;
-              return null;
-            }),
-          }) as any
-      );
+      mockHighlighter.mockImplementation(function (this: any) {
+        this.highlightComment = vi.fn();
+        this.removeHighlight = vi.fn();
+        this.setActive = vi.fn();
+        this.clearActive = vi.fn();
+        this.setResolved = vi.fn();
+        this.getHighlightElement = vi.fn((id: string) => {
+          if (id === 'comment-1') return highlight1;
+          if (id === 'comment-2') return highlight2;
+          return null;
+        });
+      } as any);
 
       // Cards will be rendered as real divs but with zero offsetHeight in jsdom
       // We mock offsetHeight via Object.defineProperty on the card elements
       const mockUIImpl = vi.mocked(CommentUI);
-      mockUIImpl.mockImplementation(
-        () =>
-          ({
-            createGutter: vi.fn(() => document.createElement('div')),
-            renderCard: vi.fn((comment: Comment) => {
-              const card = document.createElement('div');
-              card.className = 'mdview-comment-card';
-              card.dataset.commentId = comment.id;
-              // Give cards a height of 40px
-              Object.defineProperty(card, 'offsetHeight', { value: 40, configurable: true });
-              return card;
-            }),
-            renderInputForm: vi.fn(() => document.createElement('div')),
-            renderReplyForm: vi.fn(() => document.createElement('div')),
-            renderEmojiPicker: vi.fn(() => document.createElement('div')),
-            setCurrentAuthor: vi.fn(),
-            showToast: vi.fn(),
-            destroy: vi.fn(),
-          }) as any
-      );
+      mockUIImpl.mockImplementation(function (this: any) {
+        this.createGutter = vi.fn(() => document.createElement('div'));
+        this.renderCard = vi.fn((comment: Comment) => {
+          const card = document.createElement('div');
+          card.className = 'mdview-comment-card';
+          card.dataset.commentId = comment.id;
+          Object.defineProperty(card, 'offsetHeight', { value: 40, configurable: true });
+          return card;
+        });
+        this.renderInputForm = vi.fn(() => document.createElement('div'));
+        this.renderReplyForm = vi.fn(() => document.createElement('div'));
+        this.renderEmojiPicker = vi.fn(() => document.createElement('div'));
+        this.setCurrentAuthor = vi.fn();
+        this.showToast = vi.fn();
+        this.destroy = vi.fn();
+      } as any);
 
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
@@ -804,11 +758,7 @@ describe('CommentManager', () => {
 
   describe('addReply()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('calls serializer addReply with correct args and writes file', async () => {
@@ -848,11 +798,7 @@ describe('CommentManager', () => {
 
   describe('toggleReaction()', () => {
     beforeEach(async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
     });
 
     test('calls serializer toggleReaction and writes file', async () => {
@@ -912,14 +858,16 @@ describe('CommentManager', () => {
 
   describe('event wiring', () => {
     test('handles mdview:comment:reply event', async () => {
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       const mgr = new CommentManager();
 
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Get the UI instance created during initialize
-      const mockUIInstance = vi.mocked(CommentUI).mock.results[vi.mocked(CommentUI).mock.results.length - 1].value as {
+      const mockUIInstance = vi.mocked(CommentUI).mock.results[
+        vi.mocked(CommentUI).mock.results.length - 1
+      ].value as {
         renderReplyForm: ReturnType<typeof vi.fn>;
         renderCard: ReturnType<typeof vi.fn>;
         setCurrentAuthor: ReturnType<typeof vi.fn>;
@@ -976,8 +924,10 @@ describe('CommentManager', () => {
     test('passes author to UI via setCurrentAuthor', async () => {
       await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
-      const mockUIInstance = vi.mocked(CommentUI).mock.results[vi.mocked(CommentUI).mock.results.length - 1].value as {
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
+      const mockUIInstance = vi.mocked(CommentUI).mock.results[
+        vi.mocked(CommentUI).mock.results.length - 1
+      ].value as {
         setCurrentAuthor: ReturnType<typeof vi.fn>;
       };
 
@@ -990,9 +940,9 @@ describe('CommentManager', () => {
   describe('minimized card support', () => {
     test('handles mdview:comment:reposition event by repositioning cards', async () => {
       const { CommentHighlighter } = await import(
-        '../../../src/comments/comment-highlight'
+        '../../../packages/core/src/comments/comment-highlight'
       );
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       const mgr = new CommentManager();
 
@@ -1000,38 +950,45 @@ describe('CommentManager', () => {
       const highlight = document.createElement('span');
       document.body.appendChild(highlight);
       highlight.getBoundingClientRect = vi.fn(() => ({
-        top: 100, bottom: 120, left: 0, right: 100,
-        width: 100, height: 20, x: 0, y: 100, toJSON: () => ({}),
+        top: 100,
+        bottom: 120,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 20,
+        x: 0,
+        y: 100,
+        toJSON: () => ({}),
       }));
 
       // Mock highlighter
       const mockHighlighter = vi.mocked(CommentHighlighter);
-      mockHighlighter.mockImplementation(() => ({
-        highlightComment: vi.fn(),
-        removeHighlight: vi.fn(),
-        setActive: vi.fn(),
-        clearActive: vi.fn(),
-        setResolved: vi.fn(),
-        getHighlightElement: vi.fn(() => highlight),
-      }) as any);
+      mockHighlighter.mockImplementation(function (this: any) {
+        this.highlightComment = vi.fn();
+        this.removeHighlight = vi.fn();
+        this.setActive = vi.fn();
+        this.clearActive = vi.fn();
+        this.setResolved = vi.fn();
+        this.getHighlightElement = vi.fn(() => highlight);
+      } as any);
 
       // Mock UI to produce real card elements
-      vi.mocked(CommentUI).mockImplementation(() => ({
-        createGutter: vi.fn(() => document.createElement('div')),
-        renderCard: vi.fn((comment: Comment) => {
+      vi.mocked(CommentUI).mockImplementation(function (this: any) {
+        this.createGutter = vi.fn(() => document.createElement('div'));
+        this.renderCard = vi.fn((comment: Comment) => {
           const card = document.createElement('div');
           card.className = 'mdview-comment-card';
           card.dataset.commentId = comment.id;
           Object.defineProperty(card, 'offsetHeight', { value: 40, configurable: true });
           return card;
-        }),
-        renderInputForm: vi.fn(() => document.createElement('div')),
-        renderReplyForm: vi.fn(() => document.createElement('div')),
-        renderEmojiPicker: vi.fn(() => document.createElement('div')),
-        setCurrentAuthor: vi.fn(),
-        showToast: vi.fn(),
-        destroy: vi.fn(),
-      }) as any);
+        });
+        this.renderInputForm = vi.fn(() => document.createElement('div'));
+        this.renderReplyForm = vi.fn(() => document.createElement('div'));
+        this.renderEmojiPicker = vi.fn(() => document.createElement('div'));
+        this.setCurrentAuthor = vi.fn();
+        this.showToast = vi.fn();
+        this.destroy = vi.fn();
+      } as any);
 
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
@@ -1042,8 +999,15 @@ describe('CommentManager', () => {
 
       // Change the highlight position
       highlight.getBoundingClientRect = vi.fn(() => ({
-        top: 200, bottom: 220, left: 0, right: 100,
-        width: 100, height: 20, x: 0, y: 200, toJSON: () => ({}),
+        top: 200,
+        bottom: 220,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 20,
+        x: 0,
+        y: 200,
+        toJSON: () => ({}),
       }));
 
       // Dispatch reposition event
@@ -1058,28 +1022,28 @@ describe('CommentManager', () => {
     });
 
     test('refreshCardContent preserves minimized state on old card', async () => {
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       const mgr = new CommentManager();
 
       // Mock renderCard to produce cards with correct structure
       let renderCallCount = 0;
-      vi.mocked(CommentUI).mockImplementation(() => ({
-        createGutter: vi.fn(() => document.createElement('div')),
-        renderCard: vi.fn((comment: Comment) => {
+      vi.mocked(CommentUI).mockImplementation(function (this: any) {
+        this.createGutter = vi.fn(() => document.createElement('div'));
+        this.renderCard = vi.fn((comment: Comment) => {
           renderCallCount++;
           const card = document.createElement('div');
           card.className = 'mdview-comment-card';
           card.dataset.commentId = comment.id;
           return card;
-        }),
-        renderInputForm: vi.fn(() => document.createElement('div')),
-        renderReplyForm: vi.fn(() => document.createElement('div')),
-        renderEmojiPicker: vi.fn(() => document.createElement('div')),
-        setCurrentAuthor: vi.fn(),
-        showToast: vi.fn(),
-        destroy: vi.fn(),
-      }) as any);
+        });
+        this.renderInputForm = vi.fn(() => document.createElement('div'));
+        this.renderReplyForm = vi.fn(() => document.createElement('div'));
+        this.renderEmojiPicker = vi.fn(() => document.createElement('div'));
+        this.setCurrentAuthor = vi.fn();
+        this.showToast = vi.fn();
+        this.destroy = vi.fn();
+      } as any);
 
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
@@ -1100,25 +1064,25 @@ describe('CommentManager', () => {
     });
 
     test('refreshCardContent preserves minimized state when card was minimized', async () => {
-      const { CommentUI } = await import('../../../src/comments/comment-ui');
+      const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       const mgr = new CommentManager();
 
-      vi.mocked(CommentUI).mockImplementation(() => ({
-        createGutter: vi.fn(() => document.createElement('div')),
-        renderCard: vi.fn((comment: Comment) => {
+      vi.mocked(CommentUI).mockImplementation(function (this: any) {
+        this.createGutter = vi.fn(() => document.createElement('div'));
+        this.renderCard = vi.fn((comment: Comment) => {
           const card = document.createElement('div');
           card.className = 'mdview-comment-card minimized';
           card.dataset.commentId = comment.id;
           return card;
-        }),
-        renderInputForm: vi.fn(() => document.createElement('div')),
-        renderReplyForm: vi.fn(() => document.createElement('div')),
-        renderEmojiPicker: vi.fn(() => document.createElement('div')),
-        setCurrentAuthor: vi.fn(),
-        showToast: vi.fn(),
-        destroy: vi.fn(),
-      }) as any);
+        });
+        this.renderInputForm = vi.fn(() => document.createElement('div'));
+        this.renderReplyForm = vi.fn(() => document.createElement('div'));
+        this.renderEmojiPicker = vi.fn(() => document.createElement('div'));
+        this.setCurrentAuthor = vi.fn();
+        this.showToast = vi.fn();
+        this.destroy = vi.fn();
+      } as any);
 
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
@@ -1143,18 +1107,13 @@ describe('CommentManager', () => {
 
   describe('destroy()', () => {
     test('cleans up UI', async () => {
-      await manager.initialize(
-        sampleMarkdown,
-        '/path/to/file.md',
-        defaultPreferences
-      );
+      await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Import the mock to verify destroy was called
-      const { CommentUI } = await import(
-        '../../../src/comments/comment-ui'
-      );
-      const mockInstance = vi.mocked(CommentUI).mock.results[0]
-        .value as { destroy: ReturnType<typeof vi.fn> };
+      const { CommentUI } = await import('@mdview/core');
+      const mockInstance = vi.mocked(CommentUI).mock.results[0].value as {
+        destroy: ReturnType<typeof vi.fn>;
+      };
 
       manager.destroy();
 

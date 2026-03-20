@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { DOMPurifierUtil } from '../../../src/utils/dom-purifier';
+import { DOMPurifierUtil } from '@mdview/core';
 import { xssPayloads } from '../../helpers/fixtures';
 
 describe('DOMPurifier', () => {

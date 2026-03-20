@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseAnnotations } from '../../src/comments/annotation-parser';
-import { addComment } from '../../src/comments/annotation-serializer';
-import type { Comment } from '../../src/types';
+import { parseAnnotations } from '@mdview/core';
+import { addComment } from '@mdview/core';
+import type { Comment } from '@mdview/core';
 
 function makeNewComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -42,7 +42,7 @@ Some text[^comment-1] here and target there.
     // All comments present
     const parsed = parseAnnotations(result);
     expect(parsed.comments.length).toBeGreaterThanOrEqual(2);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migrated).toBeDefined();
     expect(migrated!.selectedText).toBe('text');
     expect(migrated!.body).toBe('First comment body.');
@@ -57,7 +57,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
     const parsed = parseAnnotations(result);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migrated!.replies).toHaveLength(2);
     expect(migrated!.replies![0].author).toBe('bob');
     expect(migrated!.replies![1].author).toBe('carol');
@@ -72,7 +72,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
     const parsed = parseAnnotations(result);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migrated!.reactions).toBeDefined();
     expect(migrated!.reactions!['\u{1F44D}']).toEqual(['bob', 'carol']);
     expect(migrated!.reactions!['\u{2764}\u{FE0F}']).toEqual(['alice']);
@@ -87,7 +87,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
     const parsed = parseAnnotations(result);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migrated!.context).toBeDefined();
     expect(migrated!.context!.line).toBe(3);
     expect(migrated!.context!.section).toBe('Setup');
@@ -104,7 +104,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
     const parsed = parseAnnotations(result);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migrated!.resolved).toBe(true);
   });
 
@@ -117,7 +117,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
     const parsed = parseAnnotations(result);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
     expect(migrated!.tags).toEqual(['blocking', 'nit']);
   });
 
@@ -149,8 +149,8 @@ Some text[^comment-1] here and target there.
     const parsed = parseAnnotations(result);
 
     expect(parsed.comments.length).toBeGreaterThanOrEqual(3);
-    const c1 = parsed.comments.find(c => c.id === 'comment-1');
-    const c2 = parsed.comments.find(c => c.id === 'comment-2');
+    const c1 = parsed.comments.find((c) => c.id === 'comment-1');
+    const c2 = parsed.comments.find((c) => c.id === 'comment-2');
     expect(c1!.body).toBe('First comment body.');
     expect(c2!.body).toBe('Second comment body.');
   });
@@ -183,7 +183,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
     const parsed = parseAnnotations(result);
-    const migrated = parsed.comments.find(c => c.id === 'comment-1');
+    const migrated = parsed.comments.find((c) => c.id === 'comment-1');
 
     expect(migrated!.resolved).toBe(true);
     expect(migrated!.context!.line).toBe(5);

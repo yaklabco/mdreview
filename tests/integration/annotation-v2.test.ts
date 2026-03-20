@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseAnnotations } from '../../src/comments/annotation-parser';
+import { parseAnnotations } from '@mdview/core';
 import {
   addComment,
   removeComment,
@@ -15,8 +15,8 @@ import {
   addReply,
   toggleReaction,
   generateNextCommentId,
-} from '../../src/comments/annotation-serializer';
-import type { Comment, CommentContext } from '../../src/types';
+} from '@mdview/core';
+import type { Comment, CommentContext } from '@mdview/core';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -224,7 +224,7 @@ describe('Large document', () => {
 
     // Verify all comments are correctly anchored
     for (let i = 1; i <= 25; i++) {
-      const c = parsed.comments.find(c => c.id === `comment-${i}`);
+      const c = parsed.comments.find((c) => c.id === `comment-${i}`);
       expect(c).toBeDefined();
       expect(c!.selectedText).toBe(`unique-word-${i}`);
       expect(c!.body).toBe(`Comment ${i}`);

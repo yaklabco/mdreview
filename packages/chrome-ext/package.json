@@ -1,0 +1,17 @@
+{
+  "name": "@mdview/chrome-ext",
+  "version": "0.3.4",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@mdview/core": "*"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@types/chrome": "^0.0.287"
+  }
+}

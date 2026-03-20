@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FileScanner } from '../../../src/utils/file-scanner';
+import { FileScanner } from '../../../packages/chrome-ext/src/utils/file-scanner';
 
 describe('FileScanner Blocklist', () => {
   beforeEach(() => {

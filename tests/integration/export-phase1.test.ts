@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ContentCollector } from '../../src/utils/content-collector';
-import { SVGConverter } from '../../src/utils/svg-converter';
+import { ContentCollector } from '@mdview/core';
+import { SVGConverter } from '@mdview/core';
 
 /**
  * Helper to create a comprehensive test container with various content types
@@ -484,5 +484,3 @@ describe('Phase 1 Integration', () => {
     });
   });
 });
-
-

@@ -6,10 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  buildSourceMap,
-  findInsertionPoint,
-} from '../../../src/comments/source-position-map';
+import { buildSourceMap, findInsertionPoint } from '@mdview/core';
 
 // ─── buildSourceMap ──────────────────────────────────────────────────
 

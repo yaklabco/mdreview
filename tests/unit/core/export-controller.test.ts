@@ -4,18 +4,35 @@
 
 /* eslint-disable @typescript-eslint/unbound-method */
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ExportController } from '../../../src/core/export-controller';
-import type { ExportProgress } from '../../../src/types';
+import { ExportController } from '@mdview/core';
+import type { ExportProgress } from '@mdview/core';
 
 // Don't mock modules - use real implementations
-vi.mock('../../../src/utils/debug-logger', () => ({
-  debug: {
+vi.mock('../../../packages/core/src/utils/debug-logger', () => {
+  const mockHelpers = {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
-  },
-}));
+    log: vi.fn(),
+  };
+  return {
+    debug: mockHelpers,
+    createDebug: vi.fn(() => mockHelpers),
+    createDebugLogger: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
+    DebugLogger: vi.fn().mockImplementation(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
+  };
+});
 
 describe('ExportController', () => {
   let controller: ExportController;

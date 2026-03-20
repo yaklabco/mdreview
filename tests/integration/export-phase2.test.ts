@@ -3,10 +3,10 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { ExportController } from '../../src/core/export-controller';
-import { ContentCollector } from '../../src/utils/content-collector';
-import { SVGConverter } from '../../src/utils/svg-converter';
-import type { ExportProgress } from '../../src/types';
+import { ExportController } from '@mdview/core';
+import { ContentCollector } from '@mdview/core';
+import { SVGConverter } from '@mdview/core';
+import type { ExportProgress } from '@mdview/core';
 
 describe('Phase 2 Integration: DOCX Export', () => {
   let controller: ExportController;
@@ -385,4 +385,3 @@ describe('Phase 2 Integration: DOCX Export', () => {
     expect(allMessages).toContain('download');
   });
 });
-

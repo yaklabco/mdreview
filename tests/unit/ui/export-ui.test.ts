@@ -3,10 +3,10 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ExportUI } from '../../../src/ui/export-ui';
+import { ExportUI } from '../../../packages/chrome-ext/src/ui/export-ui';
 
 // Mock the debug logger
-vi.mock('../../../src/utils/debug-logger', () => ({
+vi.mock('../../../packages/chrome-ext/src/utils/debug-logger', () => ({
   debug: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -15,8 +15,8 @@ vi.mock('../../../src/utils/debug-logger', () => ({
   },
 }));
 
-// Mock the ExportController
-vi.mock('../../../src/core/export-controller', () => {
+// Mock the ExportController (imported dynamically by the Chrome adapter)
+vi.mock('../../../packages/core/src/export-controller', () => {
   class MockExportController {
     export = vi.fn().mockResolvedValue(undefined);
   }

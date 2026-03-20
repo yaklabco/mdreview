@@ -1,0 +1,34 @@
+{
+  "name": "@mdview/core",
+  "version": "0.0.1",
+  "description": "Core rendering engine for mdview",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./utils/debug-logger": "./src/utils/debug-logger.ts",
+    "./adapters": "./src/adapters.ts"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:ci": "vitest --run"
+  },
+  "dependencies": {
+    "@jamesainslie/docx": "^9.5.1-svg.1",
+    "dompurify": "^3.0.6",
+    "highlight.js": "^11.9.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^8.6.7",
+    "markdown-it-attrs": "^4.1.6",
+    "markdown-it-emoji": "^3.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "mermaid": "^11.12.1",
+    "panzoom": "^9.4.3"
+  },
+  "devDependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/markdown-it": "^13.0.9"
+  },
+  "author": "James Ainslie",
+  "license": "MIT"
+}

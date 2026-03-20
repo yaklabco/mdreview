@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SVGConverter } from '../../../src/utils/svg-converter';
+import { SVGConverter } from '@mdview/core';
 
 /**
  * Helper to create a mock SVG element

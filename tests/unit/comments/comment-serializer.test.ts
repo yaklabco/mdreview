@@ -16,9 +16,9 @@ import {
   updateCommentMetadata,
   addReply,
   toggleReaction,
-} from '../../../src/comments/comment-serializer';
-import { buildSourceMap } from '../../../src/comments/source-position-map';
-import type { Comment, CommentContext, CommentReply } from '../../../src/types';
+} from '../../../packages/core/src/comments/comment-serializer';
+import { buildSourceMap } from '@mdview/core';
+import type { Comment, CommentContext, CommentReply } from '@mdview/core';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -380,13 +380,9 @@ describe('resolveComment', () => {
     const result = resolveComment(md, 'comment-1');
 
     // comment-1 should be resolved
-    expect(result).toMatch(
-      /\[\^comment-1\]:.*"resolved":true/
-    );
+    expect(result).toMatch(/\[\^comment-1\]:.*"resolved":true/);
     // comment-2 should NOT have resolved
-    const comment2Line = result
-      .split('\n')
-      .find((l) => l.includes('[^comment-2]:'));
+    const comment2Line = result.split('\n').find((l) => l.includes('[^comment-2]:'));
     expect(comment2Line).toBeDefined();
     expect(comment2Line).not.toContain('"resolved"');
   });
@@ -602,7 +598,9 @@ describe('replies and reactions in metadata', () => {
     const comment = makeComment({ replies });
     const result = addComment(md, comment);
 
-    expect(result).toContain('"replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]');
+    expect(result).toContain(
+      '"replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]'
+    );
   });
 
   it('should omit replies when empty array', () => {
@@ -742,7 +740,9 @@ describe('addReply', () => {
     const { markdown, replyId } = addReply(mdWithComment, 'comment-1', reply);
 
     expect(replyId).toBe('reply-1');
-    expect(markdown).toContain('"replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]');
+    expect(markdown).toContain(
+      '"replies":[{"id":"reply-1","author":"bob","body":"Good catch","date":"2026-03-04T10:00:00Z"}]'
+    );
   });
 
   it('should generate sequential reply IDs', () => {
