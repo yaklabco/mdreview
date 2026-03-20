@@ -54,5 +54,9 @@ export type { CacheOptions } from './cache-manager';
 export { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extractor';
 export type { FrontmatterResult } from './frontmatter-extractor';
 
+// Theme engine
+export { ThemeEngine } from './theme-engine';
+export type { ThemeInfo, ThemeOverrides } from './theme-engine';
+
 // Platform adapters
 export * from './adapters';

@@ -1,53 +1,89 @@
 /**
- * Theme Engine
- * Manages theme loading, switching, and customization
+ * Theme Engine — Chrome extension shim
+ *
+ * Wraps the platform-agnostic ThemeEngine from @mdview/core,
+ * wired up with a Chrome StorageAdapter and DOM-specific methods
+ * (applyTheme, watchSystemTheme, updateSyntaxTheme).
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+
 import type { Theme, ThemeName } from '../types';
+import type { StorageAdapter } from '@mdview/core';
+import { ThemeEngine as CoreThemeEngine } from '@mdview/core';
+import type { ThemeOverrides } from '@mdview/core';
 import { debug } from '../utils/debug-logger';
 
-export interface ThemeInfo {
-  name: ThemeName;
-  displayName: string;
-  variant: 'light' | 'dark';
-  preview?: string;
-}
+export type { ThemeInfo } from '@mdview/core';
+
+// ---------------------------------------------------------------------------
+// Chrome StorageAdapter
+// ---------------------------------------------------------------------------
+
+const chromeStorageAdapter: StorageAdapter = {
+  async getSync(keys: string | string[]): Promise<Record<string, unknown>> {
+    return chrome.storage.sync.get(keys) as Promise<Record<string, unknown>>;
+  },
+  async setSync(data: Record<string, unknown>): Promise<void> {
+    await chrome.storage.sync.set(data);
+  },
+  async getLocal(keys: string | string[]): Promise<Record<string, unknown>> {
+    return chrome.storage.local.get(keys) as Promise<Record<string, unknown>>;
+  },
+  async setLocal(data: Record<string, unknown>): Promise<void> {
+    await chrome.storage.local.set(data);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Chrome ThemeEngine — composition over the core engine
+// ---------------------------------------------------------------------------
 
 export class ThemeEngine {
-  private currentTheme: Theme | null = null;
-  private cache: Map<ThemeName, Theme> = new Map();
+  private core: InstanceType<typeof CoreThemeEngine>;
 
-  /**
-   * Load theme by name
-   */
-  async loadTheme(themeName: ThemeName): Promise<Theme> {
-    // Check cache
-    const cached = this.cache.get(themeName);
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      // Dynamically import theme definition
-      const themeModule = (await import(`../themes/${themeName}.ts`)) as { default: Theme };
-      const theme = themeModule.default;
-
-      // Cache theme
-      this.cache.set(themeName, theme);
-
-      return theme;
-    } catch (error) {
-      debug.error('ThemeEngine', `Failed to load theme ${themeName}:`, error);
-      // Fallback to github-light
-      if (themeName !== 'github-light') {
-        return this.loadTheme('github-light');
-      }
-      throw error;
-    }
+  constructor() {
+    this.core = new CoreThemeEngine(chromeStorageAdapter);
   }
 
   /**
-   * Apply theme to document
+   * Load theme by name (delegated to core)
+   */
+  async loadTheme(themeName: ThemeName): Promise<Theme> {
+    return this.core.loadTheme(themeName);
+  }
+
+  /**
+   * Get currently applied theme
+   */
+  getCurrentTheme(): Theme | null {
+    return this.core.getCurrentTheme();
+  }
+
+  /**
+   * Get list of available themes
+   */
+  getAvailableThemes(): Array<{
+    name: ThemeName;
+    displayName: string;
+    variant: 'light' | 'dark';
+    preview?: string;
+  }> {
+    return this.core.getAvailableThemes();
+  }
+
+  /**
+   * Compile theme to CSS variables (delegated to core)
+   */
+  compileToCSSVariables(
+    theme: Theme,
+    overrides: Partial<Theme['typography']> = {}
+  ): Record<string, string> {
+    return this.core.compileToCSSVariables(theme, overrides);
+  }
+
+  /**
+   * Apply theme to document (DOM-specific)
    */
   async applyTheme(theme: Theme | ThemeName): Promise<void> {
     debug.log(
@@ -57,32 +93,11 @@ export class ThemeEngine {
     );
 
     // Load theme if name provided
-    const themeObj = typeof theme === 'string' ? await this.loadTheme(theme) : theme;
+    const themeObj: Theme = typeof theme === 'string' ? await this.loadTheme(theme) : theme;
     debug.log('ThemeEngine', `Theme loaded/resolved:`, themeObj.name);
 
-    // Get user preferences for overrides (from storage, if available)
-    // Since ThemeEngine runs in content script, we need to fetch preferences.
-    // However, for performance, we might rely on preferences being passed or fetched separately.
-    // For this implementation, we'll try to fetch from storage if possible, but ideally applyTheme receives overrides.
-
-    // Fetch overrides from storage
-    const overrides: Partial<Theme['typography']> & { maxWidth?: number; useMaxWidth?: boolean } =
-      {};
-    try {
-      const storage = (await chrome.storage.sync.get('preferences')) as {
-        preferences?: Partial<import('../types').AppState['preferences']>;
-      };
-      if (storage.preferences) {
-        const p = storage.preferences;
-        if (p.fontFamily) overrides.fontFamily = p.fontFamily;
-        if (p.codeFontFamily) overrides.codeFontFamily = p.codeFontFamily;
-        if (p.lineHeight) overrides.baseLineHeight = p.lineHeight;
-        if (p.maxWidth) overrides.maxWidth = p.maxWidth;
-        overrides.useMaxWidth = p.useMaxWidth;
-      }
-    } catch (e) {
-      debug.warn('ThemeEngine', 'Failed to load preference overrides', e);
-    }
+    // Fetch overrides from storage via the core adapter path
+    const overrides: ThemeOverrides = await this.core.getStorageOverrides();
 
     // Compile to CSS variables with overrides
     const cssVars = this.compileToCSSVariables(themeObj, overrides);
@@ -134,7 +149,6 @@ export class ThemeEngine {
     // Update mermaid theme
     try {
       const { mermaidRenderer } = await import('../renderers/mermaid-renderer');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mermaidRenderer.updateTheme(themeObj.mermaidTheme);
     } catch (error) {
       debug.error('ThemeEngine', 'Failed to update mermaid theme:', error);
@@ -148,32 +162,9 @@ export class ThemeEngine {
     });
 
     // Save current theme
-    this.currentTheme = themeObj;
+    this.core.setCurrentTheme(themeObj);
 
     debug.log('ThemeEngine', `Successfully applied theme: ${themeObj.name}`);
-  }
-
-  /**
-   * Get currently applied theme
-   */
-  getCurrentTheme(): Theme | null {
-    return this.currentTheme;
-  }
-
-  /**
-   * Get list of available themes
-   */
-  getAvailableThemes(): ThemeInfo[] {
-    return [
-      { name: 'github-light', displayName: 'GitHub Light', variant: 'light' },
-      { name: 'github-dark', displayName: 'GitHub Dark', variant: 'dark' },
-      { name: 'catppuccin-latte', displayName: 'Catppuccin Latte', variant: 'light' },
-      { name: 'catppuccin-frappe', displayName: 'Catppuccin Frappé', variant: 'light' },
-      { name: 'catppuccin-macchiato', displayName: 'Catppuccin Macchiato', variant: 'dark' },
-      { name: 'catppuccin-mocha', displayName: 'Catppuccin Mocha', variant: 'dark' },
-      { name: 'monokai', displayName: 'Monokai', variant: 'dark' },
-      { name: 'monokai-pro', displayName: 'Monokai Pro', variant: 'dark' },
-    ];
   }
 
   /**
@@ -195,75 +186,6 @@ export class ThemeEngine {
     // Return cleanup function
     return () => {
       mediaQuery.removeEventListener('change', handler);
-    };
-  }
-
-  /**
-   * Compile theme to CSS variables
-   */
-  compileToCSSVariables(
-    theme: Theme,
-    overrides: Partial<Theme['typography']> = {}
-  ): Record<string, string> {
-    return {
-      // Colors
-      '--md-bg': theme.colors.background,
-      '--md-bg-secondary': theme.colors.backgroundSecondary,
-      '--md-bg-tertiary': theme.colors.backgroundTertiary,
-      '--md-fg': theme.colors.foreground,
-      '--md-fg-secondary': theme.colors.foregroundSecondary,
-      '--md-fg-muted': theme.colors.foregroundMuted,
-      '--md-primary': theme.colors.primary,
-      '--md-secondary': theme.colors.secondary,
-      '--md-accent': theme.colors.accent,
-      '--md-heading': theme.colors.heading,
-      '--md-link': theme.colors.link,
-      '--md-link-hover': theme.colors.linkHover,
-      '--md-link-visited': theme.colors.linkVisited,
-      '--md-code-bg': theme.colors.codeBackground,
-      '--md-code-text': theme.colors.codeText,
-      '--md-code-keyword': theme.colors.codeKeyword,
-      '--md-code-string': theme.colors.codeString,
-      '--md-code-comment': theme.colors.codeComment,
-      '--md-code-function': theme.colors.codeFunction,
-      '--md-border': theme.colors.border,
-      '--md-border-light': theme.colors.borderLight,
-      '--md-border-heavy': theme.colors.borderHeavy,
-      '--md-selection': theme.colors.selection,
-      '--md-highlight': theme.colors.highlight,
-      '--md-shadow': theme.colors.shadow,
-      '--md-success': theme.colors.success,
-      '--md-warning': theme.colors.warning,
-      '--md-error': theme.colors.error,
-      '--md-info': theme.colors.info,
-      '--md-comment-highlight': theme.colors.commentHighlight,
-      '--md-comment-highlight-resolved': theme.colors.commentHighlightResolved,
-      '--md-comment-card-bg': theme.colors.commentCardBg,
-
-      // Typography (with overrides)
-      '--md-font-family': overrides.fontFamily || theme.typography.fontFamily,
-      '--md-font-family-heading':
-        theme.typography.headingFontFamily || overrides.fontFamily || theme.typography.fontFamily,
-      '--md-font-family-code': overrides.codeFontFamily || theme.typography.codeFontFamily,
-      '--md-font-size': theme.typography.baseFontSize,
-      '--md-line-height': (overrides.baseLineHeight || theme.typography.baseLineHeight).toString(),
-      '--md-h1-size': theme.typography.h1Size,
-      '--md-h2-size': theme.typography.h2Size,
-      '--md-h3-size': theme.typography.h3Size,
-      '--md-h4-size': theme.typography.h4Size,
-      '--md-h5-size': theme.typography.h5Size,
-      '--md-h6-size': theme.typography.h6Size,
-      '--md-font-weight': theme.typography.fontWeightNormal.toString(),
-      '--md-font-weight-bold': theme.typography.fontWeightBold.toString(),
-      '--md-heading-font-weight': theme.typography.headingFontWeight.toString(),
-
-      // Spacing
-      '--md-block-margin': theme.spacing.blockMargin,
-      '--md-paragraph-margin': theme.spacing.paragraphMargin,
-      '--md-list-item-margin': theme.spacing.listItemMargin,
-      '--md-heading-margin': theme.spacing.headingMargin,
-      '--md-code-block-padding': theme.spacing.codeBlockPadding,
-      '--md-table-cell-padding': theme.spacing.tableCellPadding,
     };
   }
 
