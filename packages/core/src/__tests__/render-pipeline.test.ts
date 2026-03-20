@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MessagingAdapter, IPCMessage } from '../adapters';
 
 // Mock heavy dependencies that live outside @mdview/core
-vi.mock('../../../../src/utils/dom-purifier', () => ({
+vi.mock('../utils/dom-purifier', () => ({
   domPurifier: {
     sanitize: (html: string) => html,
   },
@@ -38,7 +38,7 @@ vi.mock('../../../../src/comments/annotation-parser', () => ({
   })),
 }));
 
-vi.mock('../../../../src/utils/skeleton-renderer', () => ({
+vi.mock('../utils/skeleton-renderer', () => ({
   SkeletonRenderer: {
     generateSkeleton: vi.fn(() => '<div>skeleton</div>'),
     isHydrated: vi.fn(() => false),

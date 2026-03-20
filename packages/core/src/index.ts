@@ -44,6 +44,10 @@ export * from './utils/filename-generator';
 export * from './utils/toc-stripper';
 export { FileScanner } from './utils/file-scanner';
 export type { WatchFileOptions } from './utils/file-scanner';
+export { DOMPurifierUtil, domPurifier } from './utils/dom-purifier';
+export { SkeletonRenderer } from './utils/skeleton-renderer';
+export type { SkeletonSection } from './utils/skeleton-renderer';
+export { ScrollManager } from './utils/scroll-manager';
 
 // Markdown converter
 export { MarkdownConverter, markdownConverter } from './markdown-converter';
@@ -71,3 +75,10 @@ export type { RenderOptions, RenderProgress, ProgressCallback, RenderPipelineOpt
 
 // Platform adapters
 export * from './adapters';
+
+// Workers
+export { WorkerPool, workerPool } from './workers/worker-pool';
+export type { WorkerPoolOptions } from './workers/worker-pool';
+export { handleParseTask } from './workers/tasks/parse-task';
+export { handleHighlightTask } from './workers/tasks/highlight-task';
+export { handleMermaidTask } from './workers/tasks/mermaid-task';

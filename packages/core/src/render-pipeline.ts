@@ -8,7 +8,7 @@
 
 import { MarkdownConverter } from './markdown-converter';
 import { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extractor';
-import { domPurifier } from '../../../src/utils/dom-purifier';
+import { domPurifier } from './utils/dom-purifier';
 import { workerPool } from '../../../src/workers/worker-pool';
 import type {
   ConversionResult,
@@ -18,7 +18,7 @@ import type {
   CommentParseResult,
 } from './types/index';
 import { splitIntoSections } from './utils/section-splitter';
-import { SkeletonRenderer } from '../../../src/utils/skeleton-renderer';
+import { SkeletonRenderer } from './utils/skeleton-renderer';
 import type { MessagingAdapter } from './adapters';
 
 // ---------------------------------------------------------------------------
