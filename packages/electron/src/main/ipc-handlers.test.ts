@@ -14,6 +14,9 @@ vi.mock('electron', () => ({
   dialog: {
     showOpenDialog: vi.fn().mockResolvedValue({ canceled: false, filePaths: ['/tmp/test.md'] }),
   },
+  shell: {
+    openExternal: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 // Import after mock
@@ -42,6 +45,7 @@ function createMockDeps() {
       updateTabMetadata: vi.fn(),
       updateTabScrollPosition: vi.fn(),
       setSidebarVisible: vi.fn(),
+      setSidebarWidth: vi.fn(),
       setOpenFolder: vi.fn(),
     },
     cacheManager: {
@@ -111,7 +115,9 @@ describe('IPC Handlers', () => {
       IPC_CHANNELS.UPDATE_TAB_METADATA,
       IPC_CHANNELS.UPDATE_TAB_SCROLL,
       IPC_CHANNELS.SET_SIDEBAR_VISIBLE,
+      IPC_CHANNELS.SET_SIDEBAR_WIDTH,
       IPC_CHANNELS.SET_OPEN_FOLDER,
+      IPC_CHANNELS.OPEN_EXTERNAL,
       IPC_CHANNELS.LIST_DIRECTORY,
       IPC_CHANNELS.WATCH_DIRECTORY,
       IPC_CHANNELS.UNWATCH_DIRECTORY,
@@ -192,6 +198,20 @@ describe('IPC Handlers', () => {
       IPC_CHANNELS.FILE_CHANGED,
       '/tmp/test.md'
     );
+  });
+
+  it('SET_SIDEBAR_WIDTH should delegate to stateManager', async () => {
+    const handler = handlers.get(IPC_CHANNELS.SET_SIDEBAR_WIDTH);
+    await handler?.({}, 350);
+    expect(deps.stateManager.setSidebarWidth).toHaveBeenCalledWith(350);
+  });
+
+  it('OPEN_EXTERNAL should call shell.openExternal', async () => {
+    const electron = await import('electron');
+    const handler = handlers.get(IPC_CHANNELS.OPEN_EXTERNAL);
+    await handler?.({}, 'https://github.com/test');
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(electron.shell.openExternal).toHaveBeenCalledWith('https://github.com/test');
   });
 
   it('UNWATCH_FILE should clean up watcher', async () => {

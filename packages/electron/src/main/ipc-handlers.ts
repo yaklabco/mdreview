@@ -1,4 +1,4 @@
-import { ipcMain, dialog, type BrowserWindow } from 'electron';
+import { ipcMain, dialog, shell, type BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { StateManager } from './state-manager';
 import type { ElectronFileAdapter } from './adapters/file-adapter';
@@ -212,8 +212,16 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
     stateManager.setSidebarVisible(visible);
   });
 
+  ipcMain.handle(IPC_CHANNELS.SET_SIDEBAR_WIDTH, (_event, width: number) => {
+    stateManager.setSidebarWidth(width);
+  });
+
   ipcMain.handle(IPC_CHANNELS.SET_OPEN_FOLDER, (_event, path: string | null) => {
     stateManager.setOpenFolder(path);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL, async (_event, url: string) => {
+    await shell.openExternal(url);
   });
 
   // Directory service

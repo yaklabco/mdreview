@@ -242,6 +242,23 @@ describe('StateManager', () => {
       });
     });
 
+    describe('setSidebarWidth', () => {
+      it('should update sidebar width', () => {
+        manager.setSidebarWidth(300);
+        expect(manager.getWorkspaceState().sidebarWidth).toBe(300);
+      });
+
+      it('should clamp width to minimum 50', () => {
+        manager.setSidebarWidth(10);
+        expect(manager.getWorkspaceState().sidebarWidth).toBe(50);
+      });
+
+      it('should clamp width to maximum 800', () => {
+        manager.setSidebarWidth(1000);
+        expect(manager.getWorkspaceState().sidebarWidth).toBe(800);
+      });
+    });
+
     describe('setOpenFolder', () => {
       it('should set open folder path', () => {
         manager.setOpenFolder('/tmp/docs');

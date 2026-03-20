@@ -48,7 +48,9 @@ const api: MdviewPreloadAPI = {
   updateTabScroll: (tabId, position) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_TAB_SCROLL, tabId, position),
   setSidebarVisible: (visible) => ipcRenderer.invoke(IPC_CHANNELS.SET_SIDEBAR_VISIBLE, visible),
+  setSidebarWidth: (width) => ipcRenderer.invoke(IPC_CHANNELS.SET_SIDEBAR_WIDTH, width),
   setOpenFolder: (path) => ipcRenderer.invoke(IPC_CHANNELS.SET_OPEN_FOLDER, path),
+  openExternal: (url) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
 
   // Directory
   listDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.LIST_DIRECTORY, dirPath),

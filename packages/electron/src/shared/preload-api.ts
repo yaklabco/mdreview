@@ -53,7 +53,9 @@ export interface MdviewPreloadAPI {
   updateTabMetadata(tabId: string, metadata: Partial<TabState>): Promise<void>;
   updateTabScroll(tabId: string, position: number): Promise<void>;
   setSidebarVisible(visible: boolean): Promise<void>;
+  setSidebarWidth(width: number): Promise<void>;
   setOpenFolder(path: string | null): Promise<void>;
+  openExternal(url: string): Promise<void>;
 
   // Directory
   listDirectory(dirPath: string): Promise<DirectoryEntry[]>;

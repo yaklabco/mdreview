@@ -143,6 +143,11 @@ export class StateManager {
     this.persistWorkspace();
   }
 
+  setSidebarWidth(width: number): void {
+    this.workspace.sidebarWidth = Math.max(50, Math.min(800, width));
+    this.persistWorkspace();
+  }
+
   setOpenFolder(path: string | null): void {
     this.workspace.openFolderPath = path;
     this.persistWorkspace();

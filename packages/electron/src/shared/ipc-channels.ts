@@ -29,7 +29,9 @@ export const IPC_CHANNELS = {
   UPDATE_TAB_METADATA: 'mdview:update-tab-metadata',
   UPDATE_TAB_SCROLL: 'mdview:update-tab-scroll',
   SET_SIDEBAR_VISIBLE: 'mdview:set-sidebar-visible',
+  SET_SIDEBAR_WIDTH: 'mdview:set-sidebar-width',
   SET_OPEN_FOLDER: 'mdview:set-open-folder',
+  OPEN_EXTERNAL: 'mdview:open-external',
 
   // Directory
   LIST_DIRECTORY: 'mdview:list-directory',
