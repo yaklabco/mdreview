@@ -2,14 +2,17 @@
 
 import { TabManager } from './tab-manager';
 import { DocumentContext } from './document-context';
+import { StatusBar } from './status-bar';
 
 export class MDViewElectronViewer {
   private tabManager: TabManager;
+  private statusBar: StatusBar;
   private documents = new Map<string, DocumentContext>();
   private cleanupListeners: (() => void)[] = [];
 
   constructor() {
     this.tabManager = new TabManager();
+    this.statusBar = new StatusBar();
   }
 
   async initialize(): Promise<void> {
@@ -30,6 +33,11 @@ export class MDViewElectronViewer {
     }
     if (contentArea) {
       this.tabManager.setContentArea(contentArea);
+    }
+
+    const statusBarEl = document.getElementById('mdview-status-bar');
+    if (statusBarEl) {
+      this.statusBar.render(statusBarEl);
     }
 
     // Wire tab callbacks
@@ -95,6 +103,7 @@ export class MDViewElectronViewer {
         codeBlockCount: metadata.codeBlockCount,
       });
       await window.mdview.addRecentFile(filePath);
+      this.updateStatusBar(ctx);
     } catch (error) {
       console.error('[mdview] Error loading file:', error);
       tabContainer.innerHTML = `<p style="padding: 2rem; color: red;">Error loading file: ${String(error)}</p>`;
@@ -113,6 +122,7 @@ export class MDViewElectronViewer {
 
     if (this.documents.size === 0) {
       this.showEmptyState();
+      this.statusBar.clear();
     }
   }
 
@@ -136,6 +146,11 @@ export class MDViewElectronViewer {
     if (ctx && container) {
       container.scrollTop = ctx.getScrollPosition();
     }
+
+    // Update status bar for new active tab
+    if (ctx) {
+      this.updateStatusBar(ctx);
+    }
   }
 
   getTabCount(): number {
@@ -148,6 +163,18 @@ export class MDViewElectronViewer {
 
   getDocument(tabId: string): DocumentContext | undefined {
     return this.documents.get(tabId);
+  }
+
+  private updateStatusBar(ctx: DocumentContext): void {
+    const metadata = ctx.getMetadata();
+    this.statusBar.update({
+      filePath: metadata.filePath,
+      wordCount: metadata.wordCount,
+      headingCount: metadata.headingCount,
+      diagramCount: metadata.diagramCount,
+      codeBlockCount: metadata.codeBlockCount,
+      renderState: metadata.renderState,
+    });
   }
 
   private setupIPCListeners(): void {
