@@ -4,50 +4,15 @@
  */
 
 import type { AppState, ThemeName, CachedResult } from '@mdview/core';
-import { CacheManager } from '@mdview/core';
+import { CacheManager, DEFAULT_STATE } from '@mdview/core';
 import { debug } from '../utils/debug-logger';
-
-// Default state
-const defaultState: AppState = {
-  preferences: {
-    theme: 'github-light',
-    autoTheme: true,
-    lightTheme: 'github-light',
-    darkTheme: 'github-dark',
-    syntaxTheme: 'github',
-    autoReload: true,
-    lineNumbers: false,
-    enableHtml: false,
-    syncTabs: false,
-    logLevel: 'error',
-    showToc: false,
-    tocMaxDepth: 6,
-    tocAutoCollapse: false,
-    tocPosition: 'left',
-    commentsEnabled: true,
-    commentAuthor: '',
-    blockedSites: [], // Sites where MDView should not render
-  },
-  document: {
-    path: '',
-    content: '',
-    scrollPosition: 0,
-    renderState: 'pending',
-  },
-  ui: {
-    theme: null,
-    maximizedDiagram: null,
-    visibleDiagrams: new Set(),
-    tocVisible: false,
-  },
-};
 
 // Cache management (persists across page reloads)
 const cacheManager = new CacheManager({ maxSize: 50, maxAge: 3600000 });
 
 // State management
 class StateManager {
-  private state: AppState = defaultState;
+  private state: AppState = structuredClone(DEFAULT_STATE);
   private listeners: Map<string, Set<(state: AppState) => void>> = new Map();
 
   async initialize(): Promise<void> {
