@@ -33,6 +33,9 @@ export { parseComments } from './comments/comment-parser';
 // Comment manager
 export { CommentManager } from './comments/comment-manager';
 export type { CommentManagerAdapters } from './comments/comment-manager';
+// Comment UI
+export { CommentHighlighter } from './comments/comment-highlight';
+export { CommentUI } from './comments/comment-ui';
 // Context & utilities
 export * from './comments/comment-context';
 export * from './comments/source-position-map';
@@ -62,7 +65,7 @@ export { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extract
 export type { FrontmatterResult } from './frontmatter-extractor';
 
 // Debug logger
-export { DebugLogger, createDebugLogger, createDebug } from './utils/debug-logger';
+export { DebugLogger, createDebugLogger, createDebug, debug } from './utils/debug-logger';
 export type { DebugHelpers } from './utils/debug-logger';
 
 // Theme engine
@@ -85,6 +88,13 @@ export { SVGConverter } from './utils/svg-converter';
 export { DOCXGenerator } from './utils/docx-generator';
 export { PDFGenerator } from './utils/pdf-generator';
 export { ExportController } from './export-controller';
+
+// UI
+export { TocRenderer } from './ui/toc-renderer';
+
+// Lazy section renderer
+export { LazySectionRenderer } from './lazy-section-renderer';
+export type { LazySectionOptions } from './lazy-section-renderer';
 
 // Platform adapters
 export * from './adapters';
