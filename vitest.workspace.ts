@@ -16,4 +16,12 @@ export default defineWorkspace([
       include: ['src/**/*.test.ts'],
     },
   },
+  {
+    extends: './packages/electron/vitest.config.ts',
+    test: {
+      name: 'electron',
+      root: './packages/electron',
+      include: ['src/**/*.test.ts'],
+    },
+  },
 ]);
