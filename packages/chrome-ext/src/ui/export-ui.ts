@@ -2,15 +2,9 @@
 // This shim provides Chrome extension MessagingAdapter and platform-specific factories.
 // It will be removed in Phase 2.9
 
-import type { ExportUIOptions, MessagingAdapter, IPCMessage } from '@mdview/core';
+import type { ExportUIOptions } from '@mdview/core';
 import { ExportUI as CoreExportUI, type CoreExportUIOptions } from '@mdview/core';
-
-/** Chrome extension MessagingAdapter using chrome.runtime.sendMessage */
-class ChromeMessagingAdapter implements MessagingAdapter {
-  async send(message: IPCMessage): Promise<unknown> {
-    return chrome.runtime.sendMessage(message);
-  }
-}
+import { ChromeMessagingAdapter } from '../adapters';
 
 /**
  * ExportUI wrapper that injects Chrome-specific dependencies.

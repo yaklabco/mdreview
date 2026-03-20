@@ -8,30 +8,12 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
 
-import type { Theme, ThemeName, StorageAdapter, ThemeOverrides } from '@mdview/core';
+import type { Theme, ThemeName, ThemeOverrides } from '@mdview/core';
 import { ThemeEngine as CoreThemeEngine } from '@mdview/core';
 import { debug } from '../utils/debug-logger';
+import { ChromeStorageAdapter } from '../adapters';
 
 export type { ThemeInfo } from '@mdview/core';
-
-// ---------------------------------------------------------------------------
-// Chrome StorageAdapter
-// ---------------------------------------------------------------------------
-
-const chromeStorageAdapter: StorageAdapter = {
-  async getSync(keys: string | string[]): Promise<Record<string, unknown>> {
-    return chrome.storage.sync.get(keys) as Promise<Record<string, unknown>>;
-  },
-  async setSync(data: Record<string, unknown>): Promise<void> {
-    await chrome.storage.sync.set(data);
-  },
-  async getLocal(keys: string | string[]): Promise<Record<string, unknown>> {
-    return chrome.storage.local.get(keys) as Promise<Record<string, unknown>>;
-  },
-  async setLocal(data: Record<string, unknown>): Promise<void> {
-    await chrome.storage.local.set(data);
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Chrome ThemeEngine — composition over the core engine
@@ -41,7 +23,7 @@ export class ThemeEngine {
   private core: InstanceType<typeof CoreThemeEngine>;
 
   constructor() {
-    this.core = new CoreThemeEngine(chromeStorageAdapter);
+    this.core = new CoreThemeEngine(new ChromeStorageAdapter());
   }
 
   /**

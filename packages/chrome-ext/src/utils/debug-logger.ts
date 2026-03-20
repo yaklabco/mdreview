@@ -7,30 +7,9 @@
  * `debug` and `debugLogger` without any changes.
  */
 
-import type { StorageAdapter, LogLevel } from '@mdview/core';
+import type { LogLevel } from '@mdview/core';
 import { DebugLogger as CoreDebugLogger } from '@mdview/core';
-
-// ---------------------------------------------------------------------------
-// Chrome StorageAdapter (sync-only for preferences)
-// ---------------------------------------------------------------------------
-
-class ChromeStorageAdapter implements StorageAdapter {
-  async getSync(keys: string | string[]): Promise<Record<string, unknown>> {
-    return chrome.storage.sync.get(keys) as Promise<Record<string, unknown>>;
-  }
-
-  async setSync(data: Record<string, unknown>): Promise<void> {
-    await chrome.storage.sync.set(data);
-  }
-
-  async getLocal(keys: string | string[]): Promise<Record<string, unknown>> {
-    return chrome.storage.local.get(keys) as Promise<Record<string, unknown>>;
-  }
-
-  async setLocal(data: Record<string, unknown>): Promise<void> {
-    await chrome.storage.local.set(data);
-  }
-}
+import { ChromeStorageAdapter } from '../adapters';
 
 // ---------------------------------------------------------------------------
 // Singleton with Chrome adapter

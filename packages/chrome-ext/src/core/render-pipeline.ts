@@ -12,19 +12,8 @@ import {
   type RenderProgress,
   type ProgressCallback,
   type RenderPipelineOptions,
-  type MessagingAdapter,
-  type IPCMessage,
 } from '@mdview/core';
-
-// ---------------------------------------------------------------------------
-// Chrome MessagingAdapter — bridges core pipeline to chrome.runtime
-// ---------------------------------------------------------------------------
-
-class ChromeMessagingAdapter implements MessagingAdapter {
-  async send(message: IPCMessage): Promise<unknown> {
-    return chrome.runtime.sendMessage(message);
-  }
-}
+import { ChromeMessagingAdapter } from '../adapters';
 
 // ---------------------------------------------------------------------------
 // Re-export the pipeline class (consumers can still `new RenderPipeline()`)
