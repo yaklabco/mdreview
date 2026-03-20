@@ -10,9 +10,8 @@ import type { AppState } from '../types/index';
  * they are browser-specific and not extracted to core yet.
  */
 
-// Mock the browser-specific dependencies (comment-ui, comment-highlight)
-// These still live in src/comments/ and are imported via relative paths
-vi.mock('../../../../src/comments/comment-ui', () => {
+// Mock the DOM-dependent comment UI modules (now in core/src/comments/)
+vi.mock('../comments/comment-ui', () => {
   class MockCommentUI {
     setCurrentAuthor = vi.fn();
     renderCard = vi.fn().mockReturnValue(document.createElement('div'));
@@ -25,7 +24,7 @@ vi.mock('../../../../src/comments/comment-ui', () => {
   return { CommentUI: MockCommentUI };
 });
 
-vi.mock('../../../../src/comments/comment-highlight', () => {
+vi.mock('../comments/comment-highlight', () => {
   class MockCommentHighlighter {
     highlightComment = vi.fn();
     clearActive = vi.fn();

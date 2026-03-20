@@ -16,8 +16,8 @@
 
 import type { Comment, CommentParseResult, AppState, CommentTag } from '../types/index';
 import type { FileAdapter, IdentityAdapter } from '../adapters';
-import { CommentUI } from '../../../../src/comments/comment-ui';
-import { CommentHighlighter } from '../../../../src/comments/comment-highlight';
+import { CommentUI } from './comment-ui';
+import { CommentHighlighter } from './comment-highlight';
 import { parseComments } from './annotation-parser';
 import {
   addComment as serializerAddComment,
