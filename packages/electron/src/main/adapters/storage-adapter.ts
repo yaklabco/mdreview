@@ -1,4 +1,4 @@
-import type { StorageAdapter } from '@mdview/core';
+import type { StorageAdapter } from '@mdview/core/node';
 import type ElectronStore from 'electron-store';
 
 export class ElectronStorageAdapter implements StorageAdapter {

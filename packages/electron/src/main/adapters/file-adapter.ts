@@ -1,4 +1,4 @@
-import type { FileAdapter, FileWriteResult, FileChangeInfo } from '@mdview/core';
+import type { FileAdapter, FileWriteResult, FileChangeInfo } from '@mdview/core/node';
 import { readFile, writeFile } from 'fs/promises';
 import { createHash } from 'crypto';
 import { watch, type FSWatcher } from 'chokidar';

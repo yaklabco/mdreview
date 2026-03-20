@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog } from 'electron';
 import { join, extname, basename } from 'path';
 import ElectronStore from 'electron-store';
-import { CacheManager } from '@mdview/core';
+import { CacheManager } from '@mdview/core/node';
 import { ElectronStorageAdapter } from './adapters/storage-adapter';
 import { ElectronFileAdapter } from './adapters/file-adapter';
 import { ElectronIdentityAdapter } from './adapters/identity-adapter';

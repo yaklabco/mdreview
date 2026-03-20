@@ -72,6 +72,7 @@ export class CacheManager {
    * Get cached result by key
    */
   get(key: string): CachedResult | null {
+    if (!key) return null;
     const entry = this.cache.get(key);
 
     if (!entry) {

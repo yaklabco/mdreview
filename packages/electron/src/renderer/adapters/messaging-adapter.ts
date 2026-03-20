@@ -15,15 +15,23 @@ export class ElectronMessagingAdapter implements MessagingAdapter {
         const p = payload as {
           filePath: string;
           contentHash: string;
+          content: string;
           theme: string;
           preferences: Record<string, unknown>;
         };
-        return window.mdview.cacheGenerateKey(p.filePath, p.contentHash, p.theme, p.preferences);
+        const key = await window.mdview.cacheGenerateKey(
+          p.filePath,
+          p.contentHash || p.content,
+          p.theme,
+          p.preferences
+        );
+        return { key };
       }
 
       case 'CACHE_GET': {
         const key = (payload as { key: string }).key;
-        return window.mdview.cacheGet(key);
+        const result = await window.mdview.cacheGet(key);
+        return { result };
       }
 
       case 'CACHE_SET': {

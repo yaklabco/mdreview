@@ -177,6 +177,16 @@
   overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
+  max-width: var(--md-max-width, 980px);
+  margin: 0 auto;
+  padding: 45px;
+  width: 100%;
+}
+
+.mdview-tab-content *,
+.mdview-tab-content *::before,
+.mdview-tab-content *::after {
+  box-sizing: border-box;
 }
 
 /* Status bar */

@@ -3,7 +3,7 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ['@mdview/core'] })],
     build: {
       rollupOptions: {
         input: {
@@ -18,6 +18,10 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
+        },
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js',
         },
       },
     },

@@ -22,7 +22,7 @@ vi.mock('@mdview/core', async () => {
       this.hide = vi.fn();
     }),
     ExportUI: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-      this.render = vi.fn();
+      this.createExportButton = vi.fn().mockReturnValue(document.createElement('button'));
     }),
     CommentManager: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.initialize = vi.fn().mockResolvedValue(undefined);
@@ -130,6 +130,30 @@ describe('DocumentContext', () => {
     expect(metadata.title).toBe('test.md');
     // wordCount is 0 since RenderPipeline is mocked and doesn't populate DOM
     expect(typeof metadata.wordCount).toBe('number');
+  });
+
+  it('should complete full render pipeline without errors (ExportUI, TOC, Comments)', async () => {
+    // Enable all features
+    mockMdview.getState.mockResolvedValue({
+      preferences: {
+        theme: 'github-light',
+        autoReload: false,
+        showToc: true,
+        commentsEnabled: true,
+      },
+      document: { path: '', content: '', scrollPosition: 0, renderState: 'pending' },
+      ui: { theme: null, maximizedDiagram: null, visibleDiagrams: new Set() },
+    });
+
+    const { DocumentContext } = await import('./document-context');
+    const container = document.getElementById('test-container')!;
+    const ctx = new DocumentContext('tab-1');
+    const metadata = await ctx.load('/tmp/test.md', container);
+
+    expect(metadata.renderState).toBe('complete');
+    expect(metadata.filePath).toBe('/tmp/test.md');
+    // ExportUI button should have been appended
+    expect(container.querySelector('button')).not.toBeNull();
   });
 
   it('should store and return scroll position', async () => {
@@ -350,10 +374,10 @@ describe('DocumentContext', () => {
   describe('progress callback', () => {
     it('should call progress callback during render when set', async () => {
       const { RenderPipeline } = await import('@mdview/core');
-      let capturedProgressListener: ((p: { stage: string; percent: number }) => void) | null = null;
+      let capturedProgressListener: ((p: { stage: string; progress: number; message: string }) => void) | null = null;
       (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
         this.render = vi.fn().mockResolvedValue(undefined);
-        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; percent: number }) => void) => {
+        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; progress: number; message: string }) => void) => {
           capturedProgressListener = listener;
           return vi.fn();
         });
@@ -369,16 +393,16 @@ describe('DocumentContext', () => {
       await ctx.load('/tmp/test.md', container);
 
       expect(capturedProgressListener).not.toBeNull();
-      capturedProgressListener!({ stage: 'parsing', percent: 50 });
+      capturedProgressListener!({ stage: 'parsing', progress: 50, message: 'Parsing...' });
       expect(progressSpy).toHaveBeenCalledWith({ stage: 'parsing', percent: 50 });
     });
 
     it('should not throw when progress fires without a callback set', async () => {
       const { RenderPipeline } = await import('@mdview/core');
-      let capturedProgressListener: ((p: { stage: string; percent: number }) => void) | null = null;
+      let capturedProgressListener: ((p: { stage: string; progress: number; message: string }) => void) | null = null;
       (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
         this.render = vi.fn().mockResolvedValue(undefined);
-        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; percent: number }) => void) => {
+        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; progress: number; message: string }) => void) => {
           capturedProgressListener = listener;
           return vi.fn();
         });
@@ -390,15 +414,15 @@ describe('DocumentContext', () => {
 
       await ctx.load('/tmp/test.md', container);
 
-      expect(() => capturedProgressListener!({ stage: 'parsing', percent: 50 })).not.toThrow();
+      expect(() => capturedProgressListener!({ stage: 'parsing', progress: 50, message: 'Parsing...' })).not.toThrow();
     });
 
     it('should update callback via setOnProgress', async () => {
       const { RenderPipeline } = await import('@mdview/core');
-      let capturedProgressListener: ((p: { stage: string; percent: number }) => void) | null = null;
+      let capturedProgressListener: ((p: { stage: string; progress: number; message: string }) => void) | null = null;
       (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
         this.render = vi.fn().mockResolvedValue(undefined);
-        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; percent: number }) => void) => {
+        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; progress: number; message: string }) => void) => {
           capturedProgressListener = listener;
           return vi.fn();
         });
@@ -414,7 +438,7 @@ describe('DocumentContext', () => {
       await ctx.load('/tmp/test.md', container);
 
       ctx.setOnProgress(spy2);
-      capturedProgressListener!({ stage: 'highlighting', percent: 80 });
+      capturedProgressListener!({ stage: 'highlighting', progress: 80, message: 'Highlighting...' });
 
       expect(spy1).not.toHaveBeenCalled();
       expect(spy2).toHaveBeenCalledWith({ stage: 'highlighting', percent: 80 });

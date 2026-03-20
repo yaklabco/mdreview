@@ -28,14 +28,10 @@ export class MDViewElectronViewer {
   async initialize(): Promise<void> {
     const tabBar = document.getElementById('mdview-tab-bar');
     const contentArea = document.getElementById('mdview-content-area');
-    const container = document.getElementById('mdview-container');
 
     if (!tabBar || !contentArea) {
-      // Fallback: legacy single-container mode
-      if (!container) {
-        console.error('[mdview] No workspace elements found');
-        return;
-      }
+      console.error('[mdview] No workspace elements found');
+      return;
     }
 
     if (tabBar) {

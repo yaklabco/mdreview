@@ -23,7 +23,7 @@ vi.mock('@mdview/core', async () => {
       this.hide = vi.fn();
     }),
     ExportUI: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-      this.render = vi.fn();
+      this.createExportButton = vi.fn().mockReturnValue(document.createElement('button'));
     }),
     CommentManager: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.initialize = vi.fn().mockResolvedValue(undefined);
@@ -129,9 +129,7 @@ describe('MDViewElectronViewer', () => {
         <div id="mdview-sidebar"></div>
         <div id="mdview-main">
           <div id="mdview-tab-bar"></div>
-          <div id="mdview-content-area">
-            <div id="mdview-container"></div>
-          </div>
+          <div id="mdview-content-area"></div>
           <div id="mdview-status-bar"></div>
         </div>
       </div>

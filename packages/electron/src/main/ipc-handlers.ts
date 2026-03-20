@@ -1,4 +1,5 @@
 import { ipcMain, dialog, shell, type BrowserWindow } from 'electron';
+import { createHash } from 'crypto';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { StateManager } from './state-manager';
 import type { ElectronFileAdapter } from './adapters/file-adapter';
@@ -6,7 +7,7 @@ import type { ElectronIdentityAdapter } from './adapters/identity-adapter';
 import type { ElectronExportAdapter } from './adapters/export-adapter';
 import type { RecentFilesManager } from './recent-files';
 import type { DirectoryService } from './directory-service';
-import type { CacheManager, CachedResult, Preferences } from '@mdview/core';
+import type { CacheManager, CachedResult, Preferences } from '@mdview/core/node';
 import type { TabState } from '../shared/workspace-types';
 
 export interface IPCHandlerDeps {
@@ -48,14 +49,15 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
 
   ipcMain.handle(
     IPC_CHANNELS.CACHE_GENERATE_KEY,
-    async (
+    (
       _event,
       filePath: string,
       contentHash: string,
       theme: string,
       prefs: Record<string, unknown>
     ) => {
-      return cacheManager.generateKey(filePath, contentHash, theme, prefs);
+      const input = JSON.stringify({ path: filePath, content: contentHash, theme, prefs });
+      return createHash('sha256').update(input).digest('hex');
     }
   );
 

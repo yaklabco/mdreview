@@ -79,7 +79,7 @@ export class DocumentContext {
 
     const cleanupProgress = this.renderPipeline.onProgress((progress: RenderProgress) => {
       if (this.onProgressCallback) {
-        this.onProgressCallback({ stage: progress.stage, percent: progress.percent });
+        this.onProgressCallback({ stage: progress.stage, percent: progress.progress });
       }
     });
 
@@ -112,7 +112,7 @@ export class DocumentContext {
 
     // Post-render: Export UI
     this.exportUI = new ExportUI({ messaging: new ElectronMessagingAdapter() });
-    this.exportUI.render(container);
+    container.appendChild(this.exportUI.createExportButton());
 
     // Post-render: Comments
     if (state.preferences.commentsEnabled !== false) {

@@ -66,12 +66,14 @@ describe('ElectronMessagingAdapter', () => {
       'github-light',
       {}
     );
-    expect(result).toBe('key-123');
+    expect(result).toEqual({ key: 'key-123' });
   });
 
-  it('should route CACHE_GET with key', async () => {
-    await adapter.send({ type: 'CACHE_GET', payload: { key: 'test-key' } });
+  it('should route CACHE_GET with key and wrap result', async () => {
+    mockMdview.cacheGet.mockResolvedValue({ html: '<p>cached</p>', timestamp: 123 });
+    const result = await adapter.send({ type: 'CACHE_GET', payload: { key: 'test-key' } });
     expect(mockMdview.cacheGet).toHaveBeenCalledWith('test-key');
+    expect(result).toEqual({ result: { html: '<p>cached</p>', timestamp: 123 } });
   });
 
   it('should route CHECK_FILE_CHANGED with url and hash', async () => {

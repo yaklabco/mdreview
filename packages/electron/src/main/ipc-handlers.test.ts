@@ -144,10 +144,11 @@ describe('IPC Handlers', () => {
     expect(mockWin.webContents.send).toHaveBeenCalledWith(IPC_CHANNELS.PREFERENCES_UPDATED, prefs);
   });
 
-  it('CACHE_GENERATE_KEY should delegate to cacheManager', async () => {
+  it('CACHE_GENERATE_KEY should return a hex hash string', async () => {
     const handler = handlers.get(IPC_CHANNELS.CACHE_GENERATE_KEY);
     const result = await handler?.({}, 'path', 'hash', 'theme', {});
-    expect(result).toBe('cache-key-123');
+    expect(typeof result).toBe('string');
+    expect(result).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('READ_FILE should delegate to fileAdapter', async () => {
