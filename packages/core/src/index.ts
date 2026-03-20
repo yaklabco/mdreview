@@ -39,6 +39,8 @@ export * from './comments/emoji-data';
 export * from './utils/section-splitter';
 export * from './utils/filename-generator';
 export * from './utils/toc-stripper';
+export { FileScanner } from './utils/file-scanner';
+export type { WatchFileOptions } from './utils/file-scanner';
 
 // Markdown converter
 export { MarkdownConverter, markdownConverter } from './markdown-converter';
