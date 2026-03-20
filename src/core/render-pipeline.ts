@@ -347,13 +347,22 @@ export class RenderPipeline {
     // Re-setup image lazy loading
     this.setupImageLazyLoading(container);
 
-    // Re-initialize Mermaid diagrams (they may need panzoom reinitialization)
-    const mermaidContainers = container.querySelectorAll('.mermaid-container.mermaid-ready');
-    if (mermaidContainers.length > 0) {
+    // Re-initialize Mermaid diagrams
+    const pendingMermaid = container.querySelectorAll('.mermaid-container.mermaid-pending');
+    const readyMermaid = container.querySelectorAll('.mermaid-container.mermaid-ready');
+
+    if (pendingMermaid.length > 0 || readyMermaid.length > 0) {
       try {
-        // Mermaid diagrams should already have SVG from cache
-        // Controls will be re-added automatically when mermaid module loads
-        await import('../renderers/mermaid-renderer');
+        const { mermaidRenderer } = await import('../renderers/mermaid-renderer');
+
+        // Re-render any pending diagrams that were cached before rendering completed
+        if (pendingMermaid.length > 0) {
+          debug.info(
+            'RenderPipeline',
+            `Re-rendering ${pendingMermaid.length} pending mermaid diagram(s) from stale cache`
+          );
+          await mermaidRenderer.renderAll(container);
+        }
       } catch (error) {
         debug.error('RenderPipeline', 'Failed to reinitialize mermaid:', error);
       }
@@ -378,11 +387,11 @@ export class RenderPipeline {
       await this.applySyntaxHighlighting(container);
     }
 
-    // CRITICAL: Mark Mermaid blocks (actual rendering happens lazily on intersection)
-    debug.debug('RenderPipeline', 'Marking Mermaid blocks...');
-    this.markMermaidBlocks(container);
+    // CRITICAL: Mark and render Mermaid blocks (awaited so cache captures rendered state)
+    debug.debug('RenderPipeline', 'Rendering Mermaid blocks...');
+    await this.markAndRenderMermaidBlocks(container);
 
-    debug.debug('RenderPipeline', 'Syntax highlighting complete');
+    debug.debug('RenderPipeline', 'Enhancement complete');
 
     // NON-CRITICAL: Schedule remaining enhancements during idle time
     // This improves perceived performance by not blocking the main render
@@ -914,18 +923,18 @@ export class RenderPipeline {
   }
 
   /**
-   * Mark Mermaid blocks for rendering
+   * Mark Mermaid blocks for rendering and await completion
    */
-  private markMermaidBlocks(container: HTMLElement): void {
+  private async markAndRenderMermaidBlocks(container: HTMLElement): Promise<void> {
     const mermaidBlocks = container.querySelectorAll('.mermaid-container');
     mermaidBlocks.forEach((block) => {
       block.classList.add('mermaid-pending');
     });
 
-    // Initialize Mermaid renderer
-    this.renderMermaidDiagrams(container).catch((error) => {
-      debug.error('RenderPipeline', 'Mermaid rendering catch error:', error);
-    });
+    // Await mermaid rendering so cache captures the rendered state
+    if (mermaidBlocks.length > 0) {
+      await this.renderMermaidDiagrams(container);
+    }
   }
 
   /**

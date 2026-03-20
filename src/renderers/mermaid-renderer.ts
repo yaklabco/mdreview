@@ -278,13 +278,27 @@ export class MermaidRenderer {
       // Generate unique ID for SVG
       const svgId = `mermaid-svg-${containerId}`;
 
-      // Render with timeout
+      // Render with timeout and proper cleanup
+      let timeoutId: ReturnType<typeof setTimeout>;
       const renderPromise = mermaid.render(svgId, code);
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Render timeout')), 5000);
+        timeoutId = setTimeout(() => reject(new Error('Render timeout')), 5000);
       });
 
-      const result = await Promise.race([renderPromise, timeoutPromise]);
+      let result: { svg: string };
+      try {
+        result = await Promise.race([renderPromise, timeoutPromise]);
+        clearTimeout(timeoutId!);
+      } catch (error) {
+        clearTimeout(timeoutId!);
+        // Clean up any orphaned DOM elements that mermaid.render() may have created
+        // mermaid creates temporary SVG elements with the svgId during rendering
+        const orphanedSvg = document.getElementById(svgId);
+        if (orphanedSvg) {
+          orphanedSvg.remove();
+        }
+        throw error;
+      }
 
       // Clear loading state
       container.innerHTML = '';
