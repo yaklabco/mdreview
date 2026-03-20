@@ -51,3 +51,6 @@ export type { CacheOptions } from './cache-manager';
 // Frontmatter extractor
 export { extractFrontmatter, renderFrontmatterHtml } from './frontmatter-extractor';
 export type { FrontmatterResult } from './frontmatter-extractor';
+
+// Platform adapters
+export * from './adapters';
