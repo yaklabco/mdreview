@@ -1,265 +1,251 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 
-import {
-  RenderPipeline,
-  ThemeEngine,
-  TocRenderer,
-  ExportUI,
-  CommentManager,
-  FileScanner,
-  type AppState,
-  type RenderProgress,
-  type Preferences,
-} from '@mdview/core';
-import {
-  ElectronMessagingAdapter,
-  ElectronRendererStorageAdapter,
-  ElectronRendererFileAdapter,
-  ElectronRendererIdentityAdapter,
-  ElectronRendererExportAdapter,
-} from './adapters';
+import { TabManager } from './tab-manager';
+import { DocumentContext } from './document-context';
 
 export class MDViewElectronViewer {
-  private state: AppState | null = null;
-  private renderPipeline: RenderPipeline;
-  private themeEngine: ThemeEngine;
-  private fileAdapter: ElectronRendererFileAdapter;
-  private identityAdapter: ElectronRendererIdentityAdapter;
-  private exportAdapter: ElectronRendererExportAdapter;
-  private tocRenderer: TocRenderer | null = null;
-  private exportUI: ExportUI | null = null;
-  private commentManager: CommentManager | null = null;
-  private autoReloadCleanup: (() => void) | null = null;
+  private tabManager: TabManager;
+  private documents = new Map<string, DocumentContext>();
   private cleanupListeners: (() => void)[] = [];
 
   constructor() {
-    const messaging = new ElectronMessagingAdapter();
-    const storage = new ElectronRendererStorageAdapter();
-    this.fileAdapter = new ElectronRendererFileAdapter();
-    this.identityAdapter = new ElectronRendererIdentityAdapter();
-    this.exportAdapter = new ElectronRendererExportAdapter();
-
-    this.renderPipeline = new RenderPipeline({ messaging });
-    this.themeEngine = new ThemeEngine(storage);
+    this.tabManager = new TabManager();
   }
 
   async initialize(): Promise<void> {
+    const tabBar = document.getElementById('mdview-tab-bar');
+    const contentArea = document.getElementById('mdview-content-area');
     const container = document.getElementById('mdview-container');
-    if (!container) {
-      console.error('[mdview] No #mdview-container found');
+
+    if (!tabBar || !contentArea) {
+      // Fallback: legacy single-container mode
+      if (!container) {
+        console.error('[mdview] No workspace elements found');
+        return;
+      }
+    }
+
+    if (tabBar) {
+      this.tabManager.render(tabBar);
+    }
+    if (contentArea) {
+      this.tabManager.setContentArea(contentArea);
+    }
+
+    // Wire tab callbacks
+    this.tabManager.onTabClick((tabId) => {
+      this.switchTab(tabId);
+    });
+
+    this.tabManager.onTabClose((tabId) => {
+      void this.closeFile(tabId);
+    });
+
+    // Listen for IPC events from main process
+    this.setupIPCListeners();
+
+    // Check for initial file from CLI args
+    try {
+      const filePath = await window.mdview.getOpenFilePath();
+      if (filePath) {
+        await this.openFile(filePath);
+      } else {
+        this.showEmptyState();
+      }
+    } catch (error) {
+      console.error('[mdview] Initialization error:', error);
+    }
+  }
+
+  async openFile(filePath: string): Promise<void> {
+    // Check if already open
+    for (const [tabId, ctx] of this.documents) {
+      if (ctx.getFilePath() === filePath) {
+        this.switchTab(tabId);
+        return;
+      }
+    }
+
+    // Open tab in main process state
+    const tabState = await window.mdview.openTab(filePath);
+
+    // Create tab UI
+    this.tabManager.createTab(tabState.id, filePath, tabState.title);
+    const tabContainer = this.tabManager.getTabContainer(tabState.id);
+
+    if (!tabContainer) {
+      console.error('[mdview] Failed to create tab container');
       return;
     }
 
+    // Hide empty state
+    this.hideEmptyState();
+
+    // Create document context and load
+    const ctx = new DocumentContext(tabState.id);
+    this.documents.set(tabState.id, ctx);
+
     try {
-      // 1. Get file path from main process
-      const filePath = await window.mdview.getOpenFilePath();
-      if (!filePath) {
-        container.innerHTML =
-          '<p style="padding: 2rem; color: #666;">No file specified. Drag a .md file onto the window or open one from the command line.</p>';
-        return;
+      const metadata = await ctx.load(filePath, tabContainer);
+      await window.mdview.updateTabMetadata(tabState.id, {
+        renderState: metadata.renderState,
+        wordCount: metadata.wordCount,
+        headingCount: metadata.headingCount,
+        diagramCount: metadata.diagramCount,
+        codeBlockCount: metadata.codeBlockCount,
+      });
+      await window.mdview.addRecentFile(filePath);
+    } catch (error) {
+      console.error('[mdview] Error loading file:', error);
+      tabContainer.innerHTML = `<p style="padding: 2rem; color: red;">Error loading file: ${String(error)}</p>`;
+    }
+  }
+
+  async closeFile(tabId: string): Promise<void> {
+    const ctx = this.documents.get(tabId);
+    if (ctx) {
+      ctx.dispose();
+      this.documents.delete(tabId);
+    }
+
+    this.tabManager.closeTab(tabId);
+    await window.mdview.closeTab(tabId);
+
+    if (this.documents.size === 0) {
+      this.showEmptyState();
+    }
+  }
+
+  switchTab(tabId: string): void {
+    // Save scroll position of current tab
+    const currentTabId = this.tabManager.getActiveTab();
+    if (currentTabId) {
+      const currentCtx = this.documents.get(currentTabId);
+      const currentContainer = this.tabManager.getTabContainer(currentTabId);
+      if (currentCtx && currentContainer) {
+        currentCtx.setScrollPosition(currentContainer.scrollTop);
       }
+    }
 
-      // 2. Load state/preferences
-      this.state = await window.mdview.getState();
+    this.tabManager.activateTab(tabId);
+    void window.mdview.setActiveTab(tabId);
 
-      // 3. Read file
-      const content = await window.mdview.readFile(filePath);
-      const fileSize = FileScanner.getFileSize(content);
+    // Restore scroll position
+    const ctx = this.documents.get(tabId);
+    const container = this.tabManager.getTabContainer(tabId);
+    if (ctx && container) {
+      container.scrollTop = ctx.getScrollPosition();
+    }
+  }
 
-      // 4. Create loading UI
-      const loadingDiv = this.createLoadingOverlay();
-      const progressIndicator = this.createProgressIndicator();
-      document.body.appendChild(loadingDiv);
-      document.body.appendChild(progressIndicator);
+  getTabCount(): number {
+    return this.tabManager.getTabCount();
+  }
 
-      // Activate body class for CSS scoping
-      document.body.classList.add('mdview-active');
+  getActiveTabId(): string | null {
+    return this.tabManager.getActiveTab();
+  }
 
-      // 5. Apply theme
-      const theme = this.state.preferences.theme || 'github-light';
-      await this.themeEngine.applyTheme(theme);
+  getDocument(tabId: string): DocumentContext | undefined {
+    return this.documents.get(tabId);
+  }
 
-      // 6. Set up progress callback
-      const cleanupProgress = this.renderPipeline.onProgress((progress: RenderProgress) => {
-        this.updateProgress(progressIndicator, loadingDiv, progress);
-      });
+  private setupIPCListeners(): void {
+    const unsubOpenFile = window.mdview.onOpenFile((path: string) => {
+      void this.openFile(path);
+    });
+    this.cleanupListeners.push(unsubOpenFile);
 
-      // 7. Render
-      await this.renderPipeline.render({
-        container,
-        markdown: content,
-        progressive: fileSize > 500000,
-        filePath,
-        theme,
-        preferences: this.state.preferences,
-        useCache: true,
-        useWorkers: false, // Workers not available in Electron renderer with contextIsolation
-      });
-
-      cleanupProgress();
-      loadingDiv.remove();
-
-      // 8. Post-render: TOC
-      if (this.state.preferences.showToc) {
-        const headings = this.extractHeadings(container);
-        if (headings.length > 0) {
-          this.tocRenderer = new TocRenderer(headings, {
-            maxDepth: this.state.preferences.tocMaxDepth ?? 6,
-            autoCollapse: this.state.preferences.tocAutoCollapse ?? false,
-            position: this.state.preferences.tocPosition ?? 'left',
-            style: this.state.preferences.tocStyle ?? 'floating',
-          });
-          this.tocRenderer.render(container);
+    const unsubMenuCommand = window.mdview.onMenuCommand((command: string) => {
+      if (command.startsWith('open:')) {
+        void this.openFile(command.slice(5));
+      } else if (command === 'close-tab') {
+        const activeTab = this.tabManager.getActiveTab();
+        if (activeTab) {
+          void this.closeFile(activeTab);
         }
       }
-
-      // 9. Post-render: Export UI
-      this.exportUI = new ExportUI({
-        messaging: new ElectronMessagingAdapter(),
-      });
-      this.exportUI.render(container);
-
-      // 10. Post-render: Comments
-      if (this.state.preferences.commentsEnabled !== false) {
-        this.commentManager = new CommentManager({
-          file: this.fileAdapter,
-          identity: this.identityAdapter,
-        });
-        await this.commentManager.initialize(content, filePath, container);
-      }
-
-      // 11. Auto-reload
-      if (this.state.preferences.autoReload) {
-        this.setupAutoReload(filePath, container, content);
-      }
-
-      // 12. Listen for preference/theme updates from main
-      this.setupEventListeners(container, filePath);
-    } catch (error) {
-      console.error('[mdview] Initialization error:', error);
-      container.innerHTML = `<p style="padding: 2rem; color: red;">Error loading file: ${String(error)}</p>`;
-    }
-  }
-
-  private createLoadingOverlay(): HTMLElement {
-    const div = document.createElement('div');
-    div.id = 'mdview-loading-overlay';
-    div.className = 'mdview-loading';
-    div.textContent = 'Rendering markdown...';
-    return div;
-  }
-
-  private createProgressIndicator(): HTMLElement {
-    const div = document.createElement('div');
-    div.id = 'mdview-progress-indicator';
-    div.innerHTML = `
-      <div class="progress-text">Rendering... 0%</div>
-      <div class="progress-bar-container">
-        <div class="progress-bar-fill" style="width: 0%"></div>
-      </div>
-    `;
-    return div;
-  }
-
-  private updateProgress(
-    indicator: HTMLElement,
-    loadingDiv: HTMLElement,
-    progress: RenderProgress
-  ): void {
-    const pct = Math.round(progress.progress);
-    const text = indicator.querySelector('.progress-text');
-    const bar = indicator.querySelector('.progress-bar-fill');
-
-    if (text) text.textContent = `${pct}%`;
-    if (bar) bar.style.width = `${pct}%`;
-
-    if (progress.progress > 5 && loadingDiv.style.display !== 'none') {
-      loadingDiv.style.display = 'none';
-    }
-
-    if (progress.progress >= 100) {
-      indicator.classList.add('complete');
-      setTimeout(() => indicator.remove(), 1000);
-    }
-  }
-
-  private extractHeadings(container: HTMLElement): { level: number; text: string; id: string }[] {
-    const headings: { level: number; text: string; id: string }[] = [];
-    container.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
-      const level = parseInt(el.tagName.charAt(1), 10);
-      headings.push({
-        level,
-        text: el.textContent || '',
-        id: el.id || '',
-      });
     });
-    return headings;
-  }
+    this.cleanupListeners.push(unsubMenuCommand);
 
-  private setupAutoReload(filePath: string, container: HTMLElement, initialContent: string): void {
-    let lastContent = initialContent;
-    let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const unwatch = this.fileAdapter.watch(filePath, () => {
-      if (reloadTimeout) clearTimeout(reloadTimeout);
-      reloadTimeout = setTimeout(() => {
-        void (async () => {
-          try {
-            const newContent = await this.fileAdapter.readFile(filePath);
-            if (newContent !== lastContent) {
-              lastContent = newContent;
-              await this.renderPipeline.render({
-                container,
-                markdown: newContent,
-                progressive: false,
-                filePath,
-                theme: this.state?.preferences.theme || 'github-light',
-                preferences: this.state?.preferences || ({} as Preferences),
-                useCache: true,
-                useWorkers: false,
-              });
-            }
-          } catch (err) {
-            console.error('[mdview] Auto-reload error:', err);
-          }
-        })();
-      }, 500);
-    });
-
-    this.autoReloadCleanup = unwatch;
-  }
-
-  private setupEventListeners(_container: HTMLElement, filePath: string): void {
-    const unsubPrefs = window.mdview.onPreferencesUpdated((prefs) => {
-      if (!this.state) return;
-      Object.assign(this.state.preferences, prefs);
-
-      if ('theme' in prefs) {
-        void this.themeEngine.applyTheme(this.state.preferences.theme);
-      }
+    const unsubPrefs = window.mdview.onPreferencesUpdated(() => {
+      // Preferences changes could trigger re-renders
     });
     this.cleanupListeners.push(unsubPrefs);
 
-    const unsubTheme = window.mdview.onThemeChanged((theme) => {
-      void this.themeEngine.applyTheme(theme as AppState['preferences']['theme']);
+    const unsubTheme = window.mdview.onThemeChanged(() => {
+      // Theme changes could trigger re-applies
     });
     this.cleanupListeners.push(unsubTheme);
 
-    // Clean up on page unload
     window.addEventListener('beforeunload', () => {
-      this.dispose(filePath);
+      this.dispose();
     });
   }
 
-  private dispose(filePath: string): void {
-    if (this.autoReloadCleanup) {
-      this.autoReloadCleanup();
-      this.autoReloadCleanup = null;
+  private showEmptyState(): void {
+    const contentArea = document.getElementById('mdview-content-area');
+    if (!contentArea) return;
+
+    let emptyState = document.getElementById('mdview-empty-state');
+    if (!emptyState) {
+      emptyState = document.createElement('div');
+      emptyState.id = 'mdview-empty-state';
+      emptyState.innerHTML = `
+        <div class="empty-state-content">
+          <h2>mdview</h2>
+          <p>Open a file to get started</p>
+          <div class="empty-state-actions">
+            <button id="empty-open-file" class="empty-state-btn">Open File</button>
+            <button id="empty-open-folder" class="empty-state-btn">Open Folder</button>
+          </div>
+        </div>
+      `;
+      contentArea.appendChild(emptyState);
+
+      document.getElementById('empty-open-file')?.addEventListener('click', () => {
+        void this.handleOpenFileDialog();
+      });
+      document.getElementById('empty-open-folder')?.addEventListener('click', () => {
+        void this.handleOpenFolderDialog();
+      });
     }
+
+    emptyState.style.display = '';
+  }
+
+  private hideEmptyState(): void {
+    const emptyState = document.getElementById('mdview-empty-state');
+    if (emptyState) {
+      emptyState.style.display = 'none';
+    }
+  }
+
+  private async handleOpenFileDialog(): Promise<void> {
+    const paths = await window.mdview.showOpenFileDialog();
+    if (paths) {
+      for (const p of paths) {
+        await this.openFile(p);
+      }
+    }
+  }
+
+  private async handleOpenFolderDialog(): Promise<void> {
+    const folderPath = await window.mdview.showOpenFolderDialog();
+    if (folderPath) {
+      await window.mdview.setOpenFolder(folderPath);
+    }
+  }
+
+  private dispose(): void {
+    for (const ctx of this.documents.values()) {
+      ctx.dispose();
+    }
+    this.documents.clear();
     for (const cleanup of this.cleanupListeners) {
       cleanup();
     }
     this.cleanupListeners = [];
-    void window.mdview.unwatchFile(filePath);
+    this.tabManager.dispose();
   }
 }
