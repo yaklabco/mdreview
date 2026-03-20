@@ -1,1 +1,5 @@
-console.log('[mdview] Electron renderer loaded');
+import './styles/content.css';
+import { MDViewElectronViewer } from './viewer';
+
+const viewer = new MDViewElectronViewer();
+void viewer.initialize();
