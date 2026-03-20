@@ -21,13 +21,11 @@
   "dependencies": {
     "@jamesainslie/docx": "^9.5.1-svg.1",
     "dompurify": "^3.0.6",
-    "highlight.js": "^11.9.0",
     "markdown-it-anchor": "^8.6.7",
     "markdown-it-attrs": "^4.1.6",
     "markdown-it-emoji": "^3.0.0",
     "markdown-it-footnote": "^4.0.0",
-    "markdown-it-task-lists": "^2.1.1",
-    "panzoom": "^9.4.3"
+    "markdown-it-task-lists": "^2.1.1"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0",
@@ -44,7 +42,6 @@
     "jsdom": "^27.2.0",
     "lint-staged": "^16.2.7",
     "markdown-it": "^14.1.0",
-    "mermaid": "^11.12.1",
     "playwright": "^1.48.0",
     "prettier": "^3.1.0",
     "sharp": "^0.34.5",
