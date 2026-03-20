@@ -11,6 +11,9 @@ vi.mock('electron', () => ({
     }),
     removeHandler: vi.fn(),
   },
+  dialog: {
+    showOpenDialog: vi.fn().mockResolvedValue({ canceled: false, filePaths: ['/tmp/test.md'] }),
+  },
 }));
 
 // Import after mock
@@ -25,6 +28,21 @@ function createMockDeps() {
         ui: { theme: null },
       }),
       updatePreferences: vi.fn(),
+      getWorkspaceState: vi.fn().mockReturnValue({
+        tabs: [],
+        activeTabId: null,
+        sidebarVisible: true,
+        sidebarWidth: 250,
+        openFolderPath: null,
+        statusBarVisible: true,
+      }),
+      openTab: vi.fn().mockReturnValue({ id: 'tab-1', filePath: '/tmp/test.md', title: 'test.md' }),
+      closeTab: vi.fn(),
+      setActiveTab: vi.fn(),
+      updateTabMetadata: vi.fn(),
+      updateTabScrollPosition: vi.fn(),
+      setSidebarVisible: vi.fn(),
+      setOpenFolder: vi.fn(),
     },
     cacheManager: {
       generateKey: vi.fn().mockResolvedValue('cache-key-123'),
@@ -81,6 +99,22 @@ describe('IPC Handlers', () => {
       IPC_CHANNELS.SAVE_FILE,
       IPC_CHANNELS.PRINT_TO_PDF,
       IPC_CHANNELS.GET_OPEN_FILE_PATH,
+      IPC_CHANNELS.SHOW_OPEN_FILE_DIALOG,
+      IPC_CHANNELS.SHOW_OPEN_FOLDER_DIALOG,
+      IPC_CHANNELS.GET_RECENT_FILES,
+      IPC_CHANNELS.ADD_RECENT_FILE,
+      IPC_CHANNELS.CLEAR_RECENT_FILES,
+      IPC_CHANNELS.GET_WORKSPACE_STATE,
+      IPC_CHANNELS.OPEN_TAB,
+      IPC_CHANNELS.CLOSE_TAB,
+      IPC_CHANNELS.SET_ACTIVE_TAB,
+      IPC_CHANNELS.UPDATE_TAB_METADATA,
+      IPC_CHANNELS.UPDATE_TAB_SCROLL,
+      IPC_CHANNELS.SET_SIDEBAR_VISIBLE,
+      IPC_CHANNELS.SET_OPEN_FOLDER,
+      IPC_CHANNELS.LIST_DIRECTORY,
+      IPC_CHANNELS.WATCH_DIRECTORY,
+      IPC_CHANNELS.UNWATCH_DIRECTORY,
     ];
     for (const channel of expectedChannels) {
       expect(handlers.has(channel)).toBe(true);

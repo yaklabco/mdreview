@@ -1,10 +1,13 @@
-import { ipcMain, type BrowserWindow } from 'electron';
+import { ipcMain, dialog, type BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { StateManager } from './state-manager';
 import type { ElectronFileAdapter } from './adapters/file-adapter';
 import type { ElectronIdentityAdapter } from './adapters/identity-adapter';
 import type { ElectronExportAdapter } from './adapters/export-adapter';
+import type { RecentFilesManager } from './recent-files';
+import type { DirectoryService } from './directory-service';
 import type { CacheManager, CachedResult, Preferences } from '@mdview/core';
+import type { TabState } from '../shared/workspace-types';
 
 export interface IPCHandlerDeps {
   stateManager: StateManager;
@@ -12,6 +15,8 @@ export interface IPCHandlerDeps {
   fileAdapter: ElectronFileAdapter;
   identityAdapter: ElectronIdentityAdapter;
   exportAdapter: ElectronExportAdapter;
+  recentFiles?: RecentFilesManager;
+  directoryService?: DirectoryService;
   getWindow: () => BrowserWindow | null;
   getOpenFilePath: () => string | null;
 }
@@ -23,6 +28,8 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
     fileAdapter,
     identityAdapter,
     exportAdapter,
+    recentFiles,
+    directoryService,
     getWindow,
     getOpenFilePath,
   } = deps;
@@ -118,5 +125,112 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
 
   ipcMain.handle(IPC_CHANNELS.GET_OPEN_FILE_PATH, () => {
     return getOpenFilePath();
+  });
+
+  // File dialogs
+  ipcMain.handle(IPC_CHANNELS.SHOW_OPEN_FILE_DIALOG, async () => {
+    const win = getWindow();
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Markdown', extensions: ['md', 'markdown', 'mdown', 'mkd', 'mkdn', 'mdx'] },
+      ],
+    });
+    return result.canceled ? null : result.filePaths;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SHOW_OPEN_FOLDER_DIALOG, async () => {
+    const win = getWindow();
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory'],
+    });
+    return result.canceled ? null : (result.filePaths[0] ?? null);
+  });
+
+  // Recent files
+  ipcMain.handle(IPC_CHANNELS.GET_RECENT_FILES, () => {
+    return recentFiles?.getFiles() ?? [];
+  });
+
+  ipcMain.handle(IPC_CHANNELS.ADD_RECENT_FILE, (_event, path: string) => {
+    recentFiles?.addFile(path);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.CLEAR_RECENT_FILES, () => {
+    recentFiles?.clear();
+  });
+
+  // Workspace state
+  ipcMain.handle(IPC_CHANNELS.GET_WORKSPACE_STATE, () => {
+    return stateManager.getWorkspaceState();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.OPEN_TAB, (_event, filePath: string) => {
+    const tab = stateManager.openTab(filePath);
+    const win = getWindow();
+    if (win) {
+      win.webContents.send(IPC_CHANNELS.TAB_OPENED, tab);
+      win.webContents.send(IPC_CHANNELS.ACTIVE_TAB_CHANGED, tab.id);
+    }
+    return tab;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.CLOSE_TAB, (_event, tabId: string) => {
+    stateManager.closeTab(tabId);
+    const win = getWindow();
+    if (win) {
+      win.webContents.send(IPC_CHANNELS.TAB_CLOSED, tabId);
+      const ws = stateManager.getWorkspaceState();
+      if (ws.activeTabId) {
+        win.webContents.send(IPC_CHANNELS.ACTIVE_TAB_CHANGED, ws.activeTabId);
+      }
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SET_ACTIVE_TAB, (_event, tabId: string) => {
+    stateManager.setActiveTab(tabId);
+    const win = getWindow();
+    if (win) {
+      win.webContents.send(IPC_CHANNELS.ACTIVE_TAB_CHANGED, tabId);
+    }
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.UPDATE_TAB_METADATA,
+    (_event, tabId: string, metadata: Partial<TabState>) => {
+      stateManager.updateTabMetadata(tabId, metadata);
+    }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.UPDATE_TAB_SCROLL, (_event, tabId: string, position: number) => {
+    stateManager.updateTabScrollPosition(tabId, position);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SET_SIDEBAR_VISIBLE, (_event, visible: boolean) => {
+    stateManager.setSidebarVisible(visible);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SET_OPEN_FOLDER, (_event, path: string | null) => {
+    stateManager.setOpenFolder(path);
+  });
+
+  // Directory service
+  ipcMain.handle(IPC_CHANNELS.LIST_DIRECTORY, (_event, dirPath: string) => {
+    return directoryService?.listDirectory(dirPath) ?? [];
+  });
+
+  ipcMain.handle(IPC_CHANNELS.WATCH_DIRECTORY, (_event, dirPath: string) => {
+    directoryService?.watchDirectory(dirPath, () => {
+      const win = getWindow();
+      if (win) {
+        win.webContents.send(IPC_CHANNELS.DIRECTORY_CHANGED, dirPath);
+      }
+    });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.UNWATCH_DIRECTORY, (_event, dirPath: string) => {
+    directoryService?.unwatchDirectory(dirPath);
   });
 }
