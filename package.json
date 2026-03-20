@@ -3,6 +3,9 @@
   "version": "0.3.4",
   "description": "Beautiful Chrome extension for viewing Markdown files with themes, syntax highlighting, and interactive Mermaid diagrams",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite build --watch",
     "build": "node scripts/update-manifest-version.js && tsc && vite build && node scripts/fix-manifest.js",

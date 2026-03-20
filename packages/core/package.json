@@ -1,0 +1,15 @@
+{
+  "name": "@mdview/core",
+  "version": "0.0.1",
+  "description": "Core rendering engine for mdview",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:ci": "vitest --run"
+  },
+  "author": "James Ainslie",
+  "license": "MIT"
+}
