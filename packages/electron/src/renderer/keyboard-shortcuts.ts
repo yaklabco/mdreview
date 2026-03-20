@@ -2,12 +2,19 @@ export interface KeyboardShortcutHandlers {
   nextTab: () => void;
   prevTab: () => void;
   switchToTab: (index: number) => void;
+  openPreferences?: () => void;
 }
 
 export function registerKeyboardShortcuts(handlers: KeyboardShortcutHandlers): () => void {
   const onKeyDown = (e: KeyboardEvent) => {
     const modifier = e.metaKey || e.ctrlKey;
     if (!modifier) return;
+
+    if (e.key === ',' && !e.shiftKey && !e.altKey) {
+      handlers.openPreferences?.();
+      e.preventDefault();
+      return;
+    }
 
     if (e.key === 'Tab') {
       if (e.shiftKey) {

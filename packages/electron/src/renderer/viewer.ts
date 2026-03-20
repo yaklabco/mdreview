@@ -7,12 +7,14 @@ import { registerKeyboardShortcuts } from './keyboard-shortcuts';
 import { setupDragAndDrop } from './drag-drop';
 import { FileTree } from './file-tree';
 import { SidebarResizeHandle } from './sidebar-resize';
+import { PreferencesPanel } from './preferences-panel';
 
 export class MDViewElectronViewer {
   private tabManager: TabManager;
   private statusBar: StatusBar;
   private fileTree: FileTree;
   private sidebarResize: SidebarResizeHandle | null = null;
+  private preferencesPanel: PreferencesPanel;
   private documents = new Map<string, DocumentContext>();
   private cleanupListeners: (() => void)[] = [];
 
@@ -20,6 +22,7 @@ export class MDViewElectronViewer {
     this.tabManager = new TabManager();
     this.statusBar = new StatusBar();
     this.fileTree = new FileTree();
+    this.preferencesPanel = new PreferencesPanel();
   }
 
   async initialize(): Promise<void> {
@@ -91,6 +94,7 @@ export class MDViewElectronViewer {
       nextTab: () => this.cycleTab(1),
       prevTab: () => this.cycleTab(-1),
       switchToTab: (index) => this.switchToTabByIndex(index),
+      openPreferences: () => void this.openPreferences(),
     });
     this.cleanupListeners.push(cleanupShortcuts);
 
@@ -294,7 +298,27 @@ export class MDViewElectronViewer {
       this.showAboutModal();
     } else if (command === 'help:github') {
       void window.mdview.openExternal('https://github.com/jamesainslie/mdview');
+    } else if (command === 'preferences') {
+      void this.openPreferences();
     }
+  }
+
+  private async openPreferences(): Promise<void> {
+    const state = await window.mdview.getState();
+    const ctx = this.getActiveDocumentContext();
+    const themeEngine = ctx?.getThemeEngine();
+    const themes = themeEngine?.getAvailableThemes() ?? [];
+
+    this.preferencesPanel.show(
+      {
+        theme: state.preferences.theme || 'github-light',
+        autoReload: state.preferences.autoReload ?? true,
+        showToc: state.preferences.showToc ?? false,
+        commentsEnabled: state.preferences.commentsEnabled !== false,
+        autoDarkMode: state.preferences.autoDarkMode ?? false,
+      },
+      themes.map((t) => ({ name: t.name, displayName: t.displayName, variant: t.variant }))
+    );
   }
 
   private showAboutModal(): void {
@@ -449,5 +473,6 @@ export class MDViewElectronViewer {
     this.cleanupListeners = [];
     this.tabManager.dispose();
     this.fileTree.dispose();
+    this.preferencesPanel.dispose();
   }
 }

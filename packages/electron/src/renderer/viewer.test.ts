@@ -11,6 +11,10 @@ vi.mock('@mdview/core', async () => {
     }),
     ThemeEngine: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.applyTheme = vi.fn().mockResolvedValue(undefined);
+      this.getAvailableThemes = vi.fn().mockReturnValue([
+        { name: 'github-light', displayName: 'GitHub Light', variant: 'light' },
+        { name: 'github-dark', displayName: 'GitHub Dark', variant: 'dark' },
+      ]);
     }),
     TocRenderer: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.render = vi.fn();
@@ -319,6 +323,19 @@ describe('MDViewElectronViewer', () => {
 
       await new Promise((r) => setTimeout(r, 10));
       expect(mockMdview.openExternal).toHaveBeenCalledWith('https://github.com/jamesainslie/mdview');
+    });
+
+    it('should open preferences panel on preferences command', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('preferences');
+
+      // Allow async to complete
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockMdview.getState).toHaveBeenCalled();
     });
 
     it('should no-op menu commands when no active document', async () => {

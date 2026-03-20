@@ -88,6 +88,25 @@ describe('registerKeyboardShortcuts', () => {
     expect(handlers.switchToTab).not.toHaveBeenCalled();
   });
 
+  it('should call openPreferences on Cmd/Ctrl+,', () => {
+    const handlersWithPrefs = {
+      ...handlers,
+      openPreferences: vi.fn(),
+    };
+    cleanup = registerKeyboardShortcuts(handlersWithPrefs);
+
+    dispatchKey({ key: ',', metaKey: true });
+    expect(handlersWithPrefs.openPreferences).toHaveBeenCalledTimes(1);
+
+    dispatchKey({ key: ',', ctrlKey: true });
+    expect(handlersWithPrefs.openPreferences).toHaveBeenCalledTimes(2);
+  });
+
+  it('should not throw when openPreferences is undefined and Cmd+, pressed', () => {
+    cleanup = registerKeyboardShortcuts(handlers);
+    expect(() => dispatchKey({ key: ',', metaKey: true })).not.toThrow();
+  });
+
   it('should handle case when handler is undefined', () => {
     const partial = {
       nextTab: undefined as unknown as () => void,

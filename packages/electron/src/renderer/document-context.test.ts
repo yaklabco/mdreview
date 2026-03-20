@@ -10,6 +10,10 @@ vi.mock('@mdview/core', async () => {
     }),
     ThemeEngine: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.applyTheme = vi.fn().mockResolvedValue(undefined);
+      this.getAvailableThemes = vi.fn().mockReturnValue([
+        { name: 'github-light', displayName: 'GitHub Light', variant: 'light' },
+        { name: 'github-dark', displayName: 'GitHub Dark', variant: 'dark' },
+      ]);
     }),
     TocRenderer: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.render = vi.fn();

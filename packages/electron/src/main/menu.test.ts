@@ -120,4 +120,18 @@ describe('buildApplicationMenu', () => {
     toggleSidebar?.click?.();
     expect(deps.onToggleSidebar).toHaveBeenCalled();
   });
+
+  it('should include Preferences item in macOS app menu', () => {
+    buildApplicationMenu(deps);
+    const template = mockBuildFromTemplate.mock.calls[0][0] as Array<{
+      label?: string;
+      submenu?: Array<{ label?: string; accelerator?: string; click?: () => void }>;
+    }>;
+    const appMenu = template.find((item) => item.label === 'mdview');
+    const prefsItem = appMenu?.submenu?.find((item) => item.label === 'Preferences...');
+    expect(prefsItem).toBeDefined();
+    expect(prefsItem?.accelerator).toBe('CmdOrCtrl+,');
+    prefsItem?.click?.();
+    expect(deps.onMenuCommand).toHaveBeenCalledWith('preferences');
+  });
 });
