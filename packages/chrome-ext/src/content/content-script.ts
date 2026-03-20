@@ -4,7 +4,7 @@
  */
 
 // CSS is imported but only activated when we add .mdview-active to body
-import './content.css';
+import '@mdview/core/styles/content.css';
 import { FileScanner } from '../utils/file-scanner';
 import type { AppState } from '@mdview/core';
 import { debug } from '../utils/debug-logger';

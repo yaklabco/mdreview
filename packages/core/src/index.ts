@@ -4,6 +4,9 @@ export const VERSION = '0.0.1';
 // Types
 export type * from './types/index';
 
+// Default state & preferences
+export { DEFAULT_PREFERENCES, DEFAULT_STATE } from './default-state';
+
 // Themes
 export { default as catppuccinFrappe } from './themes/catppuccin-frappe';
 export { default as catppuccinLatte } from './themes/catppuccin-latte';

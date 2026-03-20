@@ -143,6 +143,105 @@ export class ThemeEngine {
   }
 
   /**
+   * Apply theme to the document DOM.
+   * Sets CSS variables, data attributes, background/foreground colors,
+   * and updates syntax/mermaid themes.
+   *
+   * Requires a DOM environment (browser or Electron renderer).
+   */
+  async applyTheme(theme: Theme | ThemeName): Promise<void> {
+    // Load theme if name provided
+    const themeObj: Theme = typeof theme === 'string' ? await this.loadTheme(theme) : theme;
+
+    // Fetch overrides from storage
+    const overrides: ThemeOverrides = await this.getStorageOverrides();
+
+    // Compile to CSS variables with overrides
+    const cssVars = this.compileToCSSVariables(themeObj, overrides);
+
+    // Apply transition class
+    const root = document.documentElement;
+    root.classList.add('theme-transitioning');
+
+    // Update CSS variables on :root
+    Object.entries(cssVars).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+      // Force immediate style recalculation for critical color variables
+      if (key === '--md-bg' || key === '--md-fg') {
+        document.body.style.setProperty(key, value);
+      }
+    });
+
+    // Apply max-width logic
+    if (overrides.useMaxWidth) {
+      root.style.setProperty('--md-max-width', '100%');
+    } else if (overrides.maxWidth) {
+      root.style.setProperty('--md-max-width', `${overrides.maxWidth}px`);
+    } else {
+      root.style.setProperty('--md-max-width', '980px');
+    }
+
+    // Set data attributes
+    root.setAttribute('data-theme', themeObj.name);
+    root.setAttribute('data-theme-variant', themeObj.variant);
+
+    // Apply background color directly to body and html to prevent white flash
+    document.documentElement.style.backgroundColor = themeObj.colors.background;
+    document.body.style.backgroundColor = themeObj.colors.background;
+    document.documentElement.style.color = themeObj.colors.foreground;
+    document.body.style.color = themeObj.colors.foreground;
+
+    // Update syntax theme
+    try {
+      const { syntaxHighlighter } = await import('./renderers/syntax-highlighter');
+      syntaxHighlighter.setTheme(themeObj.syntaxTheme);
+    } catch {
+      // Syntax highlighter may not be available
+    }
+
+    // Update mermaid theme
+    try {
+      const { mermaidRenderer } = await import('./renderers/mermaid-renderer');
+      mermaidRenderer.updateTheme(themeObj.mermaidTheme);
+    } catch {
+      // Mermaid renderer may not be available
+    }
+
+    // Remove transition class after a brief moment (non-blocking)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        root.classList.remove('theme-transitioning');
+      });
+    });
+
+    // Save current theme
+    this.currentTheme = themeObj;
+  }
+
+  /**
+   * Watch system dark/light mode preference.
+   * Calls the callback with `true` when the system is in dark mode.
+   * Returns an unsubscribe function.
+   */
+  watchSystemTheme(callback: (isDark: boolean) => void): () => void {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      callback(e.matches);
+    };
+
+    // Initial call
+    handler(mediaQuery);
+
+    // Listen for changes
+    mediaQuery.addEventListener('change', handler);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handler);
+    };
+  }
+
+  /**
    * Compile theme to CSS variables
    */
   compileToCSSVariables(
