@@ -73,6 +73,19 @@ export type { ThemeInfo, ThemeOverrides } from './theme-engine';
 export { RenderPipeline } from './render-pipeline';
 export type { RenderOptions, RenderProgress, ProgressCallback, RenderPipelineOptions } from './render-pipeline';
 
+// Renderers
+export { SyntaxHighlighter, syntaxHighlighter, SYNTAX_THEME_MAP } from './renderers/syntax-highlighter';
+export type { HighlightResult, DetectionResult } from './renderers/syntax-highlighter';
+export { MermaidRenderer, mermaidRenderer } from './renderers/mermaid-renderer';
+export type { MermaidOptions, DiagramControls } from './renderers/mermaid-renderer';
+
+// Export modules
+export { ContentCollector } from './utils/content-collector';
+export { SVGConverter } from './utils/svg-converter';
+export { DOCXGenerator } from './utils/docx-generator';
+export { PDFGenerator } from './utils/pdf-generator';
+export { ExportController } from './export-controller';
+
 // Platform adapters
 export * from './adapters';
 

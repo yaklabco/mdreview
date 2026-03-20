@@ -178,3 +178,9 @@ export function createDebug(adapter?: StorageAdapter): DebugHelpers {
     isDebugEnabled: () => logger.getLogLevel() === 'debug',
   };
 }
+
+// ---------------------------------------------------------------------------
+// Default singleton — provides a zero-config `debug` object for core modules
+// that don't have access to a StorageAdapter.
+// ---------------------------------------------------------------------------
+export const debug: DebugHelpers = createDebug();
