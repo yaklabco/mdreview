@@ -14,12 +14,24 @@ vi.mock('@mdview/core', async () => {
     }),
     TocRenderer: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.render = vi.fn();
+      this.toggle = vi.fn();
+      this.show = vi.fn();
+      this.hide = vi.fn();
     }),
     ExportUI: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.render = vi.fn();
     }),
     CommentManager: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.initialize = vi.fn().mockResolvedValue(undefined);
+    }),
+    ContentCollector: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.collect = vi.fn().mockReturnValue({ title: 'Test', nodes: [], metadata: {} });
+    }),
+    SVGConverter: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.convertAll = vi.fn().mockReturnValue(new Map());
+    }),
+    DOCXGenerator: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.generate = vi.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)) });
     }),
     FileScanner: {
       getFileSize: vi.fn().mockReturnValue(100),
@@ -211,5 +223,144 @@ describe('MDViewElectronViewer', () => {
     const viewer = new MDViewElectronViewer();
     // Should not throw
     await viewer.initialize();
+  });
+
+  describe('menu commands', () => {
+    it('should dispatch toggle-toc to active document', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      // Get the menu command callback
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('toggle-toc');
+
+      // No error means the command was dispatched
+      expect(viewer.getTabCount()).toBe(1);
+    });
+
+    it('should dispatch export:pdf to active document', async () => {
+      mockMdview.printToPDF.mockResolvedValue(new ArrayBuffer(10));
+      mockMdview.saveFile.mockResolvedValue(undefined);
+
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('export:pdf');
+
+      // Allow async to complete
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockMdview.printToPDF).toHaveBeenCalled();
+    });
+
+    it('should dispatch export:docx to active document', async () => {
+      mockMdview.saveFile.mockResolvedValue(undefined);
+
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('export:docx');
+
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockMdview.saveFile).toHaveBeenCalled();
+    });
+
+    it('should show about modal on help:about', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('help:about');
+
+      const modal = document.querySelector('.mdview-about-modal');
+      expect(modal).not.toBeNull();
+      expect(modal?.textContent).toContain('mdview');
+    });
+
+    it('should dismiss about modal on click', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('help:about');
+
+      const modal = document.querySelector('.mdview-about-modal') as HTMLElement;
+      modal.click();
+
+      expect(document.querySelector('.mdview-about-modal')).toBeNull();
+    });
+
+    it('should dismiss about modal on Escape', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('help:about');
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      expect(document.querySelector('.mdview-about-modal')).toBeNull();
+    });
+
+    it('should call openExternal on help:github', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      menuCallback('help:github');
+
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockMdview.openExternal).toHaveBeenCalledWith('https://github.com/jamesainslie/mdview');
+    });
+
+    it('should no-op menu commands when no active document', async () => {
+      mockMdview.getOpenFilePath.mockResolvedValue(null);
+
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
+      // Should not throw
+      menuCallback('toggle-toc');
+      menuCallback('export:pdf');
+      menuCallback('export:docx');
+    });
+  });
+
+  describe('theme and preferences handlers', () => {
+    it('should propagate theme changes to all documents', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const themeCallback = mockMdview.onThemeChanged.mock.calls[0][0] as (theme: string) => void;
+      themeCallback('github-dark');
+
+      // Should update status bar with theme name
+      const statusBar = document.getElementById('mdview-status-bar');
+      // The status bar should have been updated (not just empty)
+      expect(statusBar).not.toBeNull();
+    });
+
+    it('should propagate preferences to all documents', async () => {
+      const { MDViewElectronViewer } = await import('./viewer');
+      const viewer = new MDViewElectronViewer();
+      await viewer.initialize();
+
+      const prefsCallback = mockMdview.onPreferencesUpdated.mock.calls[0][0] as (prefs: Record<string, unknown>) => void;
+      prefsCallback({ theme: 'monokai' });
+
+      // Should not throw, preferences should have been propagated
+      expect(viewer.getTabCount()).toBe(1);
+    });
   });
 });

@@ -7,6 +7,9 @@ import {
   ExportUI,
   CommentManager,
   FileScanner,
+  ContentCollector,
+  SVGConverter,
+  DOCXGenerator,
   type Preferences,
   type RenderProgress,
 } from '@mdview/core';
@@ -39,6 +42,7 @@ export class DocumentContext {
   private exportUI: ExportUI | null = null;
   private commentManager: CommentManager | null = null;
   private autoReloadCleanup: (() => void) | null = null;
+  private onProgressCallback: ((progress: { stage: string; percent: number }) => void) | null = null;
   private metadata: DocumentMetadata = {
     filePath: '',
     title: '',
@@ -73,8 +77,10 @@ export class DocumentContext {
     document.body.classList.add('mdview-active');
     await this.themeEngine.applyTheme(theme);
 
-    const cleanupProgress = this.renderPipeline.onProgress((_progress: RenderProgress) => {
-      // Progress tracking could be wired to status bar later
+    const cleanupProgress = this.renderPipeline.onProgress((progress: RenderProgress) => {
+      if (this.onProgressCallback) {
+        this.onProgressCallback({ stage: progress.stage, percent: progress.percent });
+      }
     });
 
     await this.renderPipeline.render({
@@ -168,6 +174,78 @@ export class DocumentContext {
 
   setScrollPosition(pos: number): void {
     this.scrollPosition = pos;
+  }
+
+  setOnProgress(callback: ((progress: { stage: string; percent: number }) => void) | null): void {
+    this.onProgressCallback = callback;
+  }
+
+  toggleToc(): void {
+    if (!this.container) return;
+
+    if (this.tocRenderer) {
+      this.tocRenderer.toggle();
+    } else {
+      const headings = this.extractHeadings(this.container);
+      if (headings.length > 0) {
+        this.tocRenderer = new TocRenderer(headings, {
+          maxDepth: 6,
+          autoCollapse: false,
+          position: 'left',
+          style: 'floating',
+        });
+        this.tocRenderer.render(this.container);
+        this.tocRenderer.show();
+      }
+    }
+  }
+
+  async exportPDF(): Promise<void> {
+    if (!this.filePath) return;
+    const data = await window.mdview.printToPDF();
+    const filename = (this.filePath.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '') + '.pdf';
+    await window.mdview.saveFile({ filename, mimeType: 'application/pdf', data });
+  }
+
+  async exportDOCX(): Promise<void> {
+    if (!this.filePath || !this.container) return;
+    const collector = new ContentCollector();
+    const content = collector.collect(this.container);
+    const svgElements = Array.from(this.container.querySelectorAll('svg')) as SVGElement[];
+    const converter = new SVGConverter();
+    const images = converter.convertAll(svgElements);
+    const generator = new DOCXGenerator();
+    const blob = await generator.generate(content, images);
+    const arrayBuffer = await blob.arrayBuffer();
+    const filename = (this.filePath.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '') + '.docx';
+    await window.mdview.saveFile({
+      filename,
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      data: arrayBuffer,
+    });
+  }
+
+  async applyTheme(theme: string): Promise<void> {
+    await this.themeEngine.applyTheme(theme);
+  }
+
+  async applyPreferences(prefs: Partial<Preferences>): Promise<void> {
+    if (prefs.theme) {
+      await this.applyTheme(prefs.theme);
+    }
+    if (prefs.showToc !== undefined) {
+      if (prefs.showToc) {
+        if (!this.tocRenderer && this.container) {
+          this.toggleToc();
+        }
+      } else if (this.tocRenderer) {
+        this.tocRenderer.hide();
+      }
+    }
+  }
+
+  getThemeEngine(): ThemeEngine {
+    return this.themeEngine;
   }
 
   dispose(): void {

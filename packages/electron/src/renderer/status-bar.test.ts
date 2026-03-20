@@ -73,4 +73,54 @@ describe('StatusBar', () => {
     expect(container.textContent).toContain('100');
     expect(container.textContent).toContain('3');
   });
+
+  describe('progress indicator', () => {
+    it('showProgress creates progress element with correct class', () => {
+      statusBar.showProgress({ stage: 'parsing', percent: 50 });
+      const progressEl = container.querySelector('.status-bar-progress');
+      expect(progressEl).not.toBeNull();
+      expect(progressEl?.parentElement).toBe(container);
+    });
+
+    it('showProgress displays the stage text', () => {
+      statusBar.showProgress({ stage: 'highlighting', percent: 30 });
+      const progressEl = container.querySelector('.status-bar-progress');
+      expect(progressEl?.textContent).toContain('highlighting');
+    });
+
+    it('showProgress sets progress bar width to given percentage', () => {
+      statusBar.showProgress({ stage: 'rendering', percent: 75 });
+      const fill = container.querySelector('.status-bar-progress-fill') as HTMLElement;
+      expect(fill).not.toBeNull();
+      expect(fill.style.width).toBe('75%');
+    });
+
+    it('showProgress updates existing progress element on subsequent calls', () => {
+      statusBar.showProgress({ stage: 'parsing', percent: 25 });
+      statusBar.showProgress({ stage: 'highlighting', percent: 60 });
+      const progressEls = container.querySelectorAll('.status-bar-progress');
+      expect(progressEls.length).toBe(1);
+      expect(progressEls[0].textContent).toContain('highlighting');
+      const fill = container.querySelector('.status-bar-progress-fill') as HTMLElement;
+      expect(fill.style.width).toBe('60%');
+    });
+
+    it('hideProgress removes the progress element', () => {
+      statusBar.showProgress({ stage: 'parsing', percent: 50 });
+      expect(container.querySelector('.status-bar-progress')).not.toBeNull();
+      statusBar.hideProgress();
+      expect(container.querySelector('.status-bar-progress')).toBeNull();
+    });
+
+    it('showProgress is a no-op when not rendered', () => {
+      const unrendered = new StatusBar();
+      unrendered.showProgress({ stage: 'parsing', percent: 50 });
+      expect(container.querySelector('.status-bar-progress')).toBeNull();
+    });
+
+    it('hideProgress is a no-op when no progress element exists', () => {
+      statusBar.hideProgress();
+      expect(container.querySelector('.status-bar-progress')).toBeNull();
+    });
+  });
 });

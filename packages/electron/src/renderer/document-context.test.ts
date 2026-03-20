@@ -13,12 +13,24 @@ vi.mock('@mdview/core', async () => {
     }),
     TocRenderer: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.render = vi.fn();
+      this.toggle = vi.fn();
+      this.show = vi.fn();
+      this.hide = vi.fn();
     }),
     ExportUI: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.render = vi.fn();
     }),
     CommentManager: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.initialize = vi.fn().mockResolvedValue(undefined);
+    }),
+    ContentCollector: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.collect = vi.fn().mockReturnValue({ title: 'Test', nodes: [], metadata: {} });
+    }),
+    SVGConverter: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.convertAll = vi.fn().mockReturnValue(new Map());
+    }),
+    DOCXGenerator: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.generate = vi.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)) });
     }),
     FileScanner: {
       getFileSize: vi.fn().mockReturnValue(100),
@@ -169,5 +181,239 @@ describe('DocumentContext', () => {
     const ctx = new DocumentContext('tab-1');
 
     await expect(ctx.load('/tmp/missing.md', container)).rejects.toThrow('File not found');
+  });
+
+  describe('toggleToc', () => {
+    it('should create and show TOC when none exists and container has headings', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      container.innerHTML = '<h1 id="a">Title</h1><h2 id="b">Sub</h2>';
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      ctx.toggleToc();
+
+      const { TocRenderer } = await import('@mdview/core');
+      expect(TocRenderer).toHaveBeenCalled();
+    });
+
+    it('should toggle existing TOC', async () => {
+      mockMdview.getState.mockResolvedValue({
+        preferences: {
+          theme: 'github-light',
+          autoReload: false,
+          showToc: true,
+          commentsEnabled: false,
+        },
+        document: { path: '', content: '', scrollPosition: 0, renderState: 'pending' },
+        ui: { theme: null, maximizedDiagram: null, visibleDiagrams: new Set() },
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      container.innerHTML = '<h1 id="a">Title</h1>';
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      // TOC was created by load because showToc=true
+      ctx.toggleToc();
+
+      const { TocRenderer } = await import('@mdview/core');
+      const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      expect(mockInstance.toggle).toHaveBeenCalled();
+    });
+
+    it('should no-op when no container is loaded', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const ctx = new DocumentContext('tab-1');
+      // Should not throw
+      ctx.toggleToc();
+    });
+  });
+
+  describe('exportPDF', () => {
+    it('should call printToPDF and saveFile', async () => {
+      mockMdview.printToPDF = vi.fn().mockResolvedValue(new ArrayBuffer(10));
+      mockMdview.saveFile = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      await ctx.exportPDF();
+
+      expect(mockMdview.printToPDF).toHaveBeenCalled();
+      expect(mockMdview.saveFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'test.pdf',
+          mimeType: 'application/pdf',
+        })
+      );
+    });
+
+    it('should no-op when no file is loaded', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const ctx = new DocumentContext('tab-1');
+      await ctx.exportPDF();
+      expect(mockMdview.printToPDF).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('exportDOCX', () => {
+    it('should generate and save DOCX', async () => {
+      mockMdview.saveFile = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      await ctx.exportDOCX();
+
+      expect(mockMdview.saveFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'test.docx',
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        })
+      );
+    });
+
+    it('should no-op when no file is loaded', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const ctx = new DocumentContext('tab-1');
+      await ctx.exportDOCX();
+      expect(mockMdview.saveFile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('applyTheme', () => {
+    it('should call themeEngine.applyTheme', async () => {
+      const { DocumentContext, } = await import('./document-context');
+      const { ThemeEngine } = await import('@mdview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      await ctx.applyTheme('github-dark');
+
+      const mockInstance = (ThemeEngine as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      // applyTheme is called during load and then again explicitly
+      expect(mockInstance.applyTheme).toHaveBeenCalledWith('github-dark');
+    });
+  });
+
+  describe('applyPreferences', () => {
+    it('should apply theme when theme is in prefs', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const { ThemeEngine } = await import('@mdview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      await ctx.applyPreferences({ theme: 'monokai' });
+
+      const mockInstance = (ThemeEngine as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      expect(mockInstance.applyTheme).toHaveBeenCalledWith('monokai');
+    });
+
+    it('should hide TOC when showToc is false', async () => {
+      mockMdview.getState.mockResolvedValue({
+        preferences: {
+          theme: 'github-light',
+          autoReload: false,
+          showToc: true,
+          commentsEnabled: false,
+        },
+        document: { path: '', content: '', scrollPosition: 0, renderState: 'pending' },
+        ui: { theme: null, maximizedDiagram: null, visibleDiagrams: new Set() },
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const { TocRenderer } = await import('@mdview/core');
+      const container = document.getElementById('test-container')!;
+      container.innerHTML = '<h1 id="a">Title</h1>';
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      await ctx.applyPreferences({ showToc: false });
+
+      const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      expect(mockInstance.hide).toHaveBeenCalled();
+    });
+  });
+
+  describe('progress callback', () => {
+    it('should call progress callback during render when set', async () => {
+      const { RenderPipeline } = await import('@mdview/core');
+      let capturedProgressListener: ((p: { stage: string; percent: number }) => void) | null = null;
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+        this.render = vi.fn().mockResolvedValue(undefined);
+        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; percent: number }) => void) => {
+          capturedProgressListener = listener;
+          return vi.fn();
+        });
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-2');
+
+      const progressSpy = vi.fn();
+      ctx.setOnProgress(progressSpy);
+
+      await ctx.load('/tmp/test.md', container);
+
+      expect(capturedProgressListener).not.toBeNull();
+      capturedProgressListener!({ stage: 'parsing', percent: 50 });
+      expect(progressSpy).toHaveBeenCalledWith({ stage: 'parsing', percent: 50 });
+    });
+
+    it('should not throw when progress fires without a callback set', async () => {
+      const { RenderPipeline } = await import('@mdview/core');
+      let capturedProgressListener: ((p: { stage: string; percent: number }) => void) | null = null;
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+        this.render = vi.fn().mockResolvedValue(undefined);
+        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; percent: number }) => void) => {
+          capturedProgressListener = listener;
+          return vi.fn();
+        });
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-3');
+
+      await ctx.load('/tmp/test.md', container);
+
+      expect(() => capturedProgressListener!({ stage: 'parsing', percent: 50 })).not.toThrow();
+    });
+
+    it('should update callback via setOnProgress', async () => {
+      const { RenderPipeline } = await import('@mdview/core');
+      let capturedProgressListener: ((p: { stage: string; percent: number }) => void) | null = null;
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+        this.render = vi.fn().mockResolvedValue(undefined);
+        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; percent: number }) => void) => {
+          capturedProgressListener = listener;
+          return vi.fn();
+        });
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-4');
+
+      const spy1 = vi.fn();
+      const spy2 = vi.fn();
+      ctx.setOnProgress(spy1);
+      await ctx.load('/tmp/test.md', container);
+
+      ctx.setOnProgress(spy2);
+      capturedProgressListener!({ stage: 'highlighting', percent: 80 });
+
+      expect(spy1).not.toHaveBeenCalled();
+      expect(spy2).toHaveBeenCalledWith({ stage: 'highlighting', percent: 80 });
+    });
   });
 });
