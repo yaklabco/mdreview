@@ -49,6 +49,10 @@ import {
   // Frontmatter
   extractFrontmatter,
   renderFrontmatterHtml,
+  // Debug logger
+  DebugLogger,
+  createDebugLogger,
+  createDebug,
 } from '../index';
 
 describe('@mdview/core barrel export', () => {
@@ -124,5 +128,11 @@ describe('@mdview/core barrel export', () => {
   it('exports frontmatter functions', () => {
     expect(typeof extractFrontmatter).toBe('function');
     expect(typeof renderFrontmatterHtml).toBe('function');
+  });
+
+  it('exports debug logger', () => {
+    expect(DebugLogger).toBeDefined();
+    expect(typeof createDebugLogger).toBe('function');
+    expect(typeof createDebug).toBe('function');
   });
 });

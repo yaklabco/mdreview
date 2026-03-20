@@ -4,7 +4,9 @@
   "description": "Core rendering engine for mdview",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./utils/debug-logger": "./src/utils/debug-logger.ts",
+    "./adapters": "./src/adapters.ts"
   },
   "scripts": {
     "test": "vitest",
