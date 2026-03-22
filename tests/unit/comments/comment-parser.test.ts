@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseComments } from '@mdview/core';
+import { parseComments } from '@mdreview/core';
 
 describe('parseComments', () => {
   describe('No comments', () => {

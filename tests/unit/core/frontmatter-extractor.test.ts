@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { extractFrontmatter, renderFrontmatterHtml } from '@mdview/core';
+import { extractFrontmatter, renderFrontmatterHtml } from '@mdreview/core';
 
 describe('extractFrontmatter', () => {
   test('returns null frontmatter for empty string', () => {

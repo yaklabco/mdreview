@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseComments } from '@mdview/core';
+import { parseComments } from '@mdreview/core';
 import {
   addComment,
   removeComment,
@@ -9,8 +9,8 @@ import {
   addReply,
   toggleReaction,
 } from '../../packages/core/src/comments/comment-serializer';
-import { computeCommentContext } from '@mdview/core';
-import type { Comment } from '@mdview/core';
+import { computeCommentContext } from '@mdreview/core';
+import type { Comment } from '@mdreview/core';
 
 describe('Comment System Integration', () => {
   const baseMarkdown =

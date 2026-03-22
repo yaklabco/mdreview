@@ -20,7 +20,7 @@ describe('DirectoryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new DirectoryService();
-    tmpDir = mkdtempSync(join(tmpdir(), 'mdview-test-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'mdreview-test-'));
   });
 
   afterEach(() => {

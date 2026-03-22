@@ -281,7 +281,7 @@ export class PDFGenerator {
    * Add print class to body
    */
   private addPrintClass(): void {
-    document.body.classList.add('mdview-printing');
+    document.body.classList.add('mdreview-printing');
     debug.debug('PDFGenerator', 'Added print class');
   }
 
@@ -289,7 +289,7 @@ export class PDFGenerator {
    * Remove print class from body
    */
   private removePrintClass(): void {
-    document.body.classList.remove('mdview-printing');
+    document.body.classList.remove('mdreview-printing');
     debug.debug('PDFGenerator', 'Removed print class');
   }
 
@@ -313,7 +313,7 @@ export class PDFGenerator {
     `;
 
     this.printStyleElement = document.createElement('style');
-    this.printStyleElement.id = 'mdview-dynamic-print-styles';
+    this.printStyleElement.id = 'mdreview-dynamic-print-styles';
     this.printStyleElement.textContent = styles;
     document.head.appendChild(this.printStyleElement);
 

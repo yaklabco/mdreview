@@ -2,7 +2,7 @@
  * Tests for core ExportUI with MessagingAdapter
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { MessagingAdapter, IPCMessage } from '../adapters';
+import type { MessagingAdapter } from '../adapters';
 import { NoopMessagingAdapter } from '../adapters';
 
 // We need to mock the DOM for ExportUI
@@ -39,10 +39,12 @@ describe('ExportUI (core)', () => {
 
       // Give loadPreferences time to run (it's async in constructor)
       await vi.waitFor(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(mockMessaging.send).toHaveBeenCalledWith({ type: 'GET_STATE' });
       });
 
       // Verify the adapter was called with the right message
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockMessaging.send).toHaveBeenCalledTimes(1);
 
       ui.destroy();
@@ -65,6 +67,7 @@ describe('ExportUI (core)', () => {
 
       // Wait for preferences to load
       await vi.waitFor(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(mockMessaging.send).toHaveBeenCalled();
       });
 
@@ -72,7 +75,7 @@ describe('ExportUI (core)', () => {
       // We can verify by creating the button and checking it works
       const button = ui.createExportButton();
       expect(button).toBeTruthy();
-      expect(button.className).toContain('mdview-export-btn');
+      expect(button.className).toContain('mdreview-export-btn');
 
       ui.destroy();
     });
@@ -88,7 +91,7 @@ describe('ExportUI (core)', () => {
 
       const button = ui.createExportButton();
       expect(button).toBeTruthy();
-      expect(button.className).toContain('mdview-export-btn');
+      expect(button.className).toContain('mdreview-export-btn');
 
       ui.destroy();
     });
@@ -123,6 +126,7 @@ describe('ExportUI (core)', () => {
       const ui = new ExportUI({ messaging: failingMessaging });
 
       await vi.waitFor(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(failingMessaging.send).toHaveBeenCalled();
       });
 
@@ -142,6 +146,7 @@ describe('ExportUI (core)', () => {
       const ui = new ExportUI({ messaging: emptyMessaging });
 
       await vi.waitFor(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(emptyMessaging.send).toHaveBeenCalled();
       });
 
@@ -175,7 +180,7 @@ describe('ExportUI (core)', () => {
       // Show menu
       ui.showMenu();
       // There should be a menu in the DOM
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu).toBeTruthy();
 
       // Hide menu

@@ -92,11 +92,25 @@ export function handleMessage(msg: HostMessage | null | string): HostResponse {
     const newContent = msg.content;
 
     // Content boundary: earlier of v1 or v2 sentinel
-    const V1_SEP = '<!-- mdview:comments -->';
-    const V2_PREFIX = '<!-- mdview:annotations';
+    const V1_SEP = '<!-- mdreview:comments -->';
+    const V1_SEP_LEGACY = '<!-- mdview:comments -->';
+    const V2_PREFIX = '<!-- mdreview:annotations';
+    const V2_PREFIX_LEGACY = '<!-- mdview:annotations';
 
-    const existingBound = findContentBoundary(existing, V1_SEP, V2_PREFIX);
-    const newBound = findContentBoundary(newContent, V1_SEP, V2_PREFIX);
+    const existingBound = findContentBoundary(
+      existing,
+      V1_SEP,
+      V1_SEP_LEGACY,
+      V2_PREFIX,
+      V2_PREFIX_LEGACY
+    );
+    const newBound = findContentBoundary(
+      newContent,
+      V1_SEP,
+      V1_SEP_LEGACY,
+      V2_PREFIX,
+      V2_PREFIX_LEGACY
+    );
 
     const existingBody =
       existingBound !== -1 ? existing.substring(0, existingBound).trimEnd() : existing.trimEnd();
@@ -124,11 +138,11 @@ export function handleMessage(msg: HostMessage | null | string): HostResponse {
   }
 }
 
-function findContentBoundary(text: string, v1Sep: string, v2Prefix: string): number {
-  const v1 = text.indexOf(v1Sep);
-  const v2 = text.indexOf(v2Prefix);
-  if (v1 === -1 && v2 === -1) return -1;
-  if (v1 === -1) return v2;
-  if (v2 === -1) return v1;
-  return Math.min(v1, v2);
+function findContentBoundary(text: string, ...sentinels: string[]): number {
+  let best = -1;
+  for (const sentinel of sentinels) {
+    const idx = text.indexOf(sentinel);
+    if (idx !== -1 && (best === -1 || idx < best)) best = idx;
+  }
+  return best;
 }

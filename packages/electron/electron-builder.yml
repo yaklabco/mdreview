@@ -1,5 +1,5 @@
-appId: net.mdview.app
-productName: mdview
+appId: net.mdreview.app
+productName: Design Review
 directories:
   buildResources: build
   output: dist

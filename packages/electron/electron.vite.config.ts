@@ -3,7 +3,7 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ['@mdview/core'] })],
+    plugins: [externalizeDepsPlugin({ exclude: ['@mdreview/core'] })],
     build: {
       rollupOptions: {
         input: {

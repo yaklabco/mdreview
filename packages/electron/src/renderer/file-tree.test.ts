@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FileTree } from './file-tree';
 import type { DirectoryEntry } from '../shared/workspace-types';
 
@@ -364,9 +364,7 @@ describe('FileTree', () => {
           name: 'lib',
           path: '/project/lib',
           type: 'directory',
-          children: [
-            { name: 'index.ts', path: '/project/lib/index.ts', type: 'file' },
-          ],
+          children: [{ name: 'index.ts', path: '/project/lib/index.ts', type: 'file' }],
         },
       ];
       fileTree.render(parent);
@@ -515,7 +513,9 @@ describe('FileTree', () => {
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
       const items = document.querySelectorAll('.tab-context-menu-item');
-      const pdfItem = Array.from(items).find((i) => i.textContent === 'Export as PDF') as HTMLElement;
+      const pdfItem = Array.from(items).find(
+        (i) => i.textContent === 'Export as PDF'
+      ) as HTMLElement;
       pdfItem.click();
 
       expect(exportCallback).toHaveBeenCalledWith('/project/docs/api.md', 'pdf');
@@ -531,7 +531,9 @@ describe('FileTree', () => {
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
       const items = document.querySelectorAll('.tab-context-menu-item');
-      const docxItem = Array.from(items).find((i) => i.textContent === 'Export as DOCX') as HTMLElement;
+      const docxItem = Array.from(items).find(
+        (i) => i.textContent === 'Export as DOCX'
+      ) as HTMLElement;
       docxItem.click();
 
       expect(exportCallback).toHaveBeenCalledWith('/project/docs/api.md', 'docx');
@@ -585,7 +587,7 @@ describe('FileTree', () => {
       expect(labels).toContain('Copy Relative Path');
     });
 
-    it('Copy Path writes absolute path to clipboard', async () => {
+    it('Copy Path writes absolute path to clipboard', () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, { clipboard: { writeText } });
 
@@ -602,7 +604,7 @@ describe('FileTree', () => {
       expect(writeText).toHaveBeenCalledWith('/project/docs/api.md');
     });
 
-    it('Copy Relative Path writes path relative to root folder', async () => {
+    it('Copy Relative Path writes path relative to root folder', () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, { clipboard: { writeText } });
 
@@ -614,13 +616,15 @@ describe('FileTree', () => {
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
       const items = document.querySelectorAll('.tab-context-menu-item');
-      const copyRelItem = Array.from(items).find((i) => i.textContent === 'Copy Relative Path') as HTMLElement;
+      const copyRelItem = Array.from(items).find(
+        (i) => i.textContent === 'Copy Relative Path'
+      ) as HTMLElement;
       copyRelItem.click();
 
       expect(writeText).toHaveBeenCalledWith('docs/api.md');
     });
 
-    it('Copy Relative Path falls back to absolute path when no root set', async () => {
+    it('Copy Relative Path falls back to absolute path when no root set', () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, { clipboard: { writeText } });
 
@@ -632,7 +636,9 @@ describe('FileTree', () => {
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
       const items = document.querySelectorAll('.tab-context-menu-item');
-      const copyRelItem = Array.from(items).find((i) => i.textContent === 'Copy Relative Path') as HTMLElement;
+      const copyRelItem = Array.from(items).find(
+        (i) => i.textContent === 'Copy Relative Path'
+      ) as HTMLElement;
       copyRelItem.click();
 
       expect(writeText).toHaveBeenCalledWith('/project/docs/api.md');

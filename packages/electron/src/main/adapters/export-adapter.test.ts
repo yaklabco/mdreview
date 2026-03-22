@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ElectronExportAdapter } from './export-adapter';
-import type { ExportSaveOptions } from '@mdview/core/node';
+import type { ExportSaveOptions } from '@mdreview/core/node';
 
 describe('ElectronExportAdapter', () => {
   let showSaveDialog: ReturnType<typeof vi.fn>;

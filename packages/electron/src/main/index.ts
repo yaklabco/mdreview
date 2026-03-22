@@ -1,8 +1,8 @@
-import { app, BrowserWindow, dialog, protocol, net } from 'electron';
+import { app, BrowserWindow, dialog, protocol, net, nativeImage } from 'electron';
 import { join, extname, basename } from 'path';
 import { pathToFileURL } from 'url';
 import ElectronStore from 'electron-store';
-import { CacheManager } from '@mdview/core/node';
+import { CacheManager } from '@mdreview/core/node';
 import { ElectronStorageAdapter } from './adapters/storage-adapter';
 import { ElectronFileAdapter } from './adapters/file-adapter';
 import { ElectronIdentityAdapter } from './adapters/identity-adapter';
@@ -25,10 +25,13 @@ const THEME_BACKGROUNDS: Record<string, string> = {
   'catppuccin-frappe': '#303446',
   'catppuccin-macchiato': '#24273a',
   'catppuccin-mocha': '#1e1e2e',
-  'monokai': '#272822',
+  monokai: '#272822',
   'monokai-pro': '#2d2a2e',
   'one-dark-pro': '#282c34',
 };
+
+// Set the app name for the Dock and menu bar (dev mode uses package.json name otherwise)
+app.setName('Design Review');
 
 // Register custom protocol for serving local assets (images, etc.)
 // Must be called before app.whenReady()
@@ -55,11 +58,25 @@ function parseOpenFilePath(): string | null {
   return null;
 }
 
+function getAppIcon(): Electron.NativeImage | undefined {
+  // In packaged builds, macOS uses icon.icns from the app bundle automatically.
+  // In dev mode, load from the build directory.
+  if (app.isPackaged) return undefined;
+  const iconPath = join(__dirname, '../../build/icon.png');
+  try {
+    return nativeImage.createFromPath(iconPath);
+  } catch {
+    return undefined;
+  }
+}
+
 function createWindow(backgroundColor?: string): BrowserWindow {
+  const icon = getAppIcon();
   const win = new BrowserWindow({
     width: 1024,
     height: 768,
     backgroundColor: backgroundColor || '#ffffff',
+    icon,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -80,9 +97,9 @@ function createWindow(backgroundColor?: string): BrowserWindow {
 function updateWindowTitle(filePath: string | null): void {
   if (!mainWindow) return;
   if (filePath) {
-    mainWindow.setTitle(`${basename(filePath)} — mdview`);
+    mainWindow.setTitle(`${basename(filePath)} — Design Review`);
   } else {
-    mainWindow.setTitle('mdview');
+    mainWindow.setTitle('Design Review');
   }
 }
 
@@ -184,7 +201,7 @@ void app.whenReady().then(async () => {
       const filePath = raw.startsWith('/') ? raw : `/${raw}`;
       return net.fetch(pathToFileURL(filePath).href);
     } catch (err) {
-      console.error('[mdview] local-asset protocol error:', request.url, err);
+      console.error('[mdreview] local-asset protocol error:', request.url, err);
       return new Response('Not Found', { status: 404 });
     }
   });
@@ -208,6 +225,12 @@ void app.whenReady().then(async () => {
   recentFilesRef = recentFiles;
 
   await stateManager.initialize();
+
+  // Set Dock icon in dev mode (packaged builds use icon.icns from the bundle)
+  if (!app.isPackaged && process.platform === 'darwin') {
+    const dockIcon = getAppIcon();
+    if (dockIcon) app.dock.setIcon(dockIcon);
+  }
 
   const themeName = stateManager.getPreferences().theme || 'github-light';
   const themeBg = THEME_BACKGROUNDS[themeName] || '#ffffff';

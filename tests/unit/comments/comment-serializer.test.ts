@@ -17,8 +17,8 @@ import {
   addReply,
   toggleReaction,
 } from '../../../packages/core/src/comments/comment-serializer';
-import { buildSourceMap } from '@mdview/core';
-import type { Comment, CommentContext, CommentReply } from '@mdview/core';
+import { buildSourceMap } from '@mdreview/core';
+import type { Comment, CommentContext, CommentReply } from '@mdreview/core';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -99,9 +99,9 @@ describe('addComment', () => {
     const result = addComment(md, comment);
 
     expect(result).toContain('Some highlighted text[^comment-1] in context.');
-    expect(result).toContain('<!-- mdview:comments -->');
+    expect(result).toContain('<!-- mdreview:comments -->');
     expect(result).toContain(
-      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","selectedText":"highlighted text"} -->'
+      '[^comment-1]: <!-- mdreview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z","selectedText":"highlighted text"} -->'
     );
     expect(result).toContain('    This is a comment');
   });
@@ -111,9 +111,9 @@ describe('addComment', () => {
     const comment = makeComment();
     const result = addComment(md, comment);
 
-    expect(result).toContain('<!-- mdview:comments -->');
+    expect(result).toContain('<!-- mdreview:comments -->');
     // Separator should appear exactly once
-    const separatorCount = (result.match(/<!-- mdview:comments -->/g) || []).length;
+    const separatorCount = (result.match(/<!-- mdreview:comments -->/g) || []).length;
     expect(separatorCount).toBe(1);
   });
 
@@ -133,7 +133,7 @@ describe('addComment', () => {
     const result = addComment(md, comment);
 
     // Only one separator
-    const separatorCount = (result.match(/<!-- mdview:comments -->/g) || []).length;
+    const separatorCount = (result.match(/<!-- mdreview:comments -->/g) || []).length;
     expect(separatorCount).toBe(1);
 
     // Both comments present
@@ -241,7 +241,7 @@ describe('removeComment', () => {
 
     expect(result).not.toContain('[^comment-1]');
     expect(result).not.toContain('First comment');
-    expect(result).toContain('<!-- mdview:comments -->');
+    expect(result).toContain('<!-- mdreview:comments -->');
     expect(result).toContain('[^comment-2]');
     expect(result).toContain('Second comment');
     expect(result).toContain('Text A and text B[^comment-2] here.');
@@ -396,7 +396,7 @@ describe('addCommentAtOffset', () => {
     const result = addCommentAtOffset(md, comment, sourceMap);
 
     expect(result).toContain('**important**[^comment-1]');
-    expect(result).toContain('[^comment-1]: <!-- mdview:comment');
+    expect(result).toContain('[^comment-1]: <!-- mdreview:comment');
   });
 
   it('should insert reference after link using source map', () => {
@@ -416,7 +416,7 @@ describe('addCommentAtOffset', () => {
 
     // Falls back to addComment, which can't find it either, so no reference
     expect(result).toContain('Some text here.');
-    expect(result).toContain('[^comment-1]: <!-- mdview:comment');
+    expect(result).toContain('[^comment-1]: <!-- mdreview:comment');
   });
 
   it('should disambiguate with context', () => {

@@ -3,8 +3,8 @@
  * Handles state management, message passing, coordination, and cache management
  */
 
-import type { AppState, ThemeName, CachedResult } from '@mdview/core';
-import { CacheManager, DEFAULT_STATE } from '@mdview/core';
+import type { AppState, ThemeName, CachedResult } from '@mdreview/core';
+import { CacheManager, DEFAULT_STATE } from '@mdreview/core';
 import { debug } from '../utils/debug-logger';
 
 // Cache management (persists across page reloads)
@@ -105,7 +105,7 @@ const initializationPromise = stateManager.initialize();
 function setupContextMenu(): void {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
-      id: 'mdview-add-comment',
+      id: 'mdreview-add-comment',
       title: 'Leave a Comment',
       contexts: ['selection'],
       documentUrlPatterns: ['file:///*.md', 'file:///*.markdown'],
@@ -115,7 +115,7 @@ function setupContextMenu(): void {
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'mdview-add-comment' && tab?.id) {
+  if (info.menuItemId === 'mdreview-add-comment' && tab?.id) {
     void chrome.tabs
       .sendMessage(tab.id, {
         type: 'ADD_COMMENT',
@@ -177,14 +177,14 @@ chrome.runtime.onMessage.addListener(
           case 'UPDATE_PREFERENCES': {
             const payload = message.payload as { preferences: Partial<AppState['preferences']> };
             const { preferences } = payload;
-            debug.log('MDView-Background', 'Processing UPDATE_PREFERENCES:', preferences);
+            debug.log('MDReview-Background', 'Processing UPDATE_PREFERENCES:', preferences);
 
             await stateManager.updatePreferences(preferences);
             sendResponse({ success: true });
 
             // Always broadcast preference updates to tabs so they can react (e.g. line numbers)
             // This fixes the issue where toggles didn't work if syncTabs was false
-            debug.log('MDView-Background', 'Broadcasting preferences update to tabs');
+            debug.log('MDReview-Background', 'Broadcasting preferences update to tabs');
             const tabs = await chrome.tabs.query({});
             tabs.forEach((tab) => {
               if (tab.id) {
@@ -206,10 +206,10 @@ chrome.runtime.onMessage.addListener(
           case 'APPLY_THEME': {
             const payload = message.payload as { theme: ThemeName };
             const { theme } = payload;
-            debug.log('MDView-Background', 'Processing APPLY_THEME:', theme);
+            debug.log('MDReview-Background', 'Processing APPLY_THEME:', theme);
 
             await stateManager.updatePreferences({ theme });
-            debug.log('MDView-Background', 'Preferences updated');
+            debug.log('MDReview-Background', 'Preferences updated');
 
             sendResponse({ success: true });
 
@@ -218,11 +218,11 @@ chrome.runtime.onMessage.addListener(
             // The current logic only broadcasts if syncTabs is true. This might be the bug if syncTabs is false.
             // Let's log the logic branch.
             // Always broadcast theme changes to all tabs to ensure proper theme application
-            debug.log('MDView-Background', 'Broadcasting theme change to all tabs');
+            debug.log('MDReview-Background', 'Broadcasting theme change to all tabs');
             const tabs = await chrome.tabs.query({});
             tabs.forEach((tab) => {
               if (tab.id) {
-                debug.log('MDView-Background', 'Sending APPLY_THEME to tab:', tab.id);
+                debug.log('MDReview-Background', 'Sending APPLY_THEME to tab:', tab.id);
                 void chrome.tabs
                   .sendMessage(tab.id, {
                     type: 'APPLY_THEME',
@@ -231,7 +231,7 @@ chrome.runtime.onMessage.addListener(
                   .catch((err: Error) => {
                     // Tab may not have content script
                     debug.log(
-                      'MDView-Background',
+                      'MDReview-Background',
                       'Failed to send to tab (likely no content script):',
                       tab.id,
                       err.message
@@ -326,7 +326,7 @@ chrome.runtime.onMessage.addListener(
               const changed = currentHash !== lastHash;
               sendResponse({ changed, newHash: currentHash });
             } catch (error) {
-              debug.error('MDView-Background', 'File check failed:', error);
+              debug.error('MDReview-Background', 'File check failed:', error);
               sendResponse({ changed: false, error: String(error) });
             }
             break;
@@ -335,12 +335,12 @@ chrome.runtime.onMessage.addListener(
           case 'GET_USERNAME': {
             try {
               const result: unknown = await chrome.runtime.sendNativeMessage(
-                'com.mdview.filewriter',
+                'com.mdreview.filewriter',
                 { action: 'get_username' }
               );
               sendResponse(result);
             } catch (error) {
-              debug.error('MDView-Background', 'Native get_username failed:', error);
+              debug.error('MDReview-Background', 'Native get_username failed:', error);
               sendResponse({ error: String(error) });
             }
             break;
@@ -350,7 +350,7 @@ chrome.runtime.onMessage.addListener(
             const payload = message.payload as { path: string; content: string };
             try {
               const result: unknown = await chrome.runtime.sendNativeMessage(
-                'com.mdview.filewriter',
+                'com.mdreview.filewriter',
                 {
                   action: 'write',
                   path: payload.path,
@@ -359,7 +359,7 @@ chrome.runtime.onMessage.addListener(
               );
               sendResponse(result);
             } catch (error) {
-              debug.error('MDView-Background', 'Native write failed:', error);
+              debug.error('MDReview-Background', 'Native write failed:', error);
               sendResponse({ error: String(error) });
             }
             break;
@@ -382,7 +382,7 @@ chrome.runtime.onMessage.addListener(
 
 // Export for debugging
 if (typeof window !== 'undefined') {
-  (window as { mdviewState?: StateManager }).mdviewState = stateManager;
+  (window as { mdreviewState?: StateManager }).mdreviewState = stateManager;
 }
 
 debug.log('MDView', 'Service worker initialized');

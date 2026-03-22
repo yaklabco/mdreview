@@ -3,8 +3,8 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CommentUI } from '@mdview/core';
-import type { Comment, CommentReply, CommentReactions } from '@mdview/core';
+import { CommentUI } from '@mdreview/core';
+import type { Comment, CommentReply, CommentReactions } from '@mdreview/core';
 
 describe('CommentUI', () => {
   let ui: CommentUI;
@@ -43,7 +43,7 @@ describe('CommentUI', () => {
 
       expect(gutter).toBeDefined();
       expect(gutter.tagName).toBe('DIV');
-      expect(gutter.classList.contains('mdview-comment-gutter')).toBe(true);
+      expect(gutter.classList.contains('mdreview-comment-gutter')).toBe(true);
     });
   });
 
@@ -52,7 +52,7 @@ describe('CommentUI', () => {
       const card = ui.renderCard(sampleComment);
 
       expect(card.tagName).toBe('DIV');
-      expect(card.classList.contains('mdview-comment-card')).toBe(true);
+      expect(card.classList.contains('mdreview-comment-card')).toBe(true);
       expect(card.dataset.commentId).toBe('comment-1');
 
       const header = card.querySelector('.comment-header');
@@ -226,12 +226,12 @@ describe('CommentUI', () => {
       expect(tagsIdx).toBeLessThan(bodyIdx);
     });
 
-    test('should dispatch mdview:comment:focus on card click', () => {
+    test('should dispatch mdreview:comment:focus on card click', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:focus', handler);
+      document.addEventListener('mdreview:comment:focus', handler);
 
       card.click();
 
@@ -239,7 +239,7 @@ describe('CommentUI', () => {
       const event = handler.mock.calls[0][0] as CustomEvent;
       expect(event.detail.commentId).toBe('comment-1');
 
-      document.removeEventListener('mdview:comment:focus', handler);
+      document.removeEventListener('mdreview:comment:focus', handler);
     });
   });
 
@@ -309,12 +309,12 @@ describe('CommentUI', () => {
       expect(card.classList.contains('minimized')).toBe(true);
     });
 
-    test('should dispatch mdview:comment:focus only on expand', () => {
+    test('should dispatch mdreview:comment:focus only on expand', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:focus', handler);
+      document.addEventListener('mdreview:comment:focus', handler);
 
       // Expand — should fire focus
       card.click();
@@ -324,15 +324,15 @@ describe('CommentUI', () => {
       card.click();
       expect(handler).toHaveBeenCalledTimes(1);
 
-      document.removeEventListener('mdview:comment:focus', handler);
+      document.removeEventListener('mdreview:comment:focus', handler);
     });
 
-    test('should dispatch mdview:comment:reposition on every toggle', () => {
+    test('should dispatch mdreview:comment:reposition on every toggle', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:reposition', handler);
+      document.addEventListener('mdreview:comment:reposition', handler);
 
       // Expand
       card.click();
@@ -342,7 +342,7 @@ describe('CommentUI', () => {
       card.click();
       expect(handler).toHaveBeenCalledTimes(2);
 
-      document.removeEventListener('mdview:comment:reposition', handler);
+      document.removeEventListener('mdreview:comment:reposition', handler);
     });
   });
 
@@ -354,7 +354,7 @@ describe('CommentUI', () => {
       const menuBtn = card.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn.click();
 
-      const dropdown = document.querySelector('.mdview-comment-menu');
+      const dropdown = document.querySelector('.mdreview-comment-menu');
       expect(dropdown).not.toBeNull();
       expect(dropdown?.getAttribute('role')).toBe('menu');
     });
@@ -366,7 +366,7 @@ describe('CommentUI', () => {
       const menuBtn = card.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn.click();
 
-      const items = document.querySelectorAll('.mdview-comment-menu [role="menuitem"]');
+      const items = document.querySelectorAll('.mdreview-comment-menu [role="menuitem"]');
       expect(items.length).toBe(3);
 
       const texts = Array.from(items).map((item) => item.textContent);
@@ -375,18 +375,18 @@ describe('CommentUI', () => {
       expect(texts).toContain('Delete');
     });
 
-    test('should dispatch mdview:comment:edit when Edit is clicked', () => {
+    test('should dispatch mdreview:comment:edit when Edit is clicked', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:edit', handler);
+      document.addEventListener('mdreview:comment:edit', handler);
 
       const menuBtn = card.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn.click();
 
       const editItem = Array.from(
-        document.querySelectorAll('.mdview-comment-menu [role="menuitem"]')
+        document.querySelectorAll('.mdreview-comment-menu [role="menuitem"]')
       ).find((el) => el.textContent === 'Edit') as HTMLElement;
       editItem.click();
 
@@ -394,21 +394,21 @@ describe('CommentUI', () => {
       const event = handler.mock.calls[0][0] as CustomEvent;
       expect(event.detail.commentId).toBe('comment-1');
 
-      document.removeEventListener('mdview:comment:edit', handler);
+      document.removeEventListener('mdreview:comment:edit', handler);
     });
 
-    test('should dispatch mdview:comment:resolve when Resolve is clicked', () => {
+    test('should dispatch mdreview:comment:resolve when Resolve is clicked', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:resolve', handler);
+      document.addEventListener('mdreview:comment:resolve', handler);
 
       const menuBtn = card.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn.click();
 
       const resolveItem = Array.from(
-        document.querySelectorAll('.mdview-comment-menu [role="menuitem"]')
+        document.querySelectorAll('.mdreview-comment-menu [role="menuitem"]')
       ).find((el) => el.textContent === 'Resolve') as HTMLElement;
       resolveItem.click();
 
@@ -416,21 +416,21 @@ describe('CommentUI', () => {
       const event = handler.mock.calls[0][0] as CustomEvent;
       expect(event.detail.commentId).toBe('comment-1');
 
-      document.removeEventListener('mdview:comment:resolve', handler);
+      document.removeEventListener('mdreview:comment:resolve', handler);
     });
 
-    test('should dispatch mdview:comment:delete when Delete is clicked', () => {
+    test('should dispatch mdreview:comment:delete when Delete is clicked', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:delete', handler);
+      document.addEventListener('mdreview:comment:delete', handler);
 
       const menuBtn = card.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn.click();
 
       const deleteItem = Array.from(
-        document.querySelectorAll('.mdview-comment-menu [role="menuitem"]')
+        document.querySelectorAll('.mdreview-comment-menu [role="menuitem"]')
       ).find((el) => el.textContent === 'Delete') as HTMLElement;
       deleteItem.click();
 
@@ -438,7 +438,7 @@ describe('CommentUI', () => {
       const event = handler.mock.calls[0][0] as CustomEvent;
       expect(event.detail.commentId).toBe('comment-1');
 
-      document.removeEventListener('mdview:comment:delete', handler);
+      document.removeEventListener('mdreview:comment:delete', handler);
     });
 
     test('should close menu when clicking outside', () => {
@@ -448,12 +448,12 @@ describe('CommentUI', () => {
       const menuBtn = card.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn.click();
 
-      expect(document.querySelector('.mdview-comment-menu')).not.toBeNull();
+      expect(document.querySelector('.mdreview-comment-menu')).not.toBeNull();
 
       // Click outside the menu
       document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-      expect(document.querySelector('.mdview-comment-menu')).toBeNull();
+      expect(document.querySelector('.mdreview-comment-menu')).toBeNull();
     });
 
     test('should close previous menu when opening a new one', () => {
@@ -465,14 +465,14 @@ describe('CommentUI', () => {
       // Open first menu
       const menuBtn1 = card1.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn1.click();
-      expect(document.querySelectorAll('.mdview-comment-menu').length).toBe(1);
+      expect(document.querySelectorAll('.mdreview-comment-menu').length).toBe(1);
 
       // Open second menu
       const menuBtn2 = card2.querySelector('.comment-menu-btn') as HTMLElement;
       menuBtn2.click();
 
       // Should still only have one menu open
-      expect(document.querySelectorAll('.mdview-comment-menu').length).toBe(1);
+      expect(document.querySelectorAll('.mdreview-comment-menu').length).toBe(1);
     });
   });
 
@@ -483,7 +483,7 @@ describe('CommentUI', () => {
       const form = ui.renderInputForm(onSave, onCancel);
 
       expect(form.tagName).toBe('DIV');
-      expect(form.classList.contains('mdview-comment-input')).toBe(true);
+      expect(form.classList.contains('mdreview-comment-input')).toBe(true);
 
       const textarea = form.querySelector('textarea');
       expect(textarea).not.toBeNull();
@@ -646,7 +646,7 @@ describe('CommentUI', () => {
       (pills[0] as HTMLElement).click(); // blocking
       (pills[2] as HTMLElement).click(); // suggestion
 
-      const saveBtn = form.querySelector('.mdview-comment-btn-save') as HTMLElement;
+      const saveBtn = form.querySelector('.mdreview-comment-btn-save') as HTMLElement;
       saveBtn.click();
 
       expect(onSave).toHaveBeenCalledWith('My comment', ['blocking', 'suggestion']);
@@ -661,7 +661,7 @@ describe('CommentUI', () => {
       const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
       textarea.value = 'No tags comment';
 
-      const saveBtn = form.querySelector('.mdview-comment-btn-save') as HTMLElement;
+      const saveBtn = form.querySelector('.mdreview-comment-btn-save') as HTMLElement;
       saveBtn.click();
 
       expect(onSave).toHaveBeenCalledWith('No tags comment', []);
@@ -699,7 +699,7 @@ describe('CommentUI', () => {
       const textareaIdx = children.findIndex((el) => el.tagName === 'TEXTAREA');
       const pickerIdx = children.findIndex((el) => el.classList.contains('comment-tag-picker'));
       const actionsIdx = children.findIndex((el) =>
-        el.classList.contains('mdview-comment-input-actions')
+        el.classList.contains('mdreview-comment-input-actions')
       );
 
       expect(textareaIdx).toBeLessThan(pickerIdx);
@@ -726,7 +726,7 @@ describe('CommentUI', () => {
 
       ui.showToast('Comment saved');
 
-      const toast = document.querySelector('.mdview-toast');
+      const toast = document.querySelector('.mdreview-toast');
       expect(toast).not.toBeNull();
       expect(toast?.textContent).toBe('Comment saved');
 
@@ -739,7 +739,7 @@ describe('CommentUI', () => {
       ui.showToast('Comment saved');
 
       // Before frame callback runs
-      const toast = document.querySelector('.mdview-toast');
+      const toast = document.querySelector('.mdreview-toast');
       expect(toast?.classList.contains('visible')).toBe(false);
 
       // requestAnimationFrame fires
@@ -758,7 +758,7 @@ describe('CommentUI', () => {
       vi.advanceTimersByTime(16); // frame
       vi.advanceTimersByTime(1000); // duration
 
-      const toast = document.querySelector('.mdview-toast');
+      const toast = document.querySelector('.mdreview-toast');
       expect(toast).toBeNull();
 
       vi.useRealTimers();
@@ -773,11 +773,11 @@ describe('CommentUI', () => {
 
       // Still visible at 1500ms
       vi.advanceTimersByTime(1500);
-      expect(document.querySelector('.mdview-toast')).not.toBeNull();
+      expect(document.querySelector('.mdreview-toast')).not.toBeNull();
 
       // Gone at 2000ms
       vi.advanceTimersByTime(500);
-      expect(document.querySelector('.mdview-toast')).toBeNull();
+      expect(document.querySelector('.mdreview-toast')).toBeNull();
 
       vi.useRealTimers();
     });
@@ -788,11 +788,11 @@ describe('CommentUI', () => {
       const gutter = ui.createGutter();
       document.body.appendChild(gutter);
 
-      expect(document.querySelector('.mdview-comment-gutter')).not.toBeNull();
+      expect(document.querySelector('.mdreview-comment-gutter')).not.toBeNull();
 
       ui.destroy();
 
-      expect(document.querySelector('.mdview-comment-gutter')).toBeNull();
+      expect(document.querySelector('.mdreview-comment-gutter')).toBeNull();
     });
 
     test('should remove cards from DOM', () => {
@@ -802,11 +802,11 @@ describe('CommentUI', () => {
       const card = ui.renderCard(sampleComment);
       gutter.appendChild(card);
 
-      expect(document.querySelector('.mdview-comment-card')).not.toBeNull();
+      expect(document.querySelector('.mdreview-comment-card')).not.toBeNull();
 
       ui.destroy();
 
-      expect(document.querySelector('.mdview-comment-card')).toBeNull();
+      expect(document.querySelector('.mdreview-comment-card')).toBeNull();
     });
 
     test('should clean up click-outside listener', () => {
@@ -888,12 +888,12 @@ describe('CommentUI', () => {
       expect(replyBtn).toBeNull();
     });
 
-    test('should dispatch mdview:comment:reply when reply button clicked', () => {
+    test('should dispatch mdreview:comment:reply when reply button clicked', () => {
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:reply', handler);
+      document.addEventListener('mdreview:comment:reply', handler);
 
       const replyBtn = card.querySelector('.comment-reply-btn') as HTMLElement;
       replyBtn.click();
@@ -902,7 +902,7 @@ describe('CommentUI', () => {
       const event = handler.mock.calls[0][0] as CustomEvent;
       expect(event.detail.commentId).toBe('comment-1');
 
-      document.removeEventListener('mdview:comment:reply', handler);
+      document.removeEventListener('mdreview:comment:reply', handler);
     });
 
     test('should render replies between body and reactions', () => {
@@ -953,7 +953,7 @@ describe('CommentUI', () => {
       const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
       textarea.value = 'My reply';
 
-      const saveBtn = form.querySelector('.mdview-comment-btn-save') as HTMLElement;
+      const saveBtn = form.querySelector('.mdreview-comment-btn-save') as HTMLElement;
       saveBtn.click();
 
       expect(onSave).toHaveBeenCalledWith('My reply');
@@ -964,7 +964,7 @@ describe('CommentUI', () => {
       const form = ui.renderReplyForm(vi.fn(), onCancel);
       document.body.appendChild(form);
 
-      const cancelBtn = form.querySelector('.mdview-comment-btn-cancel') as HTMLElement;
+      const cancelBtn = form.querySelector('.mdreview-comment-btn-cancel') as HTMLElement;
       cancelBtn.click();
 
       expect(onCancel).toHaveBeenCalledTimes(1);
@@ -1050,7 +1050,7 @@ describe('CommentUI', () => {
       expect(addBtn?.textContent).toBe('+');
     });
 
-    test('should dispatch mdview:comment:react when clicking a reaction pill', () => {
+    test('should dispatch mdreview:comment:react when clicking a reaction pill', () => {
       ui.setCurrentAuthor('test');
       const commentWithReactions: Comment = {
         ...sampleComment,
@@ -1060,7 +1060,7 @@ describe('CommentUI', () => {
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:react', handler);
+      document.addEventListener('mdreview:comment:react', handler);
 
       const pill = card.querySelector('.comment-reaction') as HTMLElement;
       pill.click();
@@ -1070,16 +1070,16 @@ describe('CommentUI', () => {
       expect(event.detail.commentId).toBe('comment-1');
       expect(event.detail.emoji).toBe('\u{1F44D}');
 
-      document.removeEventListener('mdview:comment:react', handler);
+      document.removeEventListener('mdreview:comment:react', handler);
     });
 
-    test('should dispatch mdview:comment:react:picker when clicking "+" button', () => {
+    test('should dispatch mdreview:comment:react:picker when clicking "+" button', () => {
       ui.setCurrentAuthor('test');
       const card = ui.renderCard(sampleComment);
       document.body.appendChild(card);
 
       const handler = vi.fn();
-      document.addEventListener('mdview:comment:react:picker', handler);
+      document.addEventListener('mdreview:comment:react:picker', handler);
 
       const addBtn = card.querySelector('.comment-reaction-add') as HTMLElement;
       addBtn.click();
@@ -1088,7 +1088,7 @@ describe('CommentUI', () => {
       const event = handler.mock.calls[0][0] as CustomEvent;
       expect(event.detail.commentId).toBe('comment-1');
 
-      document.removeEventListener('mdview:comment:react:picker', handler);
+      document.removeEventListener('mdreview:comment:react:picker', handler);
     });
 
     test('should not render reactions section when no reactions and no author set', () => {
@@ -1150,7 +1150,7 @@ describe('CommentUI', () => {
     test('should have correct class name', () => {
       const picker = ui.renderEmojiPicker(document.createElement('div'), vi.fn(), vi.fn());
 
-      expect(picker.classList.contains('mdview-emoji-picker')).toBe(true);
+      expect(picker.classList.contains('mdreview-emoji-picker')).toBe(true);
     });
 
     test('should call onClose when clicking outside the picker', () => {

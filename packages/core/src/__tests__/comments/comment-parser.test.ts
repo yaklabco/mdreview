@@ -63,6 +63,7 @@ More content here.`;
       expect(result.cleanedMarkdown).toBe('Some highlighted text in context.');
       expect(result.cleanedMarkdown).not.toContain('[^comment-1]');
       expect(result.cleanedMarkdown).not.toContain('mdview:comment');
+      expect(result.cleanedMarkdown).not.toContain('mdreview:comment');
     });
   });
 

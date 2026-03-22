@@ -3,7 +3,7 @@
  * Manages settings page UI and interactions
  */
 
-import type { AppState, ThemeName, LogLevel, PaperSize } from '@mdview/core';
+import type { AppState, ThemeName, LogLevel, PaperSize } from '@mdreview/core';
 import { debug } from '../utils/debug-logger';
 
 class OptionsManager {
@@ -42,7 +42,7 @@ class OptionsManager {
     if (versionElement) {
       // __APP_VERSION__ is injected by Vite at build time
       try {
-        versionElement.textContent = `MDView v${__APP_VERSION__}`;
+        versionElement.textContent = `Design Review v${__APP_VERSION__}`;
       } catch (e) {
         debug.warn('Options', 'Failed to set app version:', e);
       }
@@ -361,7 +361,7 @@ class OptionsManager {
     const previewEl = document.getElementById('filename-preview-text');
     if (previewEl) {
       // Dynamic import to avoid circular dependency
-      import('@mdview/core')
+      import('@mdreview/core')
         .then(({ FilenameGenerator }) => {
           const preview = FilenameGenerator.generate({
             title: 'My Document',
@@ -523,7 +523,7 @@ class OptionsManager {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `mdview-settings-${Date.now()}.json`;
+      link.download = `mdreview-settings-${Date.now()}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -6,8 +6,8 @@ describe('StatusBar', () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    document.body.innerHTML = '<div id="mdview-status-bar"></div>';
-    container = document.getElementById('mdview-status-bar') as HTMLElement;
+    document.body.innerHTML = '<div id="mdreview-status-bar"></div>';
+    container = document.getElementById('mdreview-status-bar') as HTMLElement;
     statusBar = new StatusBar();
     statusBar.render(container);
   });

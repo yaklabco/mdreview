@@ -29,8 +29,9 @@ describe('TabManager', () => {
   beforeEach(() => {
     MockResizeObserver.instances = [];
     globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
-    document.body.innerHTML = '<div id="mdview-tab-bar"></div><div id="mdview-content-area"></div>';
-    container = document.getElementById('mdview-tab-bar')!;
+    document.body.innerHTML =
+      '<div id="mdreview-tab-bar"></div><div id="mdreview-content-area"></div>';
+    container = document.getElementById('mdreview-tab-bar')!;
     tabManager = new TabManager();
     tabManager.render(container);
   });
@@ -122,19 +123,19 @@ describe('TabManager', () => {
   });
 
   it('should get content container for a tab', () => {
-    const contentArea = document.getElementById('mdview-content-area')!;
+    const contentArea = document.getElementById('mdreview-content-area')!;
     tabManager.setContentArea(contentArea);
     tabManager.createTab('tab-1', '/tmp/test.md', 'test.md');
     const tabContainer = tabManager.getTabContainer('tab-1');
     expect(tabContainer).not.toBeNull();
     // Container lives inside a wrapper, which lives in the content area
     const wrapper = tabContainer?.parentElement;
-    expect(wrapper?.classList.contains('mdview-tab-content-wrapper')).toBe(true);
+    expect(wrapper?.classList.contains('mdreview-tab-content-wrapper')).toBe(true);
     expect(wrapper?.parentElement).toBe(contentArea);
   });
 
   it('should hide inactive tab wrappers and show active', () => {
-    const contentArea = document.getElementById('mdview-content-area')!;
+    const contentArea = document.getElementById('mdreview-content-area')!;
     tabManager.setContentArea(contentArea);
 
     tabManager.createTab('tab-1', '/tmp/a.md', 'a.md');
@@ -320,7 +321,9 @@ describe('TabManager', () => {
       tabManager.deleteGroup(groupId);
 
       expect(container.querySelector('.tab-group-chip')).toBeNull();
-      expect(container.querySelector('[data-tab-id="tab-1"]')?.hasAttribute('data-group-color')).toBe(false);
+      expect(
+        container.querySelector('[data-tab-id="tab-1"]')?.hasAttribute('data-group-color')
+      ).toBe(false);
     });
 
     it('should fire onGroupChanged callback on group mutations', () => {
@@ -458,7 +461,9 @@ describe('TabManager', () => {
           new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 })
         );
 
-        const redSwatch = document.querySelector('.tab-group-color-swatch[data-color="red"]') as HTMLElement;
+        const redSwatch = document.querySelector(
+          '.tab-group-color-swatch[data-color="red"]'
+        ) as HTMLElement;
         redSwatch.click();
 
         expect(chip.classList.contains('tab-group-color-red')).toBe(true);
@@ -477,7 +482,9 @@ describe('TabManager', () => {
         expect(blueSwatch?.classList.contains('selected')).toBe(true);
 
         // Click red — blue deselected, red selected
-        const redSwatch = document.querySelector('.tab-group-color-swatch[data-color="red"]') as HTMLElement;
+        const redSwatch = document.querySelector(
+          '.tab-group-color-swatch[data-color="red"]'
+        ) as HTMLElement;
         redSwatch.click();
         expect(redSwatch.classList.contains('selected')).toBe(true);
         expect(blueSwatch?.classList.contains('selected')).toBe(false);
@@ -524,9 +531,9 @@ describe('TabManager', () => {
           new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 })
         );
 
-        const ungroupBtn = Array.from(
-          document.querySelectorAll('.tab-group-editor-action')
-        ).find((el) => el.textContent === 'Ungroup') as HTMLElement;
+        const ungroupBtn = Array.from(document.querySelectorAll('.tab-group-editor-action')).find(
+          (el) => el.textContent === 'Ungroup'
+        ) as HTMLElement;
         ungroupBtn.click();
 
         expect(tabManager.getGroup(groupId)).toBeUndefined();
@@ -633,9 +640,9 @@ describe('TabManager', () => {
           new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 })
         );
 
-        const pdfItem = Array.from(
-          document.querySelectorAll('.tab-context-menu-item')
-        ).find((el) => el.textContent === 'Export as PDF') as HTMLElement;
+        const pdfItem = Array.from(document.querySelectorAll('.tab-context-menu-item')).find(
+          (el) => el.textContent === 'Export as PDF'
+        ) as HTMLElement;
         pdfItem.click();
 
         expect(exportCallback).toHaveBeenCalledWith('tab-1', 'pdf');

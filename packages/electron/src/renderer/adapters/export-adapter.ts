@@ -1,11 +1,11 @@
-import type { ExportAdapter, ExportSaveOptions } from '@mdview/core';
+import type { ExportAdapter, ExportSaveOptions } from '@mdreview/core';
 
 export class ElectronRendererExportAdapter implements ExportAdapter {
   async saveFile(options: ExportSaveOptions): Promise<void> {
     const data =
       options.data instanceof ArrayBuffer ? options.data : await options.data.arrayBuffer();
 
-    return window.mdview.saveFile({
+    return window.mdreview.saveFile({
       filename: options.filename,
       mimeType: options.mimeType,
       data,
@@ -17,6 +17,6 @@ export class ElectronRendererExportAdapter implements ExportAdapter {
     margins?: string;
     landscape?: boolean;
   }): Promise<ArrayBuffer> {
-    return window.mdview.printToPDF(options);
+    return window.mdreview.printToPDF(options);
   }
 }

@@ -3,10 +3,10 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { ExportController } from '@mdview/core';
-import { ContentCollector } from '@mdview/core';
-import { SVGConverter } from '@mdview/core';
-import type { ExportProgress } from '@mdview/core';
+import { ExportController } from '@mdreview/core';
+import { ContentCollector } from '@mdreview/core';
+import { SVGConverter } from '@mdreview/core';
+import type { ExportProgress } from '@mdreview/core';
 
 describe('Phase 2 Integration: DOCX Export', () => {
   let controller: ExportController;
@@ -50,7 +50,7 @@ describe('Phase 2 Integration: DOCX Export', () => {
   // Helper to create test container
   function createTestContainer(html: string): HTMLElement {
     const container = document.createElement('div');
-    container.id = 'mdview-container';
+    container.id = 'mdreview-container';
     container.innerHTML = html;
     return container;
   }

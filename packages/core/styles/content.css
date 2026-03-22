@@ -39,24 +39,24 @@
 }
 
 /* Reset and base styles - only apply when MDView is active */
-body.mdview-active {
+body.mdreview-active {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 /* Global box-sizing without resetting margins/padding */
-#mdview-container *,
-#mdview-container *::before,
-#mdview-container *::after {
+#mdreview-container *,
+#mdreview-container *::before,
+#mdreview-container *::after {
   box-sizing: border-box;
 }
 
-body.mdview-active ::selection {
+body.mdreview-active ::selection {
   background: var(--md-selection);
 }
 
-body.mdview-active {
+body.mdreview-active {
   background-color: var(--md-bg);
   color: var(--md-fg);
   font-family: var(--md-font-family);
@@ -67,13 +67,13 @@ body.mdview-active {
   -moz-osx-font-smoothing: grayscale;
 }
 
-#mdview-container {
+#mdreview-container {
   max-width: var(--md-max-width, 980px);
   margin: 0 auto;
   padding: 45px;
 }
 
-.mdview-rendered {
+.mdreview-rendered {
   animation: fadeIn 0.3s ease;
 }
 
@@ -87,7 +87,7 @@ body.mdview-active {
 }
 
 /* Loading state */
-.mdview-loading {
+.mdreview-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,7 +98,7 @@ body.mdview-active {
 }
 
 /* Loading overlay - positioned to cover entire viewport */
-#mdview-loading-overlay {
+#mdreview-loading-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -113,8 +113,8 @@ body.mdview-active {
   color: var(--md-fg);
 }
 
-.mdview-loading::before,
-#mdview-loading-overlay::before {
+.mdreview-loading::before,
+#mdreview-loading-overlay::before {
   content: '';
   display: inline-block;
   width: 20px;
@@ -133,7 +133,7 @@ body.mdview-active {
 }
 
 /* Subtle progress indicator (top right) */
-#mdview-progress-indicator {
+#mdreview-progress-indicator {
   position: fixed;
   top: 12px;
   right: 12px;
@@ -151,7 +151,7 @@ body.mdview-active {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-#mdview-progress-indicator.complete {
+#mdreview-progress-indicator.complete {
   opacity: 0;
   transition: opacity 0.5s ease-out 0.3s; /* Fade out after 0.3s delay */
 }
@@ -175,32 +175,32 @@ body.mdview-active {
 }
 
 /* Progressive Hydration - Sections */
-.mdview-section {
+.mdreview-section {
   margin-bottom: 0;
 }
 
 /* First heading in a section should not have top margin (section spacing handles it) */
-.mdview-section > h1:first-child,
-.mdview-section > h2:first-child,
-.mdview-section > h3:first-child,
-.mdview-section > h4:first-child,
-.mdview-section > h5:first-child,
-.mdview-section > h6:first-child {
+.mdreview-section > h1:first-child,
+.mdreview-section > h2:first-child,
+.mdreview-section > h3:first-child,
+.mdreview-section > h4:first-child,
+.mdreview-section > h5:first-child,
+.mdreview-section > h6:first-child {
   margin-top: 24px;
 }
 
 /* Last element in a section should not have bottom margin */
-.mdview-section > *:last-child {
+.mdreview-section > *:last-child {
   margin-bottom: 0;
 }
 
 /* Skeleton state (before hydration) - NO VISUAL DISTRACTION */
-.mdview-section-skeleton {
+.mdreview-section-skeleton {
   opacity: 1; /* Full opacity - no fade effect */
 }
 
 /* Hydrated state (after content loaded) */
-.mdview-section-hydrated {
+.mdreview-section-hydrated {
   opacity: 1;
   min-height: auto !important; /* Override skeleton inline min-height */
 }
@@ -211,7 +211,7 @@ body.mdview-active {
 }
 
 /* Legacy: Lazy Section Loading (kept for backwards compat) */
-.mdview-section-placeholder {
+.mdreview-section-placeholder {
   min-height: 200px;
   padding: 24px;
   margin-bottom: 24px;
@@ -249,7 +249,7 @@ body.mdview-active {
   animation: spin 1s linear infinite;
 }
 
-.mdview-section-error {
+.mdreview-section-error {
   padding: 16px;
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -257,25 +257,25 @@ body.mdview-active {
   color: var(--md-fg);
 }
 
-.mdview-section-error p {
+.mdreview-section-error p {
   margin: 0 0 8px 0;
   font-weight: 600;
   color: rgb(239, 68, 68);
 }
 
-.mdview-section-error pre {
+.mdreview-section-error pre {
   margin: 0;
   font-size: 12px;
   opacity: 0.8;
 }
 
 /* Headings */
-body.mdview-active h1,
-body.mdview-active h2,
-body.mdview-active h3,
-body.mdview-active h4,
-body.mdview-active h5,
-body.mdview-active h6 {
+body.mdreview-active h1,
+body.mdreview-active h2,
+body.mdreview-active h3,
+body.mdreview-active h4,
+body.mdreview-active h5,
+body.mdreview-active h6 {
   color: var(--md-heading);
   font-weight: 600;
   margin-top: 24px;
@@ -283,31 +283,31 @@ body.mdview-active h6 {
   line-height: 1.25;
 }
 
-body.mdview-active h1 {
+body.mdreview-active h1 {
   font-size: 2em;
   padding-bottom: 0.3em;
   border-bottom: 1px solid var(--md-border);
 }
 
-body.mdview-active h2 {
+body.mdreview-active h2 {
   font-size: 1.5em;
   padding-bottom: 0.3em;
   border-bottom: 1px solid var(--md-border);
 }
 
-body.mdview-active h3 {
+body.mdreview-active h3 {
   font-size: 1.25em;
 }
 
-body.mdview-active h4 {
+body.mdreview-active h4 {
   font-size: 1em;
 }
 
-body.mdview-active h5 {
+body.mdreview-active h5 {
   font-size: 0.875em;
 }
 
-body.mdview-active h6 {
+body.mdreview-active h6 {
   font-size: 0.85em;
   color: var(--md-fg);
   opacity: 0.7;
@@ -327,43 +327,43 @@ body.mdview-active h6 {
 }
 
 /* Paragraphs */
-body.mdview-active p {
+body.mdreview-active p {
   margin-top: 0;
   margin-bottom: 16px;
 }
 
 /* Links */
-body.mdview-active a {
+body.mdreview-active a {
   color: var(--md-link);
   text-decoration: none;
 }
 
-body.mdview-active a:hover {
+body.mdreview-active a:hover {
   color: var(--md-link-hover);
   text-decoration: underline;
 }
 
-body.mdview-active a:visited {
+body.mdreview-active a:visited {
   color: var(--md-link-visited);
 }
 
 /* Lists */
-body.mdview-active ul,
-body.mdview-active ol {
+body.mdreview-active ul,
+body.mdreview-active ol {
   margin-top: 0;
   margin-bottom: 16px;
   padding-left: 2em;
 }
 
-body.mdview-active li {
+body.mdreview-active li {
   margin-top: 0.25em;
 }
 
-body.mdview-active li > p {
+body.mdreview-active li > p {
   margin-bottom: 0;
 }
 
-body.mdview-active li + li {
+body.mdreview-active li + li {
   margin-top: 0.25em;
 }
 
@@ -379,7 +379,7 @@ body.mdview-active li + li {
 }
 
 /* Code */
-body.mdview-active code {
+body.mdreview-active code {
   background-color: var(--md-code-bg);
   color: var(--md-code-text);
   font-family: var(--md-font-family-code);
@@ -388,7 +388,7 @@ body.mdview-active code {
   border-radius: 3px;
 }
 
-body.mdview-active pre {
+body.mdreview-active pre {
   background-color: var(--md-code-bg);
   color: var(--md-code-text);
   font-family: var(--md-font-family-code);
@@ -399,14 +399,14 @@ body.mdview-active pre {
   margin-bottom: 16px;
 }
 
-body.mdview-active pre code {
+body.mdreview-active pre code {
   background: transparent;
   padding: 0;
   font-size: 100%;
 }
 
 /* Syntax highlighting (highlight.js classes) */
-/* Use higher specificity to override body.mdview-active code color */
+/* Use higher specificity to override body.mdreview-active code color */
 pre code.hljs,
 pre .hljs {
   display: block;
@@ -544,8 +544,8 @@ pre .hljs-strong {
   border-color: var(--md-link);
 }
 
-/* Override body.mdview-active pre border-radius with higher specificity */
-body.mdview-active .code-block-wrapper pre {
+/* Override body.mdreview-active pre border-radius with higher specificity */
+body.mdreview-active .code-block-wrapper pre {
   margin: 0;
   border-radius: 0 0 6px 6px;
   border: 1px solid var(--md-border);
@@ -569,7 +569,7 @@ body.mdview-active .code-block-wrapper pre {
   overflow: hidden;
 }
 
-body.mdview-active .code-block-wrapper.has-line-numbers pre {
+body.mdreview-active .code-block-wrapper.has-line-numbers pre {
   border: none;
   border-radius: 0;
   margin: 0;
@@ -636,33 +636,33 @@ hr {
   margin-bottom: 16px;
 }
 
-body.mdview-active table {
+body.mdreview-active table {
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
 }
 
-body.mdview-active table th {
+body.mdreview-active table th {
   font-weight: 600;
   background-color: var(--md-code-bg);
 }
 
-body.mdview-active table th,
-body.mdview-active table td {
+body.mdreview-active table th,
+body.mdreview-active table td {
   padding: 6px 13px;
   border: 1px solid var(--md-border);
 }
 
-body.mdview-active table tr {
+body.mdreview-active table tr {
   background-color: var(--md-bg);
 }
 
-body.mdview-active table tr:nth-child(2n) {
+body.mdreview-active table tr:nth-child(2n) {
   background-color: var(--md-code-bg);
 }
 
 /* Images */
-body.mdview-active img {
+body.mdreview-active img {
   max-width: 100%;
   height: auto;
   display: block;
@@ -672,36 +672,36 @@ body.mdview-active img {
 }
 
 /* README / hero section helpers (used in project docs like README.md) */
-.mdview-hero-title {
+.mdreview-hero-title {
   text-align: center;
   margin-top: 0;
 }
 
-.mdview-badges {
+.mdreview-badges {
   text-align: center;
   margin: 12px 0 8px 0;
 }
 
-.mdview-badges img {
+.mdreview-badges img {
   display: inline-block;
   margin: 0 4px;
   box-shadow: none;
   border-radius: 4px;
 }
 
-.mdview-logo-wrapper {
+.mdreview-logo-wrapper {
   text-align: center;
   margin: 16px 0 8px 0;
 }
 
-.mdview-logo {
+.mdreview-logo {
   display: inline-block;
   margin: 0 auto;
   box-shadow: none;
   border-radius: 16px;
 }
 
-.mdview-tagline {
+.mdreview-tagline {
   text-align: center;
   font-style: italic;
   margin-bottom: 24px;
@@ -979,7 +979,7 @@ img[loading="lazy"].loaded {
 }
 
 /* Error Display */
-.mdview-error {
+.mdreview-error {
   max-width: 600px;
   margin: 100px auto;
   padding: 20px;
@@ -988,16 +988,16 @@ img[loading="lazy"].loaded {
   border-radius: 6px;
 }
 
-.mdview-error h2 {
+.mdreview-error h2 {
   color: var(--md-error);
   margin-top: 0;
 }
 
-.mdview-error details {
+.mdreview-error details {
   margin-top: 16px;
 }
 
-.mdview-error pre {
+.mdreview-error pre {
   background-color: var(--md-bg);
   border: 1px solid var(--md-border);
   max-height: 300px;
@@ -1046,7 +1046,7 @@ img[loading="lazy"].loaded {
   }
 
   /* Container */
-  #mdview-container {
+  #mdreview-container {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -1160,7 +1160,7 @@ img[loading="lazy"].loaded {
   }
 
   /* Print images for diagrams - explicit sizing set by PDFGenerator */
-  .mdview-print-image {
+  .mdreview-print-image {
     display: block !important;
     margin: 12pt auto !important;
     page-break-inside: avoid !important;
@@ -1217,16 +1217,16 @@ img[loading="lazy"].loaded {
   }
 
   /* Hide all UI elements */
-  .mdview-toc-overlay,
-  .mdview-toc-toggle-btn,
-  .mdview-export-btn,
-  .mdview-export-menu,
-  .mdview-export-progress-overlay,
-  .mdview-export-toast,
+  .mdreview-toc-overlay,
+  .mdreview-toc-toggle-btn,
+  .mdreview-export-btn,
+  .mdreview-export-menu,
+  .mdreview-export-progress-overlay,
+  .mdreview-export-toast,
   .mermaid-controls,
   .mermaid-original-code,
-  #mdview-progress-indicator,
-  #mdview-loading-overlay {
+  #mdreview-progress-indicator,
+  #mdreview-loading-overlay {
     display: none !important;
   }
 
@@ -1249,19 +1249,19 @@ img[loading="lazy"].loaded {
 
 /* Table of Contents — layout-agnostic base styles.
    Consumers (Chrome extension, Electron) provide their own positioning. */
-.mdview-toc-overlay {
+.mdreview-toc-overlay {
   display: none;
   flex-direction: column;
   width: 280px;
   background-color: var(--md-bg);
 }
 
-.mdview-toc-overlay.visible {
+.mdreview-toc-overlay.visible {
   display: flex;
 }
 
 /* TOC Toggle Button (Chrome extension only — Electron uses menu) */
-.mdview-toc-toggle-btn {
+.mdreview-toc-toggle-btn {
   position: fixed;
   top: 16px;
   width: 32px;
@@ -1280,24 +1280,24 @@ img[loading="lazy"].loaded {
   opacity: 0.4;
 }
 
-.mdview-toc-toggle-btn:hover {
+.mdreview-toc-toggle-btn:hover {
   opacity: 1;
   background: var(--md-code-bg);
   border-color: var(--md-border);
 }
 
-.mdview-toc-toggle-btn.position-left {
+.mdreview-toc-toggle-btn.position-left {
   left: 16px;
 }
 
-.mdview-toc-toggle-btn.position-right {
+.mdreview-toc-toggle-btn.position-right {
   right: 16px;
 }
 
 /* Chrome extension: position:fixed overlay with content push.
    Uses direct-child selector because Chrome appends TOC to body;
-   Electron places TOC inside .mdview-tab-content-wrapper instead. */
-body.mdview-active > .mdview-toc-overlay {
+   Electron places TOC inside .mdreview-tab-content-wrapper instead. */
+body.mdreview-active > .mdreview-toc-overlay {
   position: fixed;
   top: 0;
   height: 100vh;
@@ -1306,40 +1306,40 @@ body.mdview-active > .mdview-toc-overlay {
   box-shadow: none;
 }
 
-body.mdview-active > .mdview-toc-overlay.position-left {
+body.mdreview-active > .mdreview-toc-overlay.position-left {
   left: 0;
   border-right: 1px solid var(--md-border);
 }
 
-body.mdview-active > .mdview-toc-overlay.position-right {
+body.mdreview-active > .mdreview-toc-overlay.position-right {
   right: 0;
   border-left: 1px solid var(--md-border);
 }
 
-body.mdview-active.toc-visible-left #mdview-container {
+body.mdreview-active.toc-visible-left #mdreview-container {
   margin-left: 280px;
   transition: margin-left 0.3s ease;
 }
 
-body.mdview-active.toc-visible-right #mdview-container {
+body.mdreview-active.toc-visible-right #mdreview-container {
   margin-right: 280px;
   transition: margin-right 0.3s ease;
 }
 
-body.mdview-active.toc-visible-left .mdview-toc-toggle-btn.position-left {
+body.mdreview-active.toc-visible-left .mdreview-toc-toggle-btn.position-left {
   opacity: 1;
   background: var(--md-code-bg);
   border-color: var(--md-link);
 }
 
-body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
+body.mdreview-active.toc-visible-right .mdreview-toc-toggle-btn.position-right {
   opacity: 1;
   background: var(--md-code-bg);
   border-color: var(--md-link);
 }
 
 /* Header */
-.mdview-toc-header {
+.mdreview-toc-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1347,7 +1347,7 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   border-bottom: 1px solid var(--md-border);
 }
 
-.mdview-toc-title {
+.mdreview-toc-title {
   font-size: 11px;
   font-weight: 700;
   color: var(--md-fg-muted, var(--md-fg));
@@ -1355,7 +1355,7 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   letter-spacing: 0.08em;
 }
 
-.mdview-toc-close {
+.mdreview-toc-close {
   width: 22px;
   height: 22px;
   padding: 0;
@@ -1372,13 +1372,13 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   justify-content: center;
 }
 
-.mdview-toc-close:hover {
+.mdreview-toc-close:hover {
   background: var(--md-code-bg);
   color: var(--md-fg);
 }
 
 /* Content area */
-.mdview-toc-content {
+.mdreview-toc-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1386,14 +1386,14 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
 }
 
 /* List reset */
-.mdview-toc-overlay .mdview-toc-list,
-.mdview-toc-overlay .mdview-toc-list ul {
+.mdreview-toc-overlay .mdreview-toc-list,
+.mdreview-toc-overlay .mdreview-toc-list ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.mdview-toc-overlay .mdview-toc-item {
+.mdreview-toc-overlay .mdreview-toc-item {
   position: relative;
   margin: 0;
   padding: 0;
@@ -1401,7 +1401,7 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
 }
 
 /* Links with dot indicators */
-.mdview-toc-link {
+.mdreview-toc-link {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1416,14 +1416,14 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   min-width: 0;
 }
 
-.mdview-toc-link-text {
+.mdreview-toc-link-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }
 
-.mdview-toc-link::before {
+.mdreview-toc-link::before {
   content: '';
   width: 6px;
   height: 6px;
@@ -1433,81 +1433,81 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   transition: all 0.15s ease;
 }
 
-.mdview-toc-link:hover {
+.mdreview-toc-link:hover {
   background: var(--md-code-bg);
   color: var(--md-link);
 }
 
-.mdview-toc-link:hover::before {
+.mdreview-toc-link:hover::before {
   background: var(--md-link);
   transform: scale(1.3);
 }
 
 /* Active state */
-.mdview-toc-item.active > .mdview-toc-link {
+.mdreview-toc-item.active > .mdreview-toc-link {
   background: var(--md-selection, rgba(9, 105, 218, 0.1));
   color: var(--md-link);
   font-weight: 500;
 }
 
-.mdview-toc-item.active > .mdview-toc-link::before {
+.mdreview-toc-item.active > .mdreview-toc-link::before {
   background: var(--md-link);
   box-shadow: 0 0 0 3px var(--md-selection, rgba(9, 105, 218, 0.2));
 }
 
 /* Heading level styling - smaller dots and opacity for deeper levels */
-.mdview-toc-level-1 > .mdview-toc-link {
+.mdreview-toc-level-1 > .mdreview-toc-link {
   font-weight: 600;
   font-size: 13px;
 }
 
-.mdview-toc-level-1 > .mdview-toc-link::before {
+.mdreview-toc-level-1 > .mdreview-toc-link::before {
   width: 8px;
   height: 8px;
 }
 
-.mdview-toc-level-2 > .mdview-toc-link {
+.mdreview-toc-level-2 > .mdreview-toc-link {
   padding-left: 28px;
   font-size: 13px;
 }
 
-.mdview-toc-level-3 > .mdview-toc-link {
+.mdreview-toc-level-3 > .mdreview-toc-link {
   padding-left: 42px;
   font-size: 12px;
   opacity: 0.9;
 }
 
-.mdview-toc-level-3 > .mdview-toc-link::before {
+.mdreview-toc-level-3 > .mdreview-toc-link::before {
   width: 5px;
   height: 5px;
 }
 
-.mdview-toc-level-4 > .mdview-toc-link {
+.mdreview-toc-level-4 > .mdreview-toc-link {
   padding-left: 56px;
   font-size: 12px;
   opacity: 0.8;
 }
 
-.mdview-toc-level-4 > .mdview-toc-link::before {
+.mdreview-toc-level-4 > .mdreview-toc-link::before {
   width: 4px;
   height: 4px;
 }
 
-.mdview-toc-level-5 > .mdview-toc-link,
-.mdview-toc-level-6 > .mdview-toc-link {
+.mdreview-toc-level-5 > .mdreview-toc-link,
+.mdreview-toc-level-6 > .mdreview-toc-link {
   padding-left: 70px;
   font-size: 11px;
   opacity: 0.7;
 }
 
-.mdview-toc-level-5 > .mdview-toc-link::before,
-.mdview-toc-level-6 > .mdview-toc-link::before {
+.mdreview-toc-level-5 > .mdreview-toc-link::before,
+.mdreview-toc-level-6 > .mdreview-toc-link::before {
   width: 4px;
   height: 4px;
 }
 
 /* Collapse/expand toggle */
-.mdview-toc-toggle {
+.mdreview-toc-toggle {
   position: absolute;
   left: 4px;
   top: 50%;
@@ -1526,40 +1526,40 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   transition: all 0.15s ease;
 }
 
-.mdview-toc-toggle:hover {
+.mdreview-toc-toggle:hover {
   opacity: 1;
   background: var(--md-code-bg);
 }
 
-.mdview-toc-item.has-children {
+.mdreview-toc-item.has-children {
   position: relative;
 }
 
-.mdview-toc-item.has-children > ul {
+.mdreview-toc-item.has-children > ul {
   transition: all 0.2s ease;
 }
 
 /* Custom scrollbar */
-.mdview-toc-content::-webkit-scrollbar {
+.mdreview-toc-content::-webkit-scrollbar {
   width: 5px;
 }
 
-.mdview-toc-content::-webkit-scrollbar-track {
+.mdreview-toc-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.mdview-toc-content::-webkit-scrollbar-thumb {
+.mdreview-toc-content::-webkit-scrollbar-thumb {
   background: var(--md-border);
   border-radius: 10px;
 }
 
-.mdview-toc-content::-webkit-scrollbar-thumb:hover {
+.mdreview-toc-content::-webkit-scrollbar-thumb:hover {
   background: var(--md-link);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  #mdview-container {
+  #mdreview-container {
     padding: 20px;
   }
 
@@ -1570,7 +1570,7 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   }
 
   /* Hide TOC on narrow screens */
-  .mdview-toc-overlay {
+  .mdreview-toc-overlay {
     display: none;
   }
 }
@@ -1580,7 +1580,7 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
    ============================================ */
 
 /* === Export Button === */
-.mdview-export-btn {
+.mdreview-export-btn {
   position: fixed;
   top: 16px;
   z-index: 1000;
@@ -1598,42 +1598,42 @@ body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   justify-content: center;
 }
 
-.mdview-export-btn.position-left {
+.mdreview-export-btn.position-left {
   left: 56px; /* 16px + 32px TOC + 8px gap */
 }
 
-.mdview-export-btn.position-right {
+.mdreview-export-btn.position-right {
   right: 56px;
 }
 
 /* Shift export button when TOC is visible */
-body.mdview-active.toc-visible-left .mdview-export-btn.position-left {
+body.mdreview-active.toc-visible-left .mdreview-export-btn.position-left {
   left: 336px; /* 296px (TOC button position) + 32px + 8px gap */
 }
 
-body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
+body.mdreview-active.toc-visible-right .mdreview-export-btn.position-right {
   right: 336px;
 }
 
-.mdview-export-btn:hover {
+.mdreview-export-btn:hover {
   opacity: 1;
   background: var(--md-code-bg);
   border-color: var(--md-border);
 }
 
-.mdview-export-btn.menu-open,
-.mdview-export-btn:active {
+.mdreview-export-btn.menu-open,
+.mdreview-export-btn:active {
   opacity: 1;
   background: var(--md-code-bg);
   border-color: var(--md-link);
 }
 
-.mdview-export-btn.exporting {
+.mdreview-export-btn.exporting {
   opacity: 1;
   pointer-events: none;
 }
 
-.mdview-export-btn.exporting svg {
+.mdreview-export-btn.exporting svg {
   animation: spin 1s linear infinite;
 }
 
@@ -1647,7 +1647,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 }
 
 /* === Export Menu === */
-.mdview-export-menu {
+.mdreview-export-menu {
   position: fixed;
   top: 50px;
   width: 280px;
@@ -1664,22 +1664,22 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   overflow: hidden;
 }
 
-.mdview-export-menu.position-left {
+.mdreview-export-menu.position-left {
   left: 10px;
 }
 
-.mdview-export-menu.position-right {
+.mdreview-export-menu.position-right {
   right: 10px;
 }
 
-.mdview-export-menu.visible {
+.mdreview-export-menu.visible {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
 
 /* === Menu Header === */
-.mdview-export-menu-header {
+.mdreview-export-menu-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1689,7 +1689,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   color: var(--md-fg);
 }
 
-.mdview-export-menu-close {
+.mdreview-export-menu-close {
   background: none;
   border: none;
   font-size: 18px;
@@ -1706,17 +1706,17 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: opacity 0.2s, background-color 0.2s;
 }
 
-.mdview-export-menu-close:hover {
+.mdreview-export-menu-close:hover {
   opacity: 1;
   background: var(--md-code-bg);
 }
 
 /* === Menu Items === */
-.mdview-export-menu-section {
+.mdreview-export-menu-section {
   padding: 8px;
 }
 
-.mdview-export-menu-label {
+.mdreview-export-menu-label {
   display: block;
   padding: 4px 8px;
   font-size: 11px;
@@ -1726,7 +1726,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   opacity: 0.5;
 }
 
-.mdview-export-menu-item {
+.mdreview-export-menu-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1740,16 +1740,16 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: background-color 0.15s;
 }
 
-.mdview-export-menu-item:hover {
+.mdreview-export-menu-item:hover {
   background: var(--md-code-bg);
 }
 
-.mdview-export-menu-item:focus {
+.mdreview-export-menu-item:focus {
   outline: 2px solid var(--md-link);
   outline-offset: -2px;
 }
 
-.mdview-export-menu-item-icon {
+.mdreview-export-menu-item-icon {
   width: 32px;
   height: 32px;
   display: flex;
@@ -1762,35 +1762,35 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   flex-shrink: 0;
 }
 
-.mdview-export-menu-item-content {
+.mdreview-export-menu-item-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.mdview-export-menu-item-title {
+.mdreview-export-menu-item-title {
   display: block;
   font-weight: 500;
   color: var(--md-fg);
   font-size: 14px;
 }
 
-.mdview-export-menu-item-desc {
+.mdreview-export-menu-item-desc {
   display: block;
   font-size: 12px;
   color: var(--md-fg);
   opacity: 0.6;
 }
 
-.mdview-export-menu-divider {
+.mdreview-export-menu-divider {
   height: 1px;
   background: var(--md-border);
   margin: 8px 0;
 }
 
 /* === Options === */
-.mdview-export-option {
+.mdreview-export-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1799,18 +1799,18 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   color: var(--md-fg);
 }
 
-.mdview-export-option input[type='checkbox'] {
+.mdreview-export-option input[type='checkbox'] {
   width: 16px;
   height: 16px;
   cursor: pointer;
 }
 
-.mdview-export-option label {
+.mdreview-export-option label {
   cursor: pointer;
   color: var(--md-fg);
 }
 
-.mdview-export-option select {
+.mdreview-export-option select {
   padding: 4px 8px;
   border: 1px solid var(--md-border);
   border-radius: 4px;
@@ -1821,7 +1821,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 }
 
 /* === Progress Overlay === */
-.mdview-export-progress-overlay {
+.mdreview-export-progress-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
@@ -1834,12 +1834,12 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: opacity 0.2s;
 }
 
-.mdview-export-progress-overlay.visible {
+.mdreview-export-progress-overlay.visible {
   opacity: 1;
   pointer-events: auto;
 }
 
-.mdview-export-progress-container {
+.mdreview-export-progress-container {
   background: var(--md-bg);
   padding: 24px 32px;
   border-radius: 12px;
@@ -1848,7 +1848,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   box-shadow: 0 8px 24px var(--md-shadow);
 }
 
-.mdview-export-progress-bar {
+.mdreview-export-progress-bar {
   height: 8px;
   background: var(--md-code-bg);
   border-radius: 4px;
@@ -1856,19 +1856,19 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   margin-bottom: 12px;
 }
 
-.mdview-export-progress-fill {
+.mdreview-export-progress-fill {
   height: 100%;
   background: var(--md-link);
   transition: width 0.2s ease-out;
 }
 
-.mdview-export-progress-text {
+.mdreview-export-progress-text {
   margin-bottom: 16px;
   color: var(--md-fg);
   font-size: 14px;
 }
 
-.mdview-export-progress-cancel {
+.mdreview-export-progress-cancel {
   padding: 8px 16px;
   border: 1px solid var(--md-border);
   border-radius: 6px;
@@ -1879,13 +1879,13 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: background-color 0.2s, border-color 0.2s;
 }
 
-.mdview-export-progress-cancel:hover {
+.mdreview-export-progress-cancel:hover {
   background: var(--md-code-bg);
   border-color: var(--md-link);
 }
 
 /* === Toast === */
-.mdview-export-toast {
+.mdreview-export-toast {
   position: fixed;
   bottom: 20px;
   left: 50%;
@@ -1901,22 +1901,22 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   box-shadow: 0 4px 12px var(--md-shadow);
 }
 
-.mdview-export-toast.visible {
+.mdreview-export-toast.visible {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
 
-.mdview-export-toast.success {
+.mdreview-export-toast.success {
   background: var(--md-success);
 }
 
-.mdview-export-toast.error {
+.mdreview-export-toast.error {
   background: var(--md-error);
 }
 
 /* === Responsive === */
 @media (max-width: 768px) {
-  .mdview-export-menu {
+  .mdreview-export-menu {
     position: fixed;
     top: auto;
     bottom: 0;
@@ -1928,21 +1928,21 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
     transform: translateY(100%);
   }
 
-  .mdview-export-menu.visible {
+  .mdreview-export-menu.visible {
     transform: translateY(0);
   }
 
-  .mdview-export-btn {
+  .mdreview-export-btn {
     display: none; /* Hide on mobile for now */
   }
 }
 
 /* === Print === */
 @media print {
-  .mdview-export-btn,
-  .mdview-export-menu,
-  .mdview-export-progress-overlay,
-  .mdview-export-toast {
+  .mdreview-export-btn,
+  .mdreview-export-menu,
+  .mdreview-export-progress-overlay,
+  .mdreview-export-toast {
     display: none !important;
   }
 }
@@ -2017,7 +2017,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 /* === Floating Comment Cards === */
 
 /* Cards float absolutely in the right margin, aligned with their highlight */
-.mdview-comment-card {
+.mdreview-comment-card {
   position: absolute;
   right: 16px;
   width: 260px;
@@ -2032,11 +2032,11 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 }
 
 /* Minimized cards show only header + snippet */
-.mdview-comment-card.minimized > :not(.comment-header):not(.comment-snippet) {
+.mdreview-comment-card.minimized > :not(.comment-header):not(.comment-snippet) {
   display: none;
 }
 
-.mdview-comment-card .comment-snippet {
+.mdreview-comment-card .comment-snippet {
   display: none;
   color: var(--md-fg-muted);
   font-size: 12px;
@@ -2046,25 +2046,25 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   text-overflow: ellipsis;
 }
 
-.mdview-comment-card.minimized .comment-snippet {
+.mdreview-comment-card.minimized .comment-snippet {
   display: block;
 }
 
-.mdview-comment-card.minimized {
+.mdreview-comment-card.minimized {
   cursor: pointer;
 }
 
-.mdview-comment-card:hover,
-.mdview-comment-card.active {
+.mdreview-comment-card:hover,
+.mdreview-comment-card.active {
   box-shadow: 0 4px 16px var(--md-shadow);
 }
 
-.mdview-comment-card.resolved {
+.mdreview-comment-card.resolved {
   opacity: 0.5;
   border-left-color: var(--md-border);
 }
 
-.mdview-comment-card.resolved .comment-body {
+.mdreview-comment-card.resolved .comment-body {
   text-decoration: line-through;
 }
 
@@ -2243,7 +2243,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 }
 
 /* === Overflow Menu === */
-.mdview-comment-menu {
+.mdreview-comment-menu {
   position: absolute;
   right: 4px;
   top: 100%;
@@ -2256,7 +2256,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   padding: 4px 0;
 }
 
-.mdview-comment-menu-item {
+.mdreview-comment-menu-item {
   display: block;
   width: 100%;
   padding: 6px 12px;
@@ -2269,29 +2269,29 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: background-color 0.1s ease;
 }
 
-.mdview-comment-menu-item:hover {
+.mdreview-comment-menu-item:hover {
   background: var(--md-selection);
 }
 
 /* === Text Highlighting === */
-.mdview-comment-highlight {
+.mdreview-comment-highlight {
   background-color: var(--md-comment-highlight, rgba(255, 212, 59, 0.35));
   border-radius: 2px;
   cursor: pointer;
   transition: filter 0.15s ease;
 }
 
-.mdview-comment-highlight:hover,
-.mdview-comment-highlight.active {
+.mdreview-comment-highlight:hover,
+.mdreview-comment-highlight.active {
   filter: brightness(1.15);
 }
 
-.mdview-comment-highlight.resolved {
+.mdreview-comment-highlight.resolved {
   background-color: var(--md-comment-highlight-resolved, rgba(155, 155, 155, 0.2));
 }
 
 /* === Comment Input Form === */
-.mdview-comment-input {
+.mdreview-comment-input {
   position: absolute;
   right: 16px;
   width: 260px;
@@ -2303,7 +2303,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   z-index: 200;
 }
 
-.mdview-comment-input textarea {
+.mdreview-comment-input textarea {
   display: block;
   width: 100%;
   box-sizing: border-box;
@@ -2320,20 +2320,20 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.mdview-comment-input textarea:focus {
+.mdreview-comment-input textarea:focus {
   outline: none;
   border-color: var(--md-link);
   box-shadow: 0 0 0 3px var(--md-selection);
 }
 
-.mdview-comment-input-actions {
+.mdreview-comment-input-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 8px;
 }
 
-.mdview-comment-input-actions button {
+.mdreview-comment-input-actions button {
   padding: 5px 14px;
   border-radius: 4px;
   font-size: 12px;
@@ -2343,27 +2343,27 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.mdview-comment-btn-cancel {
+.mdreview-comment-btn-cancel {
   background: var(--md-bg);
   color: var(--md-fg);
 }
 
-.mdview-comment-btn-cancel:hover {
+.mdreview-comment-btn-cancel:hover {
   background: var(--md-bg-secondary);
 }
 
-.mdview-comment-btn-save {
+.mdreview-comment-btn-save {
   background: var(--md-link);
   color: #fff;
   border-color: var(--md-link);
 }
 
-.mdview-comment-btn-save:hover {
+.mdreview-comment-btn-save:hover {
   filter: brightness(1.1);
 }
 
 /* === Comment Toast Notification === */
-.mdview-toast {
+.mdreview-toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
@@ -2379,7 +2379,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   pointer-events: none;
 }
 
-.mdview-toast.visible {
+.mdreview-toast.visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
@@ -2529,7 +2529,7 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 }
 
 /* === Emoji Picker === */
-.mdview-emoji-picker {
+.mdreview-emoji-picker {
   position: absolute;
   width: 280px;
   max-height: 360px;
@@ -2630,22 +2630,22 @@ body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
 /* === Comment System Responsive === */
 @media (max-width: 1024px) {
   /* Hide floating cards on narrow viewports */
-  .mdview-comment-card,
-  .mdview-comment-input {
+  .mdreview-comment-card,
+  .mdreview-comment-input {
     display: none;
   }
 }
 
 /* === Comment System Print === */
 @media print {
-  .mdview-comment-card,
-  .mdview-comment-input,
-  .mdview-toast,
+  .mdreview-comment-card,
+  .mdreview-comment-input,
+  .mdreview-toast,
   .comment-menu-btn {
     display: none !important;
   }
 
-  .mdview-comment-highlight {
+  .mdreview-comment-highlight {
     background-color: transparent !important;
   }
 }

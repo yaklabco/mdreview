@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { PDFGenerator } from '@mdview/core';
+import { PDFGenerator } from '@mdreview/core';
 
 // Mock the debug logger (core internal)
 vi.mock('../../../packages/core/src/utils/debug-logger', () => {
@@ -112,7 +112,7 @@ describe('PDFGenerator', () => {
 
     // Create mock container
     mockContainer = document.createElement('div');
-    mockContainer.id = 'mdview-container';
+    mockContainer.id = 'mdreview-container';
     mockContainer.innerHTML = `
       <h1>Test Document</h1>
       <p>This is a test paragraph.</p>
@@ -137,20 +137,20 @@ describe('PDFGenerator', () => {
       expect(window.print).toHaveBeenCalled();
     });
 
-    test('should add mdview-printing class during print', async () => {
+    test('should add mdreview-printing class during print', async () => {
       const printPromise = generator.print(mockContainer);
 
       // Check that class is added immediately
       await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(document.body.classList.contains('mdview-printing')).toBe(true);
+      expect(document.body.classList.contains('mdreview-printing')).toBe(true);
 
       await printPromise;
     });
 
-    test('should remove mdview-printing class after print', async () => {
+    test('should remove mdreview-printing class after print', async () => {
       await generator.print(mockContainer);
 
-      expect(document.body.classList.contains('mdview-printing')).toBe(false);
+      expect(document.body.classList.contains('mdreview-printing')).toBe(false);
     });
 
     test('should inject custom print styles', async () => {
@@ -266,7 +266,7 @@ describe('PDFGenerator', () => {
       svgContainer.appendChild(mermaidDiv);
 
       // Mock converter to throw error
-      const { SVGConverter } = await import('@mdview/core');
+      const { SVGConverter } = await import('@mdreview/core');
       (SVGConverter as any).mockImplementationOnce(() => ({
         convert: vi.fn().mockRejectedValue(new Error('Conversion failed')),
       }));
@@ -299,7 +299,7 @@ describe('PDFGenerator', () => {
       });
 
       // Style element should be removed after print
-      const styleElement = document.getElementById('mdview-dynamic-print-styles');
+      const styleElement = document.getElementById('mdreview-dynamic-print-styles');
       expect(styleElement).toBeNull();
     });
   });
@@ -314,7 +314,7 @@ describe('PDFGenerator', () => {
       await expect(generator.print(mockContainer)).rejects.toThrow('Print failed');
 
       // State should be restored
-      expect(document.body.classList.contains('mdview-printing')).toBe(false);
+      expect(document.body.classList.contains('mdreview-printing')).toBe(false);
     });
 
     test('should clean up resources on error', async () => {

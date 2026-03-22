@@ -4,8 +4,8 @@
 
 /* eslint-disable @typescript-eslint/unbound-method */
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ExportController } from '@mdview/core';
-import type { ExportProgress } from '@mdview/core';
+import { ExportController } from '@mdreview/core';
+import type { ExportProgress } from '@mdreview/core';
 
 // Don't mock modules - use real implementations
 vi.mock('../../../packages/core/src/utils/debug-logger', () => {
@@ -47,7 +47,7 @@ describe('ExportController', () => {
 
     // Create mock container
     mockContainer = document.createElement('div');
-    mockContainer.id = 'mdview-container';
+    mockContainer.id = 'mdreview-container';
     mockContainer.innerHTML = `
       <h1>Test Document</h1>
       <p>This is a test paragraph.</p>

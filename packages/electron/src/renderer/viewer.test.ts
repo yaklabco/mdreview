@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock @mdview/core modules
-vi.mock('@mdview/core', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('@mdview/core');
+// Mock @mdreview/core modules
+vi.mock('@mdreview/core', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('@mdreview/core');
   return {
     ...actual,
     RenderPipeline: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
@@ -35,7 +35,9 @@ vi.mock('@mdview/core', async () => {
       this.convertAll = vi.fn().mockReturnValue(new Map());
     }),
     DOCXGenerator: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-      this.generate = vi.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)) });
+      this.generate = vi
+        .fn()
+        .mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)) });
     }),
     FileScanner: {
       getFileSize: vi.fn().mockReturnValue(100),
@@ -117,31 +119,31 @@ function createMockMdviewAPI() {
   };
 }
 
-describe('MDViewElectronViewer', () => {
+describe('MDReviewElectronViewer', () => {
   let mockMdview: ReturnType<typeof createMockMdviewAPI>;
 
   beforeEach(() => {
     mockMdview = createMockMdviewAPI();
-    (globalThis.window as Record<string, unknown>).mdview = mockMdview;
+    (globalThis.window as Record<string, unknown>).mdreview = mockMdview;
 
     document.body.innerHTML = `
-      <div id="mdview-workspace">
-        <div id="mdview-sidebar"></div>
-        <div id="mdview-main">
-          <div id="mdview-toolbar-row">
-            <div id="mdview-tab-bar"></div>
-            <div id="mdview-header-bar"></div>
+      <div id="mdreview-workspace">
+        <div id="mdreview-sidebar"></div>
+        <div id="mdreview-main">
+          <div id="mdreview-toolbar-row">
+            <div id="mdreview-tab-bar"></div>
+            <div id="mdreview-header-bar"></div>
           </div>
-          <div id="mdview-content-area"></div>
-          <div id="mdview-status-bar"></div>
+          <div id="mdreview-content-area"></div>
+          <div id="mdreview-status-bar"></div>
         </div>
       </div>
     `;
   });
 
   it('should initialize and open file from CLI args', async () => {
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
     expect(mockMdview.getOpenFilePath).toHaveBeenCalled();
@@ -152,11 +154,11 @@ describe('MDViewElectronViewer', () => {
   it('should show empty state when no file path is provided', async () => {
     mockMdview.getOpenFilePath.mockResolvedValue(null);
 
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
-    const emptyState = document.getElementById('mdview-empty-state');
+    const emptyState = document.getElementById('mdreview-empty-state');
     expect(emptyState).not.toBeNull();
     expect(viewer.getTabCount()).toBe(0);
   });
@@ -164,8 +166,8 @@ describe('MDViewElectronViewer', () => {
   it('should open multiple files as tabs', async () => {
     mockMdview.getOpenFilePath.mockResolvedValue(null);
 
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
     await viewer.openFile('/tmp/a.md');
@@ -177,8 +179,8 @@ describe('MDViewElectronViewer', () => {
   it('should deduplicate when opening same file', async () => {
     mockMdview.getOpenFilePath.mockResolvedValue(null);
 
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
     await viewer.openFile('/tmp/a.md');
@@ -188,8 +190,8 @@ describe('MDViewElectronViewer', () => {
   });
 
   it('should close a tab and show empty state if last', async () => {
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
     const activeTabId = viewer.getActiveTabId();
@@ -198,13 +200,13 @@ describe('MDViewElectronViewer', () => {
     await viewer.closeFile(activeTabId!);
 
     expect(viewer.getTabCount()).toBe(0);
-    const emptyState = document.getElementById('mdview-empty-state');
+    const emptyState = document.getElementById('mdreview-empty-state');
     expect(emptyState?.style.display).not.toBe('none');
   });
 
   it('should listen for IPC events', async () => {
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
     expect(mockMdview.onOpenFile).toHaveBeenCalled();
@@ -213,27 +215,27 @@ describe('MDViewElectronViewer', () => {
     expect(mockMdview.onThemeChanged).toHaveBeenCalled();
   });
 
-  it('should add mdview-active class on file load', async () => {
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+  it('should add mdreview-active class on file load', async () => {
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     await viewer.initialize();
 
-    expect(document.body.classList.contains('mdview-active')).toBe(true);
+    expect(document.body.classList.contains('mdreview-active')).toBe(true);
   });
 
   it('should handle missing workspace elements gracefully', async () => {
     document.body.innerHTML = '';
 
-    const { MDViewElectronViewer } = await import('./viewer');
-    const viewer = new MDViewElectronViewer();
+    const { MDReviewElectronViewer } = await import('./viewer');
+    const viewer = new MDReviewElectronViewer();
     // Should not throw
     await viewer.initialize();
   });
 
   describe('menu commands', () => {
     it('should dispatch toggle-toc to active document', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       // Get the menu command callback
@@ -248,8 +250,8 @@ describe('MDViewElectronViewer', () => {
       mockMdview.printToPDF.mockResolvedValue(new ArrayBuffer(10));
       mockMdview.saveFile.mockResolvedValue(undefined);
 
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
@@ -263,8 +265,8 @@ describe('MDViewElectronViewer', () => {
     it('should dispatch export:docx to active document', async () => {
       mockMdview.saveFile.mockResolvedValue(undefined);
 
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
@@ -275,35 +277,35 @@ describe('MDViewElectronViewer', () => {
     });
 
     it('should show about modal on help:about', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
       menuCallback('help:about');
 
-      const modal = document.querySelector('.mdview-about-modal');
+      const modal = document.querySelector('.mdreview-about-modal');
       expect(modal).not.toBeNull();
-      expect(modal?.textContent).toContain('mdview');
+      expect(modal?.textContent).toContain('Design Review');
     });
 
     it('should dismiss about modal on click', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
       menuCallback('help:about');
 
-      const modal = document.querySelector('.mdview-about-modal') as HTMLElement;
+      const modal = document.querySelector('.mdreview-about-modal') as HTMLElement;
       modal.click();
 
-      expect(document.querySelector('.mdview-about-modal')).toBeNull();
+      expect(document.querySelector('.mdreview-about-modal')).toBeNull();
     });
 
     it('should dismiss about modal on Escape', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
@@ -311,24 +313,24 @@ describe('MDViewElectronViewer', () => {
 
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
-      expect(document.querySelector('.mdview-about-modal')).toBeNull();
+      expect(document.querySelector('.mdreview-about-modal')).toBeNull();
     });
 
     it('should call openExternal on help:github', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
       menuCallback('help:github');
 
       await new Promise((r) => setTimeout(r, 10));
-      expect(mockMdview.openExternal).toHaveBeenCalledWith('https://github.com/jamesainslie/mdview');
+      expect(mockMdview.openExternal).toHaveBeenCalledWith('https://github.com/yaklabco/mdreview');
     });
 
     it('should open preferences panel on preferences command', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
@@ -342,8 +344,8 @@ describe('MDViewElectronViewer', () => {
     it('should no-op menu commands when no active document', async () => {
       mockMdview.getOpenFilePath.mockResolvedValue(null);
 
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
@@ -356,25 +358,27 @@ describe('MDViewElectronViewer', () => {
 
   describe('theme and preferences handlers', () => {
     it('should propagate theme changes to all documents', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
       const themeCallback = mockMdview.onThemeChanged.mock.calls[0][0] as (theme: string) => void;
       themeCallback('github-dark');
 
       // Should update status bar with theme name
-      const statusBar = document.getElementById('mdview-status-bar');
+      const statusBar = document.getElementById('mdreview-status-bar');
       // The status bar should have been updated (not just empty)
       expect(statusBar).not.toBeNull();
     });
 
     it('should propagate preferences to all documents', async () => {
-      const { MDViewElectronViewer } = await import('./viewer');
-      const viewer = new MDViewElectronViewer();
+      const { MDReviewElectronViewer } = await import('./viewer');
+      const viewer = new MDReviewElectronViewer();
       await viewer.initialize();
 
-      const prefsCallback = mockMdview.onPreferencesUpdated.mock.calls[0][0] as (prefs: Record<string, unknown>) => void;
+      const prefsCallback = mockMdview.onPreferencesUpdated.mock.calls[0][0] as (
+        prefs: Record<string, unknown>
+      ) => void;
       prefsCallback({ theme: 'monokai' });
 
       // Should not throw, preferences should have been propagated

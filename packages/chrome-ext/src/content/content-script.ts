@@ -3,12 +3,12 @@
  * Injected into markdown files to handle rendering
  */
 
-// CSS is imported but only activated when we add .mdview-active to body
-import '@mdview/core/styles/content.css';
+// CSS is imported but only activated when we add .mdreview-active to body
+import '@mdreview/core/styles/content.css';
 import { FileScanner } from '../utils/file-scanner';
-import type { AppState } from '@mdview/core';
+import type { AppState } from '@mdreview/core';
 import { debug } from '../utils/debug-logger';
-import { TocRenderer } from '@mdview/core';
+import { TocRenderer } from '@mdreview/core';
 import type { ExportUI } from '../ui/export-ui';
 import type { CommentManager } from '../comments/comment-manager';
 
@@ -37,7 +37,7 @@ try {
   debug.warn('MDView', 'Failed to patch URL constructor:', error);
 }
 
-class MDViewContentScript {
+class MDReviewContentScript {
   private autoReloadCleanup: (() => void) | null = null;
   private state: AppState | null = null;
   private tocRenderer: TocRenderer | null = null;
@@ -54,14 +54,14 @@ class MDViewContentScript {
 
     // Check if this is a markdown file (before logging, since we need state for debug mode)
     const isMarkdown = FileScanner.isMarkdownFile();
-    console.log('[MDView] isMarkdownFile check:', {
+    console.log('[MDReview] isMarkdownFile check:', {
       isMarkdown,
       contentType: document.contentType,
       pathname: window.location.pathname,
       href: window.location.href,
     });
     if (!isMarkdown) {
-      console.log('[MDView] Not a markdown file, skipping initialization');
+      console.log('[MDReview] Not a markdown file, skipping initialization');
       this.logStyleDebug('non-markdown');
       return;
     }
@@ -84,7 +84,7 @@ class MDViewContentScript {
       if (FileScanner.isSiteBlocked(blockedSites)) {
         debug.info('MDView', 'Site is in blocklist, skipping rendering');
         this.logStyleDebug('blocked');
-        console.log('[MDView] Site blocked by user preference, skipping initialization');
+        console.log('[MDReview] Site blocked by user preference, skipping initialization');
         return;
       }
       debug.info('MDView', 'Site is NOT blocked, proceeding with render');
@@ -125,15 +125,15 @@ class MDViewContentScript {
       // Create a loading indicator OUTSIDE the container (so it won't be cleared by render pipeline)
       debug.debug('MDView', 'Creating loading indicator...');
       const loadingDiv = document.createElement('div');
-      loadingDiv.id = 'mdview-loading-overlay';
-      loadingDiv.className = 'mdview-loading';
+      loadingDiv.id = 'mdreview-loading-overlay';
+      loadingDiv.className = 'mdreview-loading';
       loadingDiv.textContent = 'Rendering markdown...';
       document.body.appendChild(loadingDiv);
       debug.debug('MDView', 'Loading indicator created and appended to body');
 
       // Create subtle progress indicator (top right corner)
       const progressIndicator = document.createElement('div');
-      progressIndicator.id = 'mdview-progress-indicator';
+      progressIndicator.id = 'mdreview-progress-indicator';
       progressIndicator.innerHTML = `
         <div class="progress-text">Rendering... 0%</div>
         <div class="progress-bar-container">
@@ -153,8 +153,8 @@ class MDViewContentScript {
       // Create container
       debug.debug('MDView', 'Creating render container...');
       const container = document.createElement('div');
-      container.id = 'mdview-container';
-      container.className = 'mdview-content';
+      container.id = 'mdreview-container';
+      container.className = 'mdreview-content';
       document.body.appendChild(container);
       debug.debug('MDView', 'Container created and appended to body');
 
@@ -287,13 +287,13 @@ class MDViewContentScript {
       debug.error('MDView', 'Initialization error:', error);
 
       // Ensure loading overlay and progress indicator are removed even on error
-      const loadingOverlay = document.getElementById('mdview-loading-overlay');
+      const loadingOverlay = document.getElementById('mdreview-loading-overlay');
       if (loadingOverlay) {
         loadingOverlay.remove();
         debug.debug('MDView', 'Loading overlay removed after error');
       }
 
-      const progressIndicator = document.getElementById('mdview-progress-indicator');
+      const progressIndicator = document.getElementById('mdreview-progress-indicator');
       if (progressIndicator) {
         progressIndicator.remove();
         debug.debug('MDView', 'Progress indicator removed after error');
@@ -305,12 +305,12 @@ class MDViewContentScript {
 
   /**
    * Activate MDView styles by adding a scoping class to the body element.
-   * Global resets in content.css are scoped to body.mdview-active to avoid
+   * Global resets in content.css are scoped to body.mdreview-active to avoid
    * impacting sites where MDView should not render (e.g. GitHub UI pages).
    */
   private activateStyles(): void {
-    document.body.classList.add('mdview-active');
-    debug.info('MDView', 'Content styles activated (body.mdview-active)');
+    document.body.classList.add('mdreview-active');
+    debug.info('MDView', 'Content styles activated (body.mdreview-active)');
   }
 
   /**
@@ -464,8 +464,8 @@ class MDViewContentScript {
 
     // Track reload attempts to prevent loops
     const RELOAD_LIMIT = 3;
-    const reloadKey = 'mdview-reload-count';
-    const reloadTimeKey = 'mdview-last-reload';
+    const reloadKey = 'mdreview-reload-count';
+    const reloadTimeKey = 'mdreview-last-reload';
 
     // Check if we're in a reload loop
     const lastReloadTime = parseInt(sessionStorage.getItem(reloadTimeKey) || '0');
@@ -611,7 +611,7 @@ class MDViewContentScript {
       debug.info('MDView', `[ContentScript] Received request to apply theme: ${themeName}`);
       const { themeEngine } = await import('../core/theme-engine');
       debug.debug('MDView', `[ContentScript] Theme engine imported, calling applyTheme`);
-      await themeEngine.applyTheme(themeName as import('@mdview/core').ThemeName);
+      await themeEngine.applyTheme(themeName as import('@mdreview/core').ThemeName);
       debug.info('MDView', '[ContentScript] Theme applied successfully via engine');
     } catch (error) {
       debug.error('MDView', '[ContentScript] Failed to apply theme:', error);
@@ -648,7 +648,7 @@ class MDViewContentScript {
         if (preferences.showToc) {
           // Create TOC if it doesn't exist
           if (!this.tocRenderer && this.state) {
-            const container = document.getElementById('mdview-container');
+            const container = document.getElementById('mdreview-container');
             if (container) {
               const headings = this.extractHeadings(container);
               if (headings.length > 0) {
@@ -824,7 +824,7 @@ class MDViewContentScript {
       }
 
       // Listen for TOC toggle event to update preferences
-      document.addEventListener('mdview:toc:toggled', ((e: Event) => {
+      document.addEventListener('mdreview:toc:toggled', ((e: Event) => {
         const customEvent = e as CustomEvent<{ visible: boolean }>;
         void this.handlePreferenceChange({ showToc: customEvent.detail.visible });
         // Update body class for content push
@@ -835,7 +835,7 @@ class MDViewContentScript {
       }) as EventListener);
 
       // Listen for TOC hidden event to update preferences
-      document.addEventListener('mdview:toc:hidden', () => {
+      document.addEventListener('mdreview:toc:hidden', () => {
         void this.handlePreferenceChange({ showToc: false });
         document.body.classList.remove('toc-visible-left', 'toc-visible-right');
       });
@@ -947,13 +947,13 @@ class MDViewContentScript {
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    const contentScript = new MDViewContentScript();
+    const contentScript = new MDReviewContentScript();
     contentScript.initialize().catch((error) => {
       debug.error('MDView', 'Initialization failed:', error);
     });
   });
 } else {
-  const contentScript = new MDViewContentScript();
+  const contentScript = new MDReviewContentScript();
   contentScript.initialize().catch((error) => {
     debug.error('MDView', 'Initialization failed:', error);
   });

@@ -13,9 +13,11 @@ import type { SourcePositionMap, SelectionContext } from './source-position-map'
 import { findInsertionPoint } from './source-position-map';
 import { parseComments } from './comment-parser';
 
-const V1_SENTINEL = '<!-- mdview:comments -->';
-const V2_SENTINEL_PREFIX = '<!-- mdview:annotations';
-const V2_BLOCK_PATTERN = /<!-- mdview:annotations\s+(\[[\s\S]*?\])\s*-->/;
+const V1_SENTINEL = '<!-- mdreview:comments -->';
+const V1_SENTINEL_LEGACY = '<!-- mdview:comments -->';
+const V2_SENTINEL_PREFIX = '<!-- mdreview:annotations';
+const V2_SENTINEL_PREFIX_LEGACY = '<!-- mdview:annotations';
+const V2_BLOCK_PATTERN = /<!-- md(?:view|review):annotations\s+(\[[\s\S]*?\])\s*-->/;
 const V2_MARKER_PATTERN = /\[@(\d+)\]/g;
 
 // ─── v2 annotation JSON shape ────────────────────────────────────────
@@ -43,15 +45,14 @@ interface Annotation {
 /**
  * Split markdown into content (above annotation block) and annotations array.
  */
-function splitAtAnnotationBlock(
-  markdown: string
-): [string, Annotation[] | null] {
+function splitAtAnnotationBlock(markdown: string): [string, Annotation[] | null] {
   const blockMatch = markdown.match(V2_BLOCK_PATTERN);
   if (!blockMatch) {
     return [markdown, null];
   }
 
-  const blockStart = markdown.indexOf(V2_SENTINEL_PREFIX);
+  let blockStart = markdown.indexOf(V2_SENTINEL_PREFIX);
+  if (blockStart === -1) blockStart = markdown.indexOf(V2_SENTINEL_PREFIX_LEGACY);
   const content = markdown.slice(0, blockStart);
 
   try {
@@ -67,7 +68,7 @@ function splitAtAnnotationBlock(
  */
 function serializeAnnotationBlock(annotations: Annotation[]): string {
   const json = JSON.stringify(annotations, null, 2);
-  return `<!-- mdview:annotations ${json} -->`;
+  return `<!-- mdreview:annotations ${json} -->`;
 }
 
 /**
@@ -111,10 +112,8 @@ function commentToAnnotation(comment: Comment): Annotation {
   if (comment.context) {
     const ctx: Annotation['context'] = {};
     if (comment.context.line !== undefined) ctx.line = comment.context.line;
-    if (comment.context.section !== undefined)
-      ctx.section = comment.context.section;
-    if (comment.context.sectionLevel !== undefined)
-      ctx.sectionLevel = comment.context.sectionLevel;
+    if (comment.context.section !== undefined) ctx.section = comment.context.section;
+    if (comment.context.sectionLevel !== undefined) ctx.sectionLevel = comment.context.sectionLevel;
     if (comment.context.breadcrumb && comment.context.breadcrumb.length > 0)
       ctx.breadcrumb = comment.context.breadcrumb;
     if (Object.keys(ctx).length > 0) annotation.context = ctx;
@@ -202,7 +201,7 @@ function migrateV1Content(markdown: string): string {
  * If markdown contains v1 sentinel, migrate it. Otherwise return as-is.
  */
 function ensureV2(markdown: string): string {
-  if (markdown.includes(V1_SENTINEL)) {
+  if (markdown.includes(V1_SENTINEL) || markdown.includes(V1_SENTINEL_LEGACY)) {
     return migrateV1Content(markdown);
   }
   return markdown;
@@ -212,11 +211,7 @@ function ensureV2(markdown: string): string {
  * Insert a `[@N]` marker after the first unmatched occurrence of selectedText
  * in the content section.
  */
-function insertMarker(
-  contentSection: string,
-  selectedText: string,
-  numId: number
-): string {
+function insertMarker(contentSection: string, selectedText: string, numId: number): string {
   const marker = `[@${numId}]`;
   const escapedText = selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // Find first occurrence not already followed by [@N]
@@ -224,21 +219,13 @@ function insertMarker(
   const match = pattern.exec(contentSection);
   if (match) {
     const insertPos = match.index + match[0].length;
-    return (
-      contentSection.slice(0, insertPos) +
-      marker +
-      contentSection.slice(insertPos)
-    );
+    return contentSection.slice(0, insertPos) + marker + contentSection.slice(insertPos);
   }
   // Fallback: append to first occurrence
   const idx = contentSection.indexOf(selectedText);
   if (idx !== -1) {
     const insertPos = idx + selectedText.length;
-    return (
-      contentSection.slice(0, insertPos) +
-      marker +
-      contentSection.slice(insertPos)
-    );
+    return contentSection.slice(0, insertPos) + marker + contentSection.slice(insertPos);
   }
   return contentSection;
 }
@@ -322,8 +309,7 @@ export function addCommentAtOffset(
   const marker = `[@${numId}]`;
 
   // Insert marker at exact offset
-  const updatedContent =
-    contentSection.slice(0, offset) + marker + contentSection.slice(offset);
+  const updatedContent = contentSection.slice(0, offset) + marker + contentSection.slice(offset);
 
   const annotation = commentToAnnotation(comment);
   const annotations = existingAnnotations ? [...existingAnnotations, annotation] : [annotation];
@@ -366,11 +352,7 @@ export function removeComment(markdown: string, commentId: string): string {
 /**
  * Update a comment's body in the annotation block.
  */
-export function updateComment(
-  markdown: string,
-  commentId: string,
-  newBody: string
-): string {
+export function updateComment(markdown: string, commentId: string, newBody: string): string {
   const md = ensureV2(markdown);
 
   const [contentSection, annotations] = splitAtAnnotationBlock(md);

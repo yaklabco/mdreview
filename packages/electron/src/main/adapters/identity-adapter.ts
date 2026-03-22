@@ -1,4 +1,4 @@
-import type { IdentityAdapter } from '@mdview/core/node';
+import type { IdentityAdapter } from '@mdreview/core/node';
 import { userInfo } from 'os';
 
 export class ElectronIdentityAdapter implements IdentityAdapter {

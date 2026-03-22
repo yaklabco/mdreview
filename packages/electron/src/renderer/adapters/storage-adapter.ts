@@ -1,8 +1,8 @@
-import type { StorageAdapter } from '@mdview/core';
+import type { StorageAdapter } from '@mdreview/core';
 
 export class ElectronRendererStorageAdapter implements StorageAdapter {
   async getSync(keys: string | string[]): Promise<Record<string, unknown>> {
-    const state = await window.mdview.getState();
+    const state = await window.mdreview.getState();
     const keyList = Array.isArray(keys) ? keys : [keys];
     const result: Record<string, unknown> = {};
     for (const key of keyList) {
@@ -15,12 +15,12 @@ export class ElectronRendererStorageAdapter implements StorageAdapter {
 
   async setSync(data: Record<string, unknown>): Promise<void> {
     if (data.preferences) {
-      await window.mdview.updatePreferences(data.preferences as Record<string, unknown>);
+      await window.mdreview.updatePreferences(data.preferences as Record<string, unknown>);
     }
   }
 
   async getLocal(keys: string | string[]): Promise<Record<string, unknown>> {
-    const state = await window.mdview.getState();
+    const state = await window.mdreview.getState();
     const keyList = Array.isArray(keys) ? keys : [keys];
     const result: Record<string, unknown> = {};
     for (const key of keyList) {

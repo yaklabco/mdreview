@@ -1,6 +1,6 @@
-import type { AppState, Preferences } from '@mdview/core/node';
-import { DEFAULT_STATE } from '@mdview/core/node';
-import type { StorageAdapter } from '@mdview/core/node';
+import type { AppState, Preferences } from '@mdreview/core/node';
+import { DEFAULT_STATE } from '@mdreview/core/node';
+import type { StorageAdapter } from '@mdreview/core/node';
 import { basename } from 'path';
 import {
   type TabState,

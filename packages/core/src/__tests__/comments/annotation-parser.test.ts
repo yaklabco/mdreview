@@ -91,6 +91,7 @@ describe('parseAnnotations', () => {
       expect(result.cleanedMarkdown).toBe('Some highlighted text in context.');
       expect(result.cleanedMarkdown).not.toContain('[@1]');
       expect(result.cleanedMarkdown).not.toContain('mdview:annotations');
+      expect(result.cleanedMarkdown).not.toContain('mdreview:annotations');
     });
   });
 
@@ -225,7 +226,9 @@ describe('parseAnnotations', () => {
       expect(result.comments).toHaveLength(1);
       expect(result.comments[0].id).toBe('comment-1');
       expect(result.comments[0].selectedText).toBe('text');
-      expect(result.comments[0].body).toBe('This API endpoint needs error handling\nfor the 404 case.');
+      expect(result.comments[0].body).toBe(
+        'This API endpoint needs error handling\nfor the 404 case.'
+      );
       expect(result.comments[0].author).toBe('reviewer');
       expect(result.comments[0].date).toBe('2026-03-03T14:30:00Z');
       expect(result.comments[0].resolved).toBe(false);

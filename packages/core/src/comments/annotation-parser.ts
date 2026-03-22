@@ -3,7 +3,7 @@
  * comment formats from markdown.
  *
  * v2 uses `[@N]` inline markers and a structured JSON annotation block
- * in `<!-- mdview:annotations [...] -->` at the end of the document.
+ * in `<!-- mdreview:annotations [...] -->` at the end of the document.
  *
  * v1 uses `[^comment-N]` footnote references and `<!-- mdview:comments -->`
  * separator with footnote definitions.
@@ -12,10 +12,12 @@
 import type { Comment, CommentContext, CommentParseResult, CommentReply } from '../types/index';
 import { parseComments } from './comment-parser';
 
-const V1_SENTINEL = '<!-- mdview:comments -->';
-const V2_SENTINEL_PREFIX = '<!-- mdview:annotations';
+const V1_SENTINEL = '<!-- mdreview:comments -->';
+const V1_SENTINEL_LEGACY = '<!-- mdview:comments -->';
+const V2_SENTINEL_PREFIX = '<!-- mdreview:annotations';
+const V2_SENTINEL_PREFIX_LEGACY = '<!-- mdview:annotations';
 const V2_MARKER_PATTERN = /\[@\d+\]/g;
-const V2_BLOCK_PATTERN = /<!-- mdview:annotations\s+(\[[\s\S]*?\])\s*-->/;
+const V2_BLOCK_PATTERN = /<!-- md(?:view|review):annotations\s+(\[[\s\S]*?\])\s*-->/;
 
 /**
  * v2 annotation JSON shape (as stored in the markdown file).
@@ -50,8 +52,9 @@ interface Annotation {
  * Detect whether a markdown string uses v1, v2, or no comment format.
  */
 export function detectFormat(markdown: string): 'v1' | 'v2' | 'none' {
-  const hasV1 = markdown.includes(V1_SENTINEL);
-  const hasV2 = markdown.includes(V2_SENTINEL_PREFIX);
+  const hasV1 = markdown.includes(V1_SENTINEL) || markdown.includes(V1_SENTINEL_LEGACY);
+  const hasV2 =
+    markdown.includes(V2_SENTINEL_PREFIX) || markdown.includes(V2_SENTINEL_PREFIX_LEGACY);
 
   if (hasV1) return 'v1';
   if (hasV2) return 'v2';
@@ -99,7 +102,7 @@ function parseV2(markdown: string): CommentParseResult {
   try {
     annotations = JSON.parse(blockMatch[1]) as Annotation[];
   } catch {
-    console.warn('[MDView] Failed to parse v2 annotation JSON');
+    console.warn('[MDReview] Failed to parse v2 annotation JSON');
     const cleanedMarkdown = stripV2Markers(stripV2Block(markdown));
     return { cleanedMarkdown, comments: [] };
   }
@@ -117,7 +120,8 @@ function parseV2(markdown: string): CommentParseResult {
  * Remove the `<!-- mdview:annotations [...] -->` block from the end of the document.
  */
 function stripV2Block(markdown: string): string {
-  const idx = markdown.indexOf(V2_SENTINEL_PREFIX);
+  let idx = markdown.indexOf(V2_SENTINEL_PREFIX);
+  if (idx === -1) idx = markdown.indexOf(V2_SENTINEL_PREFIX_LEGACY);
   if (idx === -1) return markdown;
   return markdown.slice(0, idx).trimEnd();
 }

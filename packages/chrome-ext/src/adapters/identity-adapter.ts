@@ -1,4 +1,4 @@
-import type { IdentityAdapter } from '@mdview/core';
+import type { IdentityAdapter } from '@mdreview/core';
 import { sendChromeMessage } from './chrome-message';
 
 export class ChromeIdentityAdapter implements IdentityAdapter {

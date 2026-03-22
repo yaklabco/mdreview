@@ -108,7 +108,7 @@ export class ExportUI {
    */
   createExportButton(): HTMLElement {
     this.button = document.createElement('button');
-    this.button.className = `mdview-export-btn position-${this.options.position}`;
+    this.button.className = `mdreview-export-btn position-${this.options.position}`;
     this.button.setAttribute('aria-label', 'Export document');
     this.button.setAttribute('aria-haspopup', 'menu');
     this.button.setAttribute('aria-expanded', 'false');
@@ -135,25 +135,25 @@ export class ExportUI {
    */
   private createMenu(): HTMLElement {
     this.menu = document.createElement('div');
-    this.menu.className = `mdview-export-menu position-${this.options.position}`;
+    this.menu.className = `mdreview-export-menu position-${this.options.position}`;
     this.menu.setAttribute('role', 'menu');
     this.menu.setAttribute('aria-label', 'Export options');
 
     // Menu header
     const header = document.createElement('div');
-    header.className = 'mdview-export-menu-header';
+    header.className = 'mdreview-export-menu-header';
     header.innerHTML = `
       <span>Export Document</span>
-      <button class="mdview-export-menu-close" aria-label="Close">\u00d7</button>
+      <button class="mdreview-export-menu-close" aria-label="Close">\u00d7</button>
     `;
     this.menu.appendChild(header);
 
     // Format section
     const formatSection = document.createElement('div');
-    formatSection.className = 'mdview-export-menu-section';
+    formatSection.className = 'mdreview-export-menu-section';
 
     const formatLabel = document.createElement('span');
-    formatLabel.className = 'mdview-export-menu-label';
+    formatLabel.className = 'mdreview-export-menu-label';
     formatLabel.textContent = 'FORMAT';
     formatSection.appendChild(formatLabel);
 
@@ -173,21 +173,21 @@ export class ExportUI {
 
     // Divider
     const divider = document.createElement('div');
-    divider.className = 'mdview-export-menu-divider';
+    divider.className = 'mdreview-export-menu-divider';
     this.menu.appendChild(divider);
 
     // Options section
     const optionsSection = document.createElement('div');
-    optionsSection.className = 'mdview-export-menu-section';
+    optionsSection.className = 'mdreview-export-menu-section';
 
     const optionsLabel = document.createElement('span');
-    optionsLabel.className = 'mdview-export-menu-label';
+    optionsLabel.className = 'mdreview-export-menu-label';
     optionsLabel.textContent = 'OPTIONS';
     optionsSection.appendChild(optionsLabel);
 
     // Table of Contents checkbox
     const tocOption = document.createElement('label');
-    tocOption.className = 'mdview-export-option';
+    tocOption.className = 'mdreview-export-option';
     tocOption.innerHTML = `
       <input type="checkbox" id="export-toc" checked />
       <span>Include Table of Contents</span>
@@ -196,7 +196,7 @@ export class ExportUI {
 
     // Page size select
     const pageSizeOption = document.createElement('div');
-    pageSizeOption.className = 'mdview-export-option';
+    pageSizeOption.className = 'mdreview-export-option';
     const defaultSize = this.options.defaultPageSize || 'A4';
     pageSizeOption.innerHTML = `
       <label for="export-page-size">Page Size:</label>
@@ -238,23 +238,23 @@ export class ExportUI {
     description: string
   ): HTMLElement {
     const button = document.createElement('button');
-    button.className = 'mdview-export-menu-item';
+    button.className = 'mdreview-export-menu-item';
     button.setAttribute('role', 'menuitem');
     button.setAttribute('data-format', format);
 
     const iconSpan = document.createElement('span');
-    iconSpan.className = 'mdview-export-menu-item-icon';
+    iconSpan.className = 'mdreview-export-menu-item-icon';
     iconSpan.textContent = icon;
 
     const contentSpan = document.createElement('span');
-    contentSpan.className = 'mdview-export-menu-item-content';
+    contentSpan.className = 'mdreview-export-menu-item-content';
 
     const titleSpan = document.createElement('span');
-    titleSpan.className = 'mdview-export-menu-item-title';
+    titleSpan.className = 'mdreview-export-menu-item-title';
     titleSpan.textContent = title;
 
     const descSpan = document.createElement('span');
-    descSpan.className = 'mdview-export-menu-item-desc';
+    descSpan.className = 'mdreview-export-menu-item-desc';
     descSpan.textContent = description;
 
     contentSpan.appendChild(titleSpan);
@@ -279,7 +279,7 @@ export class ExportUI {
     if (!this.menu) return;
 
     // Close button
-    const closeButton = this.menu.querySelector('.mdview-export-menu-close');
+    const closeButton = this.menu.querySelector('.mdreview-export-menu-close');
     if (closeButton) {
       const closeHandler = () => this.hideMenu();
       closeButton.addEventListener('click', closeHandler);
@@ -304,12 +304,7 @@ export class ExportUI {
     if (!this.state.isMenuOpen) return;
 
     const target = e.target as Node;
-    if (
-      this.menu &&
-      !this.menu.contains(target) &&
-      this.button &&
-      !this.button.contains(target)
-    ) {
+    if (this.menu && !this.menu.contains(target) && this.button && !this.button.contains(target)) {
       this.hideMenu();
     }
   }
@@ -345,9 +340,7 @@ export class ExportUI {
   private navigateMenu(direction: 1 | -1): void {
     if (!this.menu) return;
 
-    const items = Array.from(
-      this.menu.querySelectorAll<HTMLElement>('.mdview-export-menu-item')
-    );
+    const items = Array.from(this.menu.querySelectorAll<HTMLElement>('.mdreview-export-menu-item'));
 
     if (items.length === 0) return;
 
@@ -381,7 +374,7 @@ export class ExportUI {
     }
 
     // Focus first menu item
-    const firstItem = this.menu?.querySelector('.mdview-export-menu-item') as HTMLElement;
+    const firstItem = this.menu?.querySelector('.mdreview-export-menu-item') as HTMLElement;
     setTimeout(() => firstItem?.focus(), 100);
 
     debug.info('ExportUI', 'Menu shown');
@@ -440,7 +433,7 @@ export class ExportUI {
           message: 'Preparing document for print...',
         });
 
-        const container = document.getElementById('mdview-container');
+        const container = document.getElementById('mdreview-container');
         if (!container) {
           throw new Error('Content container not found');
         }
@@ -504,7 +497,7 @@ export class ExportUI {
 
     try {
       // Get the container to export
-      const container = document.getElementById('mdview-container');
+      const container = document.getElementById('mdreview-container');
       if (!container) {
         throw new Error('Content container not found');
       }
@@ -551,25 +544,25 @@ export class ExportUI {
    */
   private createProgressOverlay(): HTMLElement {
     this.progressOverlay = document.createElement('div');
-    this.progressOverlay.className = 'mdview-export-progress-overlay';
+    this.progressOverlay.className = 'mdreview-export-progress-overlay';
 
     const container = document.createElement('div');
-    container.className = 'mdview-export-progress-container';
+    container.className = 'mdreview-export-progress-container';
 
     const progressBar = document.createElement('div');
-    progressBar.className = 'mdview-export-progress-bar';
+    progressBar.className = 'mdreview-export-progress-bar';
 
     const progressFill = document.createElement('div');
-    progressFill.className = 'mdview-export-progress-fill';
+    progressFill.className = 'mdreview-export-progress-fill';
     progressFill.style.width = '0%';
     progressBar.appendChild(progressFill);
 
     const progressText = document.createElement('div');
-    progressText.className = 'mdview-export-progress-text';
+    progressText.className = 'mdreview-export-progress-text';
     progressText.textContent = 'Starting export...';
 
     const cancelButton = document.createElement('button');
-    cancelButton.className = 'mdview-export-progress-cancel';
+    cancelButton.className = 'mdreview-export-progress-cancel';
     cancelButton.textContent = 'Cancel';
 
     const cancelHandler = () => {
@@ -614,10 +607,10 @@ export class ExportUI {
     if (!this.progressOverlay) return;
 
     const fill = this.progressOverlay.querySelector(
-      '.mdview-export-progress-fill'
+      '.mdreview-export-progress-fill'
     ) as HTMLElement;
     const text = this.progressOverlay.querySelector(
-      '.mdview-export-progress-text'
+      '.mdreview-export-progress-text'
     ) as HTMLElement;
 
     if (fill) {
@@ -646,7 +639,7 @@ export class ExportUI {
    */
   private createToast(type: 'success' | 'error', message: string): HTMLElement {
     this.toast = document.createElement('div');
-    this.toast.className = `mdview-export-toast ${type}`;
+    this.toast.className = `mdreview-export-toast ${type}`;
     this.toast.textContent = message;
 
     return this.toast;
@@ -734,8 +727,12 @@ export class ExportUI {
       const state = response?.state;
 
       if (state?.preferences) {
-        const { exportDefaultFormat, exportDefaultPageSize, exportIncludeToc, exportFilenameTemplate } =
-          state.preferences;
+        const {
+          exportDefaultFormat,
+          exportDefaultPageSize,
+          exportIncludeToc,
+          exportFilenameTemplate,
+        } = state.preferences;
 
         // Update options with saved preferences
         if (exportDefaultFormat) {

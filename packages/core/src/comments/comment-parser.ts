@@ -12,10 +12,12 @@
 
 import type { Comment, CommentContext, CommentMetadata, CommentParseResult } from '../types/index';
 
-const COMMENT_SEPARATOR = '<!-- mdview:comments -->';
+const COMMENT_SEPARATOR = '<!-- mdreview:comments -->';
+const COMMENT_SEPARATOR_LEGACY = '<!-- mdview:comments -->';
 const COMMENT_REF_PATTERN = /\[\^comment-(\w+)\]/g;
-const FOOTNOTE_DEF_PATTERN = /^\[\^comment-(\w+)\]:\s*<!-- mdview:comment\s+(.+?)\s*-->\s*$/;
-const BODY_CONTINUATION_PATTERN = /^    (.*)$/;
+const FOOTNOTE_DEF_PATTERN =
+  /^\[\^comment-(\w+)\]:\s*<!-- md(?:view|review):comment\s+(.+?)\s*-->\s*$/;
+const BODY_CONTINUATION_PATTERN = /^ {4}(.*)$/;
 
 /**
  * Parse comments from markdown text.
@@ -25,14 +27,19 @@ const BODY_CONTINUATION_PATTERN = /^    (.*)$/;
  * content section, and returns cleaned markdown with comment references removed.
  */
 export function parseComments(markdown: string): CommentParseResult {
-  const separatorIndex = markdown.indexOf(COMMENT_SEPARATOR);
+  let separatorIndex = markdown.indexOf(COMMENT_SEPARATOR);
+  let separatorLength = COMMENT_SEPARATOR.length;
+  if (separatorIndex === -1) {
+    separatorIndex = markdown.indexOf(COMMENT_SEPARATOR_LEGACY);
+    separatorLength = COMMENT_SEPARATOR_LEGACY.length;
+  }
 
   if (separatorIndex === -1) {
     return { cleanedMarkdown: markdown, comments: [] };
   }
 
   const contentPortion = markdown.substring(0, separatorIndex);
-  const commentsPortion = markdown.substring(separatorIndex + COMMENT_SEPARATOR.length);
+  const commentsPortion = markdown.substring(separatorIndex + separatorLength);
 
   const comments = parseCommentFootnotes(commentsPortion, contentPortion);
   const cleanedMarkdown = removeCommentReferences(contentPortion.trimEnd());
@@ -100,7 +107,7 @@ function buildComment(
   id: string,
   metadata: CommentMetadata,
   bodyLines: string[],
-  contentSection: string,
+  contentSection: string
 ): Comment {
   const comment: Comment = {
     id: `comment-${id}`,

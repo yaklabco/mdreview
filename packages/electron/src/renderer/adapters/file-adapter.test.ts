@@ -30,23 +30,23 @@ describe('ElectronRendererFileAdapter', () => {
   beforeEach(() => {
     mockMdview = createMockMdview();
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    (globalThis as Record<string, unknown>).window = { mdview: mockMdview } as never;
+    (globalThis as Record<string, unknown>).window = { mdreview: mockMdview } as never;
     adapter = new ElectronRendererFileAdapter();
   });
 
-  it('should delegate readFile to window.mdview', async () => {
+  it('should delegate readFile to window.mdreview', async () => {
     const result = await adapter.readFile('/tmp/test.md');
     expect(mockMdview.readFile).toHaveBeenCalledWith('/tmp/test.md');
     expect(result).toBe('# Test content');
   });
 
-  it('should delegate writeFile to window.mdview', async () => {
+  it('should delegate writeFile to window.mdreview', async () => {
     const result = await adapter.writeFile('/tmp/out.md', 'content');
     expect(mockMdview.writeFile).toHaveBeenCalledWith('/tmp/out.md', 'content');
     expect(result).toEqual({ success: true });
   });
 
-  it('should delegate checkChanged to window.mdview', async () => {
+  it('should delegate checkChanged to window.mdreview', async () => {
     const result = await adapter.checkChanged('/tmp/test.md', 'old-hash');
     expect(mockMdview.checkFileChanged).toHaveBeenCalledWith('/tmp/test.md', 'old-hash');
     expect(result).toEqual({ changed: true, newHash: 'abc' });

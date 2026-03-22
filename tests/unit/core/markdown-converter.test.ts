@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { MarkdownConverter } from '@mdview/core';
+import { MarkdownConverter } from '@mdreview/core';
 import { markdownSamples, expectedHtml } from '../../helpers/fixtures';
 import { assertHtmlMatches } from '../../helpers/test-utils';
 

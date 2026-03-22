@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseAnnotations } from '@mdview/core';
-import { addComment } from '@mdview/core';
-import type { Comment } from '@mdview/core';
+import { parseAnnotations } from '@mdreview/core';
+import { addComment } from '@mdreview/core';
+import type { Comment } from '@mdreview/core';
 
 function makeNewComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -35,7 +35,7 @@ Some text[^comment-1] here and target there.
     const result = addComment(v1Md, makeNewComment());
 
     // Should be v2 format
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
     expect(result).not.toContain('<!-- mdview:comments -->');
     expect(result).not.toContain('[^comment-');
 
@@ -128,7 +128,7 @@ Some text[^comment-1] here and target there.
 
     const result = addComment(v1Md, makeNewComment());
 
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
     expect(result).not.toContain('<!-- mdview:comments -->');
 
     const parsed = parseAnnotations(result);

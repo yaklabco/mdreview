@@ -68,7 +68,7 @@ describe('RenderPipeline', () => {
       });
 
       expect(container.innerHTML).toContain('Hello World');
-      expect(container.classList.contains('mdview-rendered')).toBe(true);
+      expect(container.classList.contains('mdreview-rendered')).toBe(true);
     });
 
     test('should render complex markdown', async () => {
@@ -472,7 +472,7 @@ describe('RenderPipeline', () => {
         theme: 'github-light',
       });
 
-      expect(container.classList.contains('mdview-rendered')).toBe(true);
+      expect(container.classList.contains('mdreview-rendered')).toBe(true);
     });
 
     test('should handle theme parameter', async () => {

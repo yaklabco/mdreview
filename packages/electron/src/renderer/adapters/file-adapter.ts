@@ -1,21 +1,21 @@
-import type { FileAdapter, FileWriteResult, FileChangeInfo } from '@mdview/core';
+import type { FileAdapter, FileWriteResult, FileChangeInfo } from '@mdreview/core';
 
 export class ElectronRendererFileAdapter implements FileAdapter {
   async readFile(path: string): Promise<string> {
-    return window.mdview.readFile(path);
+    return window.mdreview.readFile(path);
   }
 
   async writeFile(path: string, content: string): Promise<FileWriteResult> {
-    return window.mdview.writeFile(path, content);
+    return window.mdreview.writeFile(path, content);
   }
 
   async checkChanged(url: string, lastHash: string): Promise<FileChangeInfo> {
-    return window.mdview.checkFileChanged(url, lastHash);
+    return window.mdreview.checkFileChanged(url, lastHash);
   }
 
   watch(path: string, callback: () => void): () => void {
-    void window.mdview.watchFile(path);
-    const unsubscribe = window.mdview.onFileChanged((changedPath) => {
+    void window.mdreview.watchFile(path);
+    const unsubscribe = window.mdreview.onFileChanged((changedPath) => {
       if (changedPath === path) {
         callback();
       }
@@ -23,7 +23,7 @@ export class ElectronRendererFileAdapter implements FileAdapter {
 
     return () => {
       unsubscribe();
-      void window.mdview.unwatchFile(path);
+      void window.mdreview.unwatchFile(path);
     };
   }
 }

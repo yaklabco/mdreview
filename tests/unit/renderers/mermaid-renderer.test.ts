@@ -32,7 +32,7 @@ vi.mock('panzoom', () => ({
 // Import after mocks are set up
 import mermaid from 'mermaid';
 import Panzoom from 'panzoom';
-import { MermaidRenderer } from '@mdview/core';
+import { MermaidRenderer } from '@mdreview/core';
 
 describe('MermaidRenderer', () => {
   let renderer: MermaidRenderer;

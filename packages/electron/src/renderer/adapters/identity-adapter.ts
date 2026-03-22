@@ -1,7 +1,7 @@
-import type { IdentityAdapter } from '@mdview/core';
+import type { IdentityAdapter } from '@mdreview/core';
 
 export class ElectronRendererIdentityAdapter implements IdentityAdapter {
   async getUsername(): Promise<string> {
-    return window.mdview.getUsername();
+    return window.mdreview.getUsername();
   }
 }

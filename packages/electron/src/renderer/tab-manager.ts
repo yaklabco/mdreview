@@ -54,11 +54,11 @@ export class TabManager {
     const buttonEl = this.createTabButton(id, title);
 
     const wrapperEl = document.createElement('div');
-    wrapperEl.className = 'mdview-tab-content-wrapper';
+    wrapperEl.className = 'mdreview-tab-content-wrapper';
     wrapperEl.dataset.tabWrapperId = id;
 
     const containerEl = document.createElement('div');
-    containerEl.className = 'mdview-tab-content';
+    containerEl.className = 'mdreview-tab-content';
     containerEl.dataset.tabContentId = id;
 
     wrapperEl.appendChild(containerEl);
@@ -354,9 +354,7 @@ export class TabManager {
 
     // Subtract chip widths (estimate 80px per chip for visible groups)
     let chipSpace = 0;
-    for (const group of this.groups.values()) {
-      chipSpace += 80; // approximate chip width
-    }
+    chipSpace = this.groups.size * 80; // approximate chip width per group
 
     const availableWidth = Math.max(0, barWidth - chipSpace);
     const perTab = availableWidth / visibleCount;
@@ -511,11 +509,7 @@ export class TabManager {
     return btn;
   }
 
-  private createGroupChip(
-    groupId: string,
-    name: string,
-    color: TabGroupColor
-  ): HTMLElement {
+  private createGroupChip(groupId: string, name: string, color: TabGroupColor): HTMLElement {
     const chip = document.createElement('div');
     chip.className = `tab-group-chip tab-group-color-${color}`;
     chip.dataset.groupId = groupId;
@@ -576,8 +570,15 @@ export class TabManager {
 
     // Color swatches
     const colors: TabGroupColor[] = [
-      'grey', 'blue', 'red', 'yellow', 'green',
-      'pink', 'purple', 'cyan', 'orange',
+      'grey',
+      'blue',
+      'red',
+      'yellow',
+      'green',
+      'pink',
+      'purple',
+      'cyan',
+      'orange',
     ];
     const colorGrid = document.createElement('div');
     colorGrid.className = 'tab-group-editor-colors';

@@ -1,4 +1,4 @@
-// @mdview/core - shared rendering engine
+// @mdreview/core - shared rendering engine
 export const VERSION = '0.0.1';
 
 // Types

@@ -36,9 +36,7 @@ vi.mock('../comments/comment-highlight', () => {
   return { CommentHighlighter: MockCommentHighlighter };
 });
 
-function createMockFileAdapter(
-  overrides: Partial<FileAdapter> = {}
-): FileAdapter {
+function createMockFileAdapter(overrides: Partial<FileAdapter> = {}): FileAdapter {
   return {
     writeFile: vi.fn().mockResolvedValue({ success: true } as FileWriteResult),
     readFile: vi.fn().mockResolvedValue(''),
@@ -48,9 +46,7 @@ function createMockFileAdapter(
   };
 }
 
-function createMockIdentityAdapter(
-  overrides: Partial<IdentityAdapter> = {}
-): IdentityAdapter {
+function createMockIdentityAdapter(overrides: Partial<IdentityAdapter> = {}): IdentityAdapter {
   return {
     getUsername: vi.fn().mockResolvedValue('test-user'),
     ...overrides,
@@ -86,7 +82,7 @@ describe('CommentManager (core)', () => {
   beforeEach(() => {
     // Set up a basic DOM container
     const container = document.createElement('div');
-    container.id = 'mdview-container';
+    container.id = 'mdreview-container';
     container.textContent = 'This is a test document. Some content here.';
     document.body.appendChild(container);
   });
@@ -112,6 +108,7 @@ describe('CommentManager (core)', () => {
         createMinimalPreferences()
       );
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(identity.getUsername).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result.comments).toEqual([]);
@@ -130,6 +127,7 @@ describe('CommentManager (core)', () => {
       await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', prefs);
 
       // Should NOT call getUsername since author is already set
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(identity.getUsername).not.toHaveBeenCalled();
     });
 
@@ -138,14 +136,11 @@ describe('CommentManager (core)', () => {
       const identity = createMockIdentityAdapter();
 
       manager = new CommentManager({ file, identity });
-      await manager.initialize(
-        SAMPLE_MARKDOWN,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
       await manager.addComment('test document', 'My note');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(file.writeFile).toHaveBeenCalledWith(
         '/test/file.md',
         expect.stringContaining('My note')
@@ -163,14 +158,11 @@ This is a test[@1] document.
       const identity = createMockIdentityAdapter();
 
       manager = new CommentManager({ file, identity });
-      await manager.initialize(
-        mdWithComment,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(mdWithComment, '/test/file.md', createMinimalPreferences());
 
       await manager.editComment('comment-1', 'Updated note');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(file.writeFile).toHaveBeenCalledWith(
         '/test/file.md',
         expect.stringContaining('Updated note')
@@ -188,14 +180,11 @@ Test[@1] content.
       const identity = createMockIdentityAdapter();
 
       manager = new CommentManager({ file, identity });
-      await manager.initialize(
-        mdWithComment,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(mdWithComment, '/test/file.md', createMinimalPreferences());
 
       await manager.resolveComment('comment-1');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(file.writeFile).toHaveBeenCalled();
     });
 
@@ -210,14 +199,11 @@ Test[@1] content.
       const identity = createMockIdentityAdapter();
 
       manager = new CommentManager({ file, identity });
-      await manager.initialize(
-        mdWithComment,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(mdWithComment, '/test/file.md', createMinimalPreferences());
 
       await manager.deleteComment('comment-1');
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(file.writeFile).toHaveBeenCalled();
     });
 
@@ -231,16 +217,10 @@ Test[@1] content.
       const identity = createMockIdentityAdapter();
 
       manager = new CommentManager({ file, identity });
-      await manager.initialize(
-        SAMPLE_MARKDOWN,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
       // Should not throw even if write fails
-      await expect(
-        manager.addComment('test', 'note')
-      ).resolves.not.toThrow();
+      await expect(manager.addComment('test', 'note')).resolves.not.toThrow();
     });
   });
 
@@ -259,11 +239,7 @@ Test[@1] content.
 
     it('uses empty username when no adapter and no preference set', async () => {
       manager = new CommentManager();
-      await manager.initialize(
-        SAMPLE_MARKDOWN,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
       // Comments created should have empty author
       const comments = manager.getComments();
@@ -272,16 +248,10 @@ Test[@1] content.
 
     it('addComment works without FileAdapter (skips write)', async () => {
       manager = new CommentManager();
-      await manager.initialize(
-        SAMPLE_MARKDOWN,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
       // Should not throw even without file adapter
-      await expect(
-        manager.addComment('test document', 'A note')
-      ).resolves.not.toThrow();
+      await expect(manager.addComment('test document', 'A note')).resolves.not.toThrow();
 
       const comments = manager.getComments();
       expect(comments).toHaveLength(1);
@@ -296,15 +266,9 @@ Test[@1] content.
 <!-- mdview:annotations [{"id":1,"anchor":{"text":"Test"},"body":"A note","author":"tester","date":"2024-01-01T00:00:00.000Z"}] -->
 `;
       manager = new CommentManager();
-      await manager.initialize(
-        mdWithComment,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(mdWithComment, '/test/file.md', createMinimalPreferences());
 
-      await expect(
-        manager.editComment('comment-1', 'Updated')
-      ).resolves.not.toThrow();
+      await expect(manager.editComment('comment-1', 'Updated')).resolves.not.toThrow();
     });
 
     it('deleteComment works without FileAdapter', async () => {
@@ -315,15 +279,9 @@ Test[@1] content.
 <!-- mdview:annotations [{"id":1,"anchor":{"text":"Test"},"body":"A note","author":"tester","date":"2024-01-01T00:00:00.000Z"}] -->
 `;
       manager = new CommentManager();
-      await manager.initialize(
-        mdWithComment,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(mdWithComment, '/test/file.md', createMinimalPreferences());
 
-      await expect(
-        manager.deleteComment('comment-1')
-      ).resolves.not.toThrow();
+      await expect(manager.deleteComment('comment-1')).resolves.not.toThrow();
 
       expect(manager.getComments()).toHaveLength(0);
     });
@@ -336,30 +294,21 @@ Test[@1] content.
 <!-- mdview:annotations [{"id":1,"anchor":{"text":"Test"},"body":"A note","author":"tester","date":"2024-01-01T00:00:00.000Z"}] -->
 `;
       manager = new CommentManager();
-      await manager.initialize(
-        mdWithComment,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(mdWithComment, '/test/file.md', createMinimalPreferences());
 
-      await expect(
-        manager.resolveComment('comment-1')
-      ).resolves.not.toThrow();
+      await expect(manager.resolveComment('comment-1')).resolves.not.toThrow();
     });
 
     it('provides partial adapters — only FileAdapter', async () => {
       const file = createMockFileAdapter();
 
       manager = new CommentManager({ file });
-      await manager.initialize(
-        SAMPLE_MARKDOWN,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
       await manager.addComment('test document', 'note');
 
       // File adapter should be used for write
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(file.writeFile).toHaveBeenCalled();
     });
 
@@ -369,18 +318,13 @@ Test[@1] content.
       });
 
       manager = new CommentManager({ identity });
-      await manager.initialize(
-        SAMPLE_MARKDOWN,
-        '/test/file.md',
-        createMinimalPreferences()
-      );
+      await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(identity.getUsername).toHaveBeenCalled();
 
       // addComment should still work (no file write, but no crash)
-      await expect(
-        manager.addComment('test', 'note')
-      ).resolves.not.toThrow();
+      await expect(manager.addComment('test', 'note')).resolves.not.toThrow();
     });
   });
 

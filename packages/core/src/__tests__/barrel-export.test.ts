@@ -1,5 +1,5 @@
 /**
- * Test that all public APIs are accessible via the @mdview/core barrel export.
+ * Test that all public APIs are accessible via the @mdreview/core barrel export.
  */
 import {
   // Version
@@ -55,7 +55,7 @@ import {
   createDebug,
 } from '../index';
 
-describe('@mdview/core barrel export', () => {
+describe('@mdreview/core barrel export', () => {
   it('exports VERSION', () => {
     expect(VERSION).toBe('0.0.1');
   });

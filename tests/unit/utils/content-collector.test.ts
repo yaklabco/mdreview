@@ -3,14 +3,14 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ContentCollector } from '@mdview/core';
+import { ContentCollector } from '@mdreview/core';
 
 /**
  * Helper to create a test container with HTML
  */
 function createTestContainer(html: string): HTMLElement {
   const container = document.createElement('div');
-  container.id = 'mdview-container';
+  container.id = 'mdreview-container';
   container.innerHTML = html;
   return container;
 }

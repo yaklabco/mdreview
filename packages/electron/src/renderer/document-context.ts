@@ -11,7 +11,7 @@ import {
   DOCXGenerator,
   type Preferences,
   type RenderProgress,
-} from '@mdview/core';
+} from '@mdreview/core';
 import {
   ElectronMessagingAdapter,
   ElectronRendererStorageAdapter,
@@ -40,7 +40,8 @@ export class DocumentContext {
   private tocRenderer: TocRenderer | null = null;
   private commentManager: CommentManager | null = null;
   private autoReloadCleanup: (() => void) | null = null;
-  private onProgressCallback: ((progress: { stage: string; percent: number }) => void) | null = null;
+  private onProgressCallback: ((progress: { stage: string; percent: number }) => void) | null =
+    null;
   private metadata: DocumentMetadata = {
     filePath: '',
     title: '',
@@ -67,12 +68,12 @@ export class DocumentContext {
     this.metadata.title = filePath.split('/').pop() ?? filePath;
     this.metadata.renderState = 'rendering';
 
-    const state = await window.mdview.getState();
-    const content = await window.mdview.readFile(filePath);
+    const state = await window.mdreview.getState();
+    const content = await window.mdreview.readFile(filePath);
     const fileSize = FileScanner.getFileSize(content);
     const theme = state.preferences.theme || 'github-light';
 
-    document.body.classList.add('mdview-active');
+    document.body.classList.add('mdreview-active');
     await this.themeEngine.applyTheme(theme);
 
     const cleanupProgress = this.renderPipeline.onProgress((progress: RenderProgress) => {
@@ -149,8 +150,8 @@ export class DocumentContext {
   async reload(): Promise<DocumentMetadata | null> {
     if (!this.filePath || !this.container) return null;
 
-    const state = await window.mdview.getState();
-    const content = await window.mdview.readFile(this.filePath);
+    const state = await window.mdreview.getState();
+    const content = await window.mdreview.readFile(this.filePath);
 
     const resolvedContent = DocumentContext.resolveContentUrls(content, this.filePath);
 
@@ -200,7 +201,11 @@ export class DocumentContext {
     if (this.tocRenderer) {
       this.tocRenderer.toggle();
     } else {
-      this.setupToc(this.container, { tocPosition: 'left', tocMaxDepth: 6, tocAutoCollapse: false });
+      this.setupToc(this.container, {
+        tocPosition: 'left',
+        tocMaxDepth: 6,
+        tocAutoCollapse: false,
+      });
     }
   }
 
@@ -231,9 +236,10 @@ export class DocumentContext {
 
   async exportPDF(): Promise<void> {
     if (!this.filePath) return;
-    const data = await window.mdview.printToPDF();
-    const filename = (this.filePath.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '') + '.pdf';
-    await window.mdview.saveFile({ filename, mimeType: 'application/pdf', data });
+    const data = await window.mdreview.printToPDF();
+    const filename =
+      (this.filePath.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '') + '.pdf';
+    await window.mdreview.saveFile({ filename, mimeType: 'application/pdf', data });
   }
 
   async exportDOCX(): Promise<void> {
@@ -246,8 +252,9 @@ export class DocumentContext {
     const generator = new DOCXGenerator();
     const blob = await generator.generate(content, images);
     const arrayBuffer = await blob.arrayBuffer();
-    const filename = (this.filePath.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '') + '.docx';
-    await window.mdview.saveFile({
+    const filename =
+      (this.filePath.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '') + '.docx';
+    await window.mdreview.saveFile({
       filename,
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       data: arrayBuffer,
@@ -260,7 +267,7 @@ export class DocumentContext {
 
   async applyPreferences(prefs: Partial<Preferences>): Promise<void> {
     if (prefs.theme) {
-      await this.applyTheme(prefs.theme);
+      await this.applyTheme(prefs.theme as string);
     }
     if (prefs.showToc !== undefined) {
       if (prefs.showToc) {
@@ -283,7 +290,7 @@ export class DocumentContext {
       this.autoReloadCleanup = null;
     }
     if (this.filePath) {
-      void window.mdview.unwatchFile(this.filePath);
+      void window.mdreview.unwatchFile(this.filePath);
     }
   }
 
@@ -407,7 +414,7 @@ export class DocumentContext {
               this.updateMetadata(container, newContent);
             }
           } catch (err) {
-            console.error('[mdview] Auto-reload error:', err);
+            console.error('[mdreview] Auto-reload error:', err);
           }
         })();
       }, 500);

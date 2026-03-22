@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeCommentContext } from '@mdview/core';
+import { computeCommentContext } from '@mdreview/core';
 
 // ─── Simple documents ────────────────────────────────────────────────
 

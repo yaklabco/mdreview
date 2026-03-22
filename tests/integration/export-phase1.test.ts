@@ -4,15 +4,15 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ContentCollector } from '@mdview/core';
-import { SVGConverter } from '@mdview/core';
+import { ContentCollector } from '@mdreview/core';
+import { SVGConverter } from '@mdreview/core';
 
 /**
  * Helper to create a comprehensive test container with various content types
  */
 function createComprehensiveContainer(): HTMLElement {
   const container = document.createElement('div');
-  container.id = 'mdview-container';
+  container.id = 'mdreview-container';
 
   // Add headings
   const h1 = document.createElement('h1');
@@ -51,7 +51,7 @@ function createComprehensiveContainer(): HTMLElement {
  */
 function createContainerWithMermaid(): HTMLElement {
   const container = document.createElement('div');
-  container.id = 'mdview-container';
+  container.id = 'mdreview-container';
 
   // Add heading
   const h1 = document.createElement('h1');
@@ -247,7 +247,7 @@ describe('Phase 1 Integration', () => {
   describe('Mixed Content Scenarios', () => {
     it('should handle document with all content types and diagrams', async () => {
       const container = document.createElement('div');
-      container.id = 'mdview-container';
+      container.id = 'mdreview-container';
 
       // Title
       const h1 = document.createElement('h1');
@@ -323,7 +323,7 @@ describe('Phase 1 Integration', () => {
 
     it('should handle multiple diagrams of different sizes', async () => {
       const container = document.createElement('div');
-      container.id = 'mdview-container';
+      container.id = 'mdreview-container';
 
       const sizes = [
         [100, 100],
@@ -373,7 +373,7 @@ describe('Phase 1 Integration', () => {
   describe('Performance and Edge Cases', () => {
     it('should handle large documents efficiently', async () => {
       const container = document.createElement('div');
-      container.id = 'mdview-container';
+      container.id = 'mdreview-container';
 
       // Add 100 paragraphs
       for (let i = 0; i < 100; i++) {
@@ -421,7 +421,7 @@ describe('Phase 1 Integration', () => {
 
     it('should handle empty mermaid containers', async () => {
       const container = document.createElement('div');
-      container.id = 'mdview-container';
+      container.id = 'mdreview-container';
 
       // Mermaid container without SVG
       const mermaid = document.createElement('div');

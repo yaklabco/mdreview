@@ -13,13 +13,12 @@ import {
   removeComment,
   updateComment,
   resolveComment,
-  updateCommentMetadata,
   addReply,
   toggleReaction,
 } from '../../comments/annotation-serializer';
 import { parseAnnotations } from '../../comments/annotation-parser';
 import { buildSourceMap } from '../../comments/source-position-map';
-import type { Comment, CommentContext, CommentReply } from '../../types/index';
+import type { Comment, CommentReply } from '../../types/index';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -53,7 +52,7 @@ describe('addComment', () => {
     const result = addComment(md, comment);
 
     expect(result).toContain('Some highlighted text[@1] in context.');
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
     expect(result).toContain('"id": 1');
     expect(result).toContain('"text": "highlighted text"');
     expect(result).toContain('"body": "This is a comment"');
@@ -128,7 +127,7 @@ describe('addCommentAtOffset', () => {
     const result = addCommentAtOffset(md, comment, sourceMap);
 
     expect(result).toContain('**important**[@1]');
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
   });
 });
 

@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PreferencesPanel, type PreferencesPanelOptions, type ThemeOption } from './preferences-panel';
+import {
+  PreferencesPanel,
+  type PreferencesPanelOptions,
+  type ThemeOption,
+} from './preferences-panel';
 
 const defaultPrefs: PreferencesPanelOptions = {
   theme: 'github-light',
@@ -38,7 +42,7 @@ describe('PreferencesPanel', () => {
   let panel: PreferencesPanel;
 
   beforeEach(() => {
-    (globalThis.window as Record<string, unknown>).mdview = {
+    (globalThis.window as Record<string, unknown>).mdreview = {
       updatePreferences: vi.fn().mockResolvedValue(undefined),
     };
     panel = new PreferencesPanel();
@@ -136,7 +140,8 @@ describe('PreferencesPanel', () => {
       const select = document.querySelector('[data-pref="theme"]') as HTMLSelectElement;
       select.value = 'github-dark';
       select.dispatchEvent(new Event('change'));
-      expect(window.mdview.updatePreferences).toHaveBeenCalledWith({ theme: 'github-dark' });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(window.mdreview.updatePreferences).toHaveBeenCalledWith({ theme: 'github-dark' });
     });
 
     it('auto dark mode toggle shows conditional theme selectors', () => {
@@ -153,7 +158,8 @@ describe('PreferencesPanel', () => {
       toggle.dispatchEvent(new Event('change'));
 
       expect(conditional.classList.contains('expanded')).toBe(true);
-      expect(window.mdview.updatePreferences).toHaveBeenCalledWith({ autoTheme: true });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(window.mdreview.updatePreferences).toHaveBeenCalledWith({ autoTheme: true });
     });
 
     it('light/dark theme dropdowns visible when auto dark mode is on', () => {
@@ -175,7 +181,8 @@ describe('PreferencesPanel', () => {
       const toggle = document.querySelector('[data-pref="autoReload"]') as HTMLInputElement;
       toggle.checked = false;
       toggle.dispatchEvent(new Event('change'));
-      expect(window.mdview.updatePreferences).toHaveBeenCalledWith({ autoReload: false });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(window.mdreview.updatePreferences).toHaveBeenCalledWith({ autoReload: false });
     });
 
     it('show all files toggle is present in General category', () => {
@@ -190,7 +197,8 @@ describe('PreferencesPanel', () => {
       const toggle = document.querySelector('[data-pref="showAllFiles"]') as HTMLInputElement;
       toggle.checked = true;
       toggle.dispatchEvent(new Event('change'));
-      expect(window.mdview.updatePreferences).toHaveBeenCalledWith({ showAllFiles: true });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(window.mdreview.updatePreferences).toHaveBeenCalledWith({ showAllFiles: true });
     });
 
     it('icon theme select renders in General category', () => {
@@ -214,7 +222,8 @@ describe('PreferencesPanel', () => {
       const select = document.querySelector('[data-pref="iconTheme"]') as HTMLSelectElement;
       select.value = 'codicons';
       select.dispatchEvent(new Event('change'));
-      expect(window.mdview.updatePreferences).toHaveBeenCalledWith({ iconTheme: 'codicons' });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(window.mdreview.updatePreferences).toHaveBeenCalledWith({ iconTheme: 'codicons' });
     });
   });
 
@@ -313,7 +322,9 @@ describe('PreferencesPanel', () => {
 
     it('format dropdown with PDF/DOCX', () => {
       showExportCategory();
-      const select = document.querySelector('[data-pref="exportDefaultFormat"]') as HTMLSelectElement;
+      const select = document.querySelector(
+        '[data-pref="exportDefaultFormat"]'
+      ) as HTMLSelectElement;
       expect(select).not.toBeNull();
       const options = select.querySelectorAll('option');
       expect(options.length).toBeGreaterThanOrEqual(2);

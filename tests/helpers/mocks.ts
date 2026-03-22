@@ -3,7 +3,7 @@
  */
 
 import { vi } from 'vitest';
-import type { Theme, ConversionResult, CachedResult } from '@mdview/core';
+import type { Theme, ConversionResult, CachedResult } from '@mdreview/core';
 import { mockTheme } from './fixtures';
 
 /**

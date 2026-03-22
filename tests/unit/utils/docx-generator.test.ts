@@ -3,8 +3,8 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { DOCXGenerator } from '@mdview/core';
-import type { ContentNode, CollectedContent, ConvertedImage } from '@mdview/core';
+import { DOCXGenerator } from '@mdreview/core';
+import type { ContentNode, CollectedContent, ConvertedImage } from '@mdreview/core';
 
 describe('DOCXGenerator', () => {
   let generator: DOCXGenerator;

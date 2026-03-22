@@ -1,14 +1,14 @@
 /**
  * Debug Logger — Chrome extension shim
  *
- * Re-exports the platform-agnostic debug-logger from @mdview/core,
+ * Re-exports the platform-agnostic debug-logger from @mdreview/core,
  * pre-configured with a Chrome StorageAdapter that reads from
  * chrome.storage.sync.  Existing callers continue to import
  * `debug` and `debugLogger` without any changes.
  */
 
-import type { LogLevel } from '@mdview/core';
-import { DebugLogger as CoreDebugLogger } from '@mdview/core';
+import type { LogLevel } from '@mdreview/core';
+import { DebugLogger as CoreDebugLogger } from '@mdreview/core';
 import { ChromeStorageAdapter } from '../adapters';
 
 // ---------------------------------------------------------------------------
