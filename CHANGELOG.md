@@ -6,6 +6,13 @@
 
 ---
 
+## [0.3.2](https://github.com/yaklabco/mdreview/compare/v0.3.1...v0.3.2) (2026-03-22)
+
+
+### Documentation
+
+* curate 0.3.0 changelog entry with human-readable summary ([0bca8a0](https://github.com/yaklabco/mdreview/commit/0bca8a0b845f52965f6c898fefb7e421ba4ef119))
+
 ## [0.3.1](https://github.com/yaklabco/mdreview/compare/v0.3.0...v0.3.1) (2026-03-22)
 
 
