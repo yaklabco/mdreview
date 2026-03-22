@@ -5,6 +5,13 @@
 
 * **changelog:** remove duplicate 0.2.0 section ([2e2cfd5](https://github.com/jamesainslie/mdview/commit/2e2cfd5b698b77d8c88244a3a0ed86ba6751de88))
 
+## [0.4.1](https://github.com/yaklabco/mdreview/compare/mdview-v0.4.0...mdview-v0.4.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* resolve CI test failures on Linux runners ([50befaa](https://github.com/yaklabco/mdreview/commit/50befaae4cac7e092a88fd1a9879b2e70f54a1b2))
+
 ## [0.4.0](https://github.com/yaklabco/mdreview/compare/mdview-v0.3.6...mdview-v0.4.0) (2026-03-22)
 
 
