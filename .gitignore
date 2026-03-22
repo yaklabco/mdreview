@@ -17,3 +17,5 @@ test-results/
 releases/
 dist-backup-*
 .turbo/
+.playwright-mcp/
+packages/electron/out/
