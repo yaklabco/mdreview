@@ -1,4 +1,4 @@
-/* Prevent window-level scrollbars — all scrolling happens inside .mdview-tab-content */
+/* Prevent window-level scrollbars — all scrolling happens inside .mdreview-tab-content */
 html, body {
   margin: 0;
   padding: 0;
@@ -7,7 +7,7 @@ html, body {
 }
 
 /* Workspace layout */
-#mdview-workspace {
+#mdreview-workspace {
   display: flex;
   flex-direction: row;
   height: 100vh;
@@ -19,7 +19,7 @@ html, body {
 }
 
 /* Sidebar */
-#mdview-sidebar {
+#mdreview-sidebar {
   display: flex;
   flex-direction: column;
   width: 250px;
@@ -29,13 +29,13 @@ html, body {
   overflow: hidden;
 }
 
-#mdview-sidebar[style*="display: none"] {
+#mdreview-sidebar[style*="display: none"] {
   width: 0;
   border-right: none;
 }
 
 /* Main area */
-#mdview-main {
+#mdreview-main {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -44,7 +44,7 @@ html, body {
 }
 
 /* Toolbar row — single bar containing tabs + breadcrumb/actions */
-#mdview-toolbar-row {
+#mdreview-toolbar-row {
   display: flex;
   flex-direction: row;
   align-items: flex-end;
@@ -57,7 +57,7 @@ html, body {
 }
 
 /* Tab bar */
-#mdview-tab-bar {
+#mdreview-tab-bar {
   display: flex;
   flex-direction: row;
   align-items: flex-end;
@@ -71,7 +71,7 @@ html, body {
   user-select: none;
 }
 
-#mdview-tab-bar::-webkit-scrollbar {
+#mdreview-tab-bar::-webkit-scrollbar {
   height: 0;
 }
 
@@ -453,7 +453,7 @@ html, body {
 }
 
 /* Document header bar — breadcrumb + actions, inline in toolbar row */
-#mdview-header-bar {
+#mdreview-header-bar {
   -webkit-app-region: no-drag;
   display: flex;
   flex-direction: row;
@@ -467,7 +467,7 @@ html, body {
   white-space: nowrap;
 }
 
-#mdview-header-bar.hidden {
+#mdreview-header-bar.hidden {
   display: none;
 }
 
@@ -569,15 +569,15 @@ html, body {
 }
 
 /* Hidden states for panels */
-#mdview-tab-bar.hidden {
+#mdreview-tab-bar.hidden {
   display: none;
 }
 
-#mdview-toolbar-row:has(#mdview-tab-bar.hidden):has(#mdview-header-bar.hidden) {
+#mdreview-toolbar-row:has(#mdreview-tab-bar.hidden):has(#mdreview-header-bar.hidden) {
   display: none;
 }
 
-#mdview-status-bar.hidden {
+#mdreview-status-bar.hidden {
   display: none;
 }
 
@@ -691,25 +691,25 @@ html, body {
 }
 
 /* Content area */
-#mdview-content-area {
+#mdreview-content-area {
   flex: 1;
   overflow: hidden;
   position: relative;
 }
 
 /* Tab wrapper provides flex layout for TOC sidebar + content */
-.mdview-tab-content-wrapper {
+.mdreview-tab-content-wrapper {
   display: flex;
   height: 100%;
   overflow: hidden;
 }
 
-.mdview-tab-content-wrapper.toc-position-right {
+.mdreview-tab-content-wrapper.toc-position-right {
   flex-direction: row-reverse;
 }
 
 /* TOC sidebar within the wrapper — styled as part of the content, not the app chrome */
-.mdview-tab-content-wrapper > .mdview-toc-overlay {
+.mdreview-tab-content-wrapper > .mdreview-toc-overlay {
   width: 240px;
   flex-shrink: 0;
   background-color: var(--md-bg);
@@ -721,13 +721,13 @@ html, body {
   box-shadow: none;
 }
 
-.mdview-tab-content-wrapper.toc-position-right > .mdview-toc-overlay {
+.mdreview-tab-content-wrapper.toc-position-right > .mdreview-toc-overlay {
   border-right: none;
   border-left: 1px solid var(--md-border);
 }
 
 /* TOC header matches content heading style */
-.mdview-tab-content-wrapper > .mdview-toc-overlay .mdview-toc-title {
+.mdreview-tab-content-wrapper > .mdreview-toc-overlay .mdreview-toc-title {
   font-size: 14px;
   font-weight: 600;
   text-transform: none;
@@ -735,7 +735,7 @@ html, body {
   color: var(--md-heading, var(--md-fg));
 }
 
-.mdview-tab-content {
+.mdreview-tab-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -748,31 +748,31 @@ html, body {
   scrollbar-color: var(--md-border) transparent;
 }
 
-.mdview-tab-content::-webkit-scrollbar {
+.mdreview-tab-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.mdview-tab-content::-webkit-scrollbar-track {
+.mdreview-tab-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.mdview-tab-content::-webkit-scrollbar-thumb {
+.mdreview-tab-content::-webkit-scrollbar-thumb {
   background-color: var(--md-border);
   border-radius: 3px;
 }
 
-.mdview-tab-content::-webkit-scrollbar-thumb:hover {
+.mdreview-tab-content::-webkit-scrollbar-thumb:hover {
   background-color: var(--md-fg-muted);
 }
 
-.mdview-tab-content *,
-.mdview-tab-content *::before,
-.mdview-tab-content *::after {
+.mdreview-tab-content *,
+.mdreview-tab-content *::before,
+.mdreview-tab-content *::after {
   box-sizing: border-box;
 }
 
 /* Status bar */
-#mdview-status-bar {
+#mdreview-status-bar {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -821,7 +821,7 @@ html, body {
 }
 
 /* Empty state */
-#mdview-empty-state {
+#mdreview-empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -883,11 +883,11 @@ html, body {
 }
 
 /* Drag and drop overlay */
-.mdview-drag-over {
+.mdreview-drag-over {
   position: relative;
 }
 
-.mdview-drag-over::after {
+.mdreview-drag-over::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -915,7 +915,7 @@ html, body {
 }
 
 /* About modal */
-.mdview-about-modal {
+.mdreview-about-modal {
   position: fixed;
   inset: 0;
   display: flex;
@@ -925,7 +925,7 @@ html, body {
   z-index: 9999;
 }
 
-.mdview-about-card {
+.mdreview-about-card {
   background-color: var(--md-bg);
   border: 1px solid var(--md-border);
   border-radius: 12px;
@@ -935,13 +935,13 @@ html, body {
   box-shadow: 0 8px 32px var(--md-shadow);
 }
 
-.mdview-about-card h2 {
+.mdreview-about-card h2 {
   margin: 0 0 8px;
   font-size: 20px;
   color: var(--md-fg);
 }
 
-.mdview-about-card p {
+.mdreview-about-card p {
   margin: 4px 0;
   font-size: 13px;
   color: var(--md-fg-muted);

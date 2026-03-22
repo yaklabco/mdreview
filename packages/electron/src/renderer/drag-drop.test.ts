@@ -31,7 +31,7 @@ describe('setupDragAndDrop', () => {
     const event = new Event('dragover', { bubbles: true, cancelable: true });
     target.dispatchEvent(event);
 
-    expect(target.classList.contains('mdview-drag-over')).toBe(true);
+    expect(target.classList.contains('mdreview-drag-over')).toBe(true);
   });
 
   it('should remove indicator class on dragleave', () => {
@@ -40,13 +40,13 @@ describe('setupDragAndDrop', () => {
     // First add the class via dragover
     const dragoverEvent = new Event('dragover', { bubbles: true, cancelable: true });
     target.dispatchEvent(dragoverEvent);
-    expect(target.classList.contains('mdview-drag-over')).toBe(true);
+    expect(target.classList.contains('mdreview-drag-over')).toBe(true);
 
     // Then remove via dragleave
     const dragleaveEvent = new Event('dragleave', { bubbles: true, cancelable: true });
     target.dispatchEvent(dragleaveEvent);
 
-    expect(target.classList.contains('mdview-drag-over')).toBe(false);
+    expect(target.classList.contains('mdreview-drag-over')).toBe(false);
   });
 
   it('should extract .md file paths from drop event and call callback', () => {
@@ -118,7 +118,7 @@ describe('setupDragAndDrop', () => {
     // First add the class
     const dragoverEvent = new Event('dragover', { bubbles: true, cancelable: true });
     target.dispatchEvent(dragoverEvent);
-    expect(target.classList.contains('mdview-drag-over')).toBe(true);
+    expect(target.classList.contains('mdreview-drag-over')).toBe(true);
 
     // Drop should remove it
     const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
@@ -129,7 +129,7 @@ describe('setupDragAndDrop', () => {
     });
     target.dispatchEvent(dropEvent);
 
-    expect(target.classList.contains('mdview-drag-over')).toBe(false);
+    expect(target.classList.contains('mdreview-drag-over')).toBe(false);
   });
 
   it('should return a cleanup function', () => {
@@ -143,7 +143,7 @@ describe('setupDragAndDrop', () => {
     target.dispatchEvent(event);
 
     expect(spy).not.toHaveBeenCalled();
-    expect(target.classList.contains('mdview-drag-over')).toBe(false);
+    expect(target.classList.contains('mdreview-drag-over')).toBe(false);
 
     // Drop should also not fire callback
     const dropEvent = new Event('drop', { bubbles: true, cancelable: true });

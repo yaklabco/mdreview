@@ -3,7 +3,7 @@
  * Manages popup UI and interactions
  */
 
-import type { AppState, ThemeName, LogLevel } from '@mdview/core';
+import type { AppState, ThemeName, LogLevel } from '@mdreview/core';
 import { debug } from '../utils/debug-logger';
 
 class PopupManager {
@@ -353,7 +353,7 @@ class PopupManager {
     if (btnHelp) {
       btnHelp.addEventListener('click', () => {
         void chrome.tabs.create({
-          url: 'https://github.com/jamesainslie/mdview#readme',
+          url: 'https://github.com/yaklabco/mdreview#readme',
         });
       });
     }

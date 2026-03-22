@@ -15,7 +15,7 @@ interface ScrollState {
 }
 
 export class ScrollManager {
-  private static readonly STORAGE_KEY = 'mdview-scroll-state';
+  private static readonly STORAGE_KEY = 'mdreview-scroll-state';
   private static readonly MAX_AGE = 5000; // 5 seconds - only restore recent scrolls
   private saveTimeout: number | null = null;
   private filePath: string;

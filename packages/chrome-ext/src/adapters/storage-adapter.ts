@@ -1,4 +1,4 @@
-import type { StorageAdapter } from '@mdview/core';
+import type { StorageAdapter } from '@mdreview/core';
 
 export class ChromeStorageAdapter implements StorageAdapter {
   async getSync(keys: string | string[]): Promise<Record<string, unknown>> {

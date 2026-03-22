@@ -1,4 +1,4 @@
-import type { MessagingAdapter, IPCMessage } from '@mdview/core';
+import type { MessagingAdapter, IPCMessage } from '@mdreview/core';
 
 export class ElectronMessagingAdapter implements MessagingAdapter {
   async send(message: IPCMessage): Promise<unknown> {
@@ -6,10 +6,10 @@ export class ElectronMessagingAdapter implements MessagingAdapter {
 
     switch (type) {
       case 'GET_STATE':
-        return window.mdview.getState();
+        return window.mdreview.getState();
 
       case 'UPDATE_PREFERENCES':
-        return window.mdview.updatePreferences(payload as Record<string, unknown>);
+        return window.mdreview.updatePreferences(payload as Record<string, unknown>);
 
       case 'CACHE_GENERATE_KEY': {
         const p = payload as {
@@ -19,7 +19,7 @@ export class ElectronMessagingAdapter implements MessagingAdapter {
           theme: string;
           preferences: Record<string, unknown>;
         };
-        const key = await window.mdview.cacheGenerateKey(
+        const key = await window.mdreview.cacheGenerateKey(
           p.filePath,
           p.contentHash || p.content,
           p.theme,
@@ -30,30 +30,30 @@ export class ElectronMessagingAdapter implements MessagingAdapter {
 
       case 'CACHE_GET': {
         const key = (payload as { key: string }).key;
-        const result = await window.mdview.cacheGet(key);
+        const result = await window.mdreview.cacheGet(key);
         return { result };
       }
 
       case 'CACHE_SET': {
         const { key, result } = payload as { key: string; result: unknown };
-        return window.mdview.cacheSet(key, result as never);
+        return window.mdreview.cacheSet(key, result as never);
       }
 
       case 'CHECK_FILE_CHANGED': {
         const { url, lastHash } = payload as { url: string; lastHash: string };
-        return window.mdview.checkFileChanged(url, lastHash);
+        return window.mdreview.checkFileChanged(url, lastHash);
       }
 
       case 'GET_USERNAME':
-        return window.mdview.getUsername();
+        return window.mdreview.getUsername();
 
       case 'WRITE_FILE': {
         const { path, content } = payload as { path: string; content: string };
-        return window.mdview.writeFile(path, content);
+        return window.mdreview.writeFile(path, content);
       }
 
       default:
-        console.warn(`[mdview] Unknown message type: ${type}`);
+        console.warn(`[mdreview] Unknown message type: ${type}`);
         return undefined;
     }
   }

@@ -10,7 +10,7 @@ describe('ElectronFileAdapter', () => {
 
   beforeEach(async () => {
     adapter = new ElectronFileAdapter();
-    tempDir = await mkdtemp(join(tmpdir(), 'mdview-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'mdreview-test-'));
   });
 
   afterEach(async () => {

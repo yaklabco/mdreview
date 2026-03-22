@@ -9,14 +9,14 @@ describe('SidebarResizeHandle', () => {
 
   beforeEach(() => {
     document.body.innerHTML = `
-      <div id="mdview-workspace">
-        <div id="mdview-sidebar" style="width: 250px;"></div>
-        <div id="mdview-main"></div>
+      <div id="mdreview-workspace">
+        <div id="mdreview-sidebar" style="width: 250px;"></div>
+        <div id="mdreview-main"></div>
       </div>
     `;
-    workspace = document.getElementById('mdview-workspace')!;
-    sidebar = document.getElementById('mdview-sidebar')!;
-    main = document.getElementById('mdview-main')!;
+    workspace = document.getElementById('mdreview-workspace')!;
+    sidebar = document.getElementById('mdreview-sidebar')!;
+    main = document.getElementById('mdreview-main')!;
     handle = new SidebarResizeHandle(sidebar);
   });
 

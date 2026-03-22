@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
-import type { MdviewPreloadAPI } from '../shared/preload-api';
+import type { MdreviewPreloadAPI } from '../shared/preload-api';
 
-const api: MdviewPreloadAPI = {
+const api: MdreviewPreloadAPI = {
   // State
   getState: () => ipcRenderer.invoke(IPC_CHANNELS.GET_STATE),
   updatePreferences: (prefs) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_PREFERENCES, prefs),
@@ -63,7 +63,8 @@ const api: MdviewPreloadAPI = {
   deleteTabGroup: (groupId) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_TAB_GROUP, groupId),
 
   // Directory
-  listDirectory: (dirPath, options) => ipcRenderer.invoke(IPC_CHANNELS.LIST_DIRECTORY, dirPath, options),
+  listDirectory: (dirPath, options) =>
+    ipcRenderer.invoke(IPC_CHANNELS.LIST_DIRECTORY, dirPath, options),
   watchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.WATCH_DIRECTORY, dirPath),
   unwatchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.UNWATCH_DIRECTORY, dirPath),
 
@@ -127,4 +128,4 @@ const api: MdviewPreloadAPI = {
   },
 };
 
-contextBridge.exposeInMainWorld('mdview', api);
+contextBridge.exposeInMainWorld('mdreview', api);

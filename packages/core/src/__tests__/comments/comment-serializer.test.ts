@@ -36,8 +36,8 @@ describe('generateNextCommentId', () => {
     const md = [
       'Some highlighted text[^comment-1] in context.',
       '',
-      '<!-- mdview:comments -->',
-      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+      '<!-- mdreview:comments -->',
+      '[^comment-1]: <!-- mdreview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
       '    This is a comment',
     ].join('\n');
     expect(generateNextCommentId(md)).toBe('comment-2');
@@ -51,8 +51,8 @@ describe('addComment', () => {
     const result = addComment(md, comment);
 
     expect(result).toContain('Some highlighted text[^comment-1] in context.');
-    expect(result).toContain('<!-- mdview:comments -->');
-    expect(result).toContain('[^comment-1]: <!-- mdview:comment');
+    expect(result).toContain('<!-- mdreview:comments -->');
+    expect(result).toContain('[^comment-1]: <!-- mdreview:comment');
     expect(result).toContain('    This is a comment');
   });
 });
@@ -62,8 +62,8 @@ describe('removeComment', () => {
     const md = [
       'Some highlighted text[^comment-1] in context.',
       '',
-      '<!-- mdview:comments -->',
-      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+      '<!-- mdreview:comments -->',
+      '[^comment-1]: <!-- mdreview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
       '    This is a comment',
     ].join('\n');
     const result = removeComment(md, 'comment-1');
@@ -79,8 +79,8 @@ describe('updateComment', () => {
     const md = [
       'Some highlighted text[^comment-1] in context.',
       '',
-      '<!-- mdview:comments -->',
-      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+      '<!-- mdreview:comments -->',
+      '[^comment-1]: <!-- mdreview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
       '    Original body text',
     ].join('\n');
     const result = updateComment(md, 'comment-1', 'Updated body text');
@@ -95,8 +95,8 @@ describe('resolveComment', () => {
     const md = [
       'Some highlighted text[^comment-1] in context.',
       '',
-      '<!-- mdview:comments -->',
-      '[^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
+      '<!-- mdreview:comments -->',
+      '[^comment-1]: <!-- mdreview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->',
       '    This is a comment',
     ].join('\n');
     const result = resolveComment(md, 'comment-1');

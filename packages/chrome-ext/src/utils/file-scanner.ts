@@ -1,10 +1,10 @@
 /**
- * Re-export shim: delegates to @mdview/core FileScanner and adds
+ * Re-export shim: delegates to @mdreview/core FileScanner and adds
  * Chrome extension-specific methods (window.location, chrome.runtime).
  */
 
-import { FileScanner as CoreFileScanner } from '@mdview/core';
-import type { FileAdapter, FileChangeInfo } from '@mdview/core';
+import { FileScanner as CoreFileScanner } from '@mdreview/core';
+import type { FileAdapter, FileChangeInfo } from '@mdreview/core';
 import { debug } from './debug-logger';
 
 /**
@@ -110,7 +110,7 @@ export class FileScanner extends CoreFileScanner {
         return pre.textContent || '';
       }
       // If body is not cleared yet
-      if (!document.getElementById('mdview-container')) {
+      if (!document.getElementById('mdreview-container')) {
         return document.body.textContent || '';
       }
     }

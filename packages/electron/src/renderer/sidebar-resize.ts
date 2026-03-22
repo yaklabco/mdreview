@@ -22,8 +22,8 @@ export class SidebarResizeHandle {
     this.handleEl = document.createElement('div');
     this.handleEl.className = 'sidebar-resize-handle';
 
-    // Insert after sidebar (before #mdview-main)
-    const main = parent.querySelector('#mdview-main');
+    // Insert after sidebar (before #mdreview-main)
+    const main = parent.querySelector('#mdreview-main');
     if (main) {
       parent.insertBefore(this.handleEl, main);
     } else {
@@ -74,7 +74,8 @@ export class SidebarResizeHandle {
     e.preventDefault();
     this.isDragging = true;
     this.startX = e.clientX;
-    this.startWidth = parseInt(this.sidebar.style.width, 10) || this.sidebar.getBoundingClientRect().width;
+    this.startWidth =
+      parseInt(this.sidebar.style.width, 10) || this.sidebar.getBoundingClientRect().width;
 
     this.handleEl?.classList.add('dragging');
 

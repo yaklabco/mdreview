@@ -33,7 +33,7 @@ const themes: { label: string; theme: Theme }[] = [
   { label: 'one-dark-pro', theme: oneDarkPro },
 ];
 
-describe('@mdview/core themes', () => {
+describe('@mdreview/core themes', () => {
   it.each(themes)('$label has all required Theme fields', ({ theme }) => {
     for (const field of requiredFields) {
       expect(theme).toHaveProperty(field);

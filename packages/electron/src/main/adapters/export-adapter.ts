@@ -1,4 +1,4 @@
-import type { ExportAdapter, ExportSaveOptions } from '@mdview/core/node';
+import type { ExportAdapter, ExportSaveOptions } from '@mdreview/core/node';
 import { writeFile } from 'fs/promises';
 
 type ShowSaveDialogFn = (options: {

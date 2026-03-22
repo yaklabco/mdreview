@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { FilenameGenerator } from '@mdview/core';
+import { FilenameGenerator } from '@mdreview/core';
 
 describe('FilenameGenerator', () => {
   beforeEach(() => {

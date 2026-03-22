@@ -1,9 +1,9 @@
-// Re-export shim: export-ui has moved to @mdview/core
+// Re-export shim: export-ui has moved to @mdreview/core
 // This shim provides Chrome extension MessagingAdapter and platform-specific factories.
 // It will be removed in Phase 2.9
 
-import type { ExportUIOptions } from '@mdview/core';
-import { ExportUI as CoreExportUI, type CoreExportUIOptions } from '@mdview/core';
+import type { ExportUIOptions } from '@mdreview/core';
+import { ExportUI as CoreExportUI, type CoreExportUIOptions } from '@mdreview/core';
 import { ChromeMessagingAdapter } from '../adapters';
 
 /**
@@ -20,11 +20,11 @@ export class ExportUI extends CoreExportUI {
       messaging: new ChromeMessagingAdapter(),
       factories: {
         createExportController: async () => {
-          const mod = await import('@mdview/core');
+          const mod = await import('@mdreview/core');
           return new mod.ExportController();
         },
         createPDFGenerator: async () => {
-          const mod = await import('@mdview/core');
+          const mod = await import('@mdreview/core');
           return new mod.PDFGenerator();
         },
       },

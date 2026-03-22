@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@mdview/core', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('@mdview/core');
+vi.mock('@mdreview/core', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('@mdreview/core');
   return {
     ...actual,
     RenderPipeline: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
@@ -34,7 +34,9 @@ vi.mock('@mdview/core', async () => {
       this.convertAll = vi.fn().mockReturnValue(new Map());
     }),
     DOCXGenerator: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-      this.generate = vi.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)) });
+      this.generate = vi
+        .fn()
+        .mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)) });
     }),
     FileScanner: {
       getFileSize: vi.fn().mockReturnValue(100),
@@ -105,7 +107,7 @@ describe('DocumentContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMdview = createMockMdviewAPI();
-    (globalThis.window as Record<string, unknown>).mdview = mockMdview;
+    (globalThis.window as Record<string, unknown>).mdreview = mockMdview;
     document.body.innerHTML = '<div id="test-container"></div>';
   });
 
@@ -219,7 +221,7 @@ describe('DocumentContext', () => {
 
       ctx.toggleToc();
 
-      const { TocRenderer } = await import('@mdview/core');
+      const { TocRenderer } = await import('@mdreview/core');
       expect(TocRenderer).toHaveBeenCalled();
     });
 
@@ -244,8 +246,9 @@ describe('DocumentContext', () => {
       // TOC was created by load because showToc=true
       ctx.toggleToc();
 
-      const { TocRenderer } = await import('@mdview/core');
-      const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      const { TocRenderer } = await import('@mdreview/core');
+      const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]
+        ?.value as Record<string, ReturnType<typeof vi.fn>>;
       expect(mockInstance.toggle).toHaveBeenCalled();
     });
 
@@ -315,15 +318,16 @@ describe('DocumentContext', () => {
 
   describe('applyTheme', () => {
     it('should call themeEngine.applyTheme', async () => {
-      const { DocumentContext, } = await import('./document-context');
-      const { ThemeEngine } = await import('@mdview/core');
+      const { DocumentContext } = await import('./document-context');
+      const { ThemeEngine } = await import('@mdreview/core');
       const container = document.getElementById('test-container')!;
       const ctx = new DocumentContext('tab-1');
       await ctx.load('/tmp/test.md', container);
 
       await ctx.applyTheme('github-dark');
 
-      const mockInstance = (ThemeEngine as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      const mockInstance = (ThemeEngine as unknown as ReturnType<typeof vi.fn>).mock.results[0]
+        ?.value as Record<string, ReturnType<typeof vi.fn>>;
       // applyTheme is called during load and then again explicitly
       expect(mockInstance.applyTheme).toHaveBeenCalledWith('github-dark');
     });
@@ -332,14 +336,15 @@ describe('DocumentContext', () => {
   describe('applyPreferences', () => {
     it('should apply theme when theme is in prefs', async () => {
       const { DocumentContext } = await import('./document-context');
-      const { ThemeEngine } = await import('@mdview/core');
+      const { ThemeEngine } = await import('@mdreview/core');
       const container = document.getElementById('test-container')!;
       const ctx = new DocumentContext('tab-1');
       await ctx.load('/tmp/test.md', container);
 
       await ctx.applyPreferences({ theme: 'monokai' });
 
-      const mockInstance = (ThemeEngine as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      const mockInstance = (ThemeEngine as unknown as ReturnType<typeof vi.fn>).mock.results[0]
+        ?.value as Record<string, ReturnType<typeof vi.fn>>;
       expect(mockInstance.applyTheme).toHaveBeenCalledWith('monokai');
     });
 
@@ -356,7 +361,7 @@ describe('DocumentContext', () => {
       });
 
       const { DocumentContext } = await import('./document-context');
-      const { TocRenderer } = await import('@mdview/core');
+      const { TocRenderer } = await import('@mdreview/core');
       const container = document.getElementById('test-container')!;
       container.innerHTML = '<h1 id="a">Title</h1>';
       const ctx = new DocumentContext('tab-1');
@@ -364,7 +369,8 @@ describe('DocumentContext', () => {
 
       await ctx.applyPreferences({ showToc: false });
 
-      const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]
+        ?.value as Record<string, ReturnType<typeof vi.fn>>;
       expect(mockInstance.hide).toHaveBeenCalled();
     });
   });
@@ -403,7 +409,9 @@ describe('DocumentContext', () => {
         '<img src="img/basset.jpg" alt="basset" width="400">',
         '/Users/test/project/README.md'
       );
-      expect(result).toBe('<img src="local-asset:///Users/test/project/img/basset.jpg" alt="basset" width="400">');
+      expect(result).toBe(
+        '<img src="local-asset:///Users/test/project/img/basset.jpg" alt="basset" width="400">'
+      );
     });
 
     it('should not rewrite HTML img src with https URL', async () => {
@@ -482,10 +490,13 @@ describe('DocumentContext', () => {
   describe('post-render URL resolution (DOM rewrite)', () => {
     it('should resolve relative image paths after rendering', async () => {
       // Mock render to inject an img with relative src
-      const { RenderPipeline } = await import('@mdview/core');
-      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+      const { RenderPipeline } = await import('@mdreview/core');
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (
+        this: Record<string, unknown>
+      ) {
         this.render = vi.fn().mockImplementation(({ container }: { container: HTMLElement }) => {
-          container.innerHTML = '<img src="img/photo.jpg" alt="photo"><img src="https://example.com/badge.svg" alt="badge">';
+          container.innerHTML =
+            '<img src="img/photo.jpg" alt="photo"><img src="https://example.com/badge.svg" alt="badge">';
           return Promise.resolve();
         });
         this.onProgress = vi.fn().mockReturnValue(vi.fn());
@@ -504,10 +515,13 @@ describe('DocumentContext', () => {
     });
 
     it('should resolve relative link hrefs after rendering', async () => {
-      const { RenderPipeline } = await import('@mdview/core');
-      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+      const { RenderPipeline } = await import('@mdreview/core');
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (
+        this: Record<string, unknown>
+      ) {
         this.render = vi.fn().mockImplementation(({ container }: { container: HTMLElement }) => {
-          container.innerHTML = '<a href="docs/guide.md">Guide</a><a href="https://github.com">GH</a><a href="#section">Anchor</a>';
+          container.innerHTML =
+            '<a href="docs/guide.md">Guide</a><a href="https://github.com">GH</a><a href="#section">Anchor</a>';
           return Promise.resolve();
         });
         this.onProgress = vi.fn().mockReturnValue(vi.fn());
@@ -527,14 +541,22 @@ describe('DocumentContext', () => {
 
   describe('progress callback', () => {
     it('should call progress callback during render when set', async () => {
-      const { RenderPipeline } = await import('@mdview/core');
-      let capturedProgressListener: ((p: { stage: string; progress: number; message: string }) => void) | null = null;
-      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+      const { RenderPipeline } = await import('@mdreview/core');
+      let capturedProgressListener:
+        | ((p: { stage: string; progress: number; message: string }) => void)
+        | null = null;
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (
+        this: Record<string, unknown>
+      ) {
         this.render = vi.fn().mockResolvedValue(undefined);
-        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; progress: number; message: string }) => void) => {
-          capturedProgressListener = listener;
-          return vi.fn();
-        });
+        this.onProgress = vi
+          .fn()
+          .mockImplementation(
+            (listener: (p: { stage: string; progress: number; message: string }) => void) => {
+              capturedProgressListener = listener;
+              return vi.fn();
+            }
+          );
       });
 
       const { DocumentContext } = await import('./document-context');
@@ -552,14 +574,22 @@ describe('DocumentContext', () => {
     });
 
     it('should not throw when progress fires without a callback set', async () => {
-      const { RenderPipeline } = await import('@mdview/core');
-      let capturedProgressListener: ((p: { stage: string; progress: number; message: string }) => void) | null = null;
-      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+      const { RenderPipeline } = await import('@mdreview/core');
+      let capturedProgressListener:
+        | ((p: { stage: string; progress: number; message: string }) => void)
+        | null = null;
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (
+        this: Record<string, unknown>
+      ) {
         this.render = vi.fn().mockResolvedValue(undefined);
-        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; progress: number; message: string }) => void) => {
-          capturedProgressListener = listener;
-          return vi.fn();
-        });
+        this.onProgress = vi
+          .fn()
+          .mockImplementation(
+            (listener: (p: { stage: string; progress: number; message: string }) => void) => {
+              capturedProgressListener = listener;
+              return vi.fn();
+            }
+          );
       });
 
       const { DocumentContext } = await import('./document-context');
@@ -568,18 +598,28 @@ describe('DocumentContext', () => {
 
       await ctx.load('/tmp/test.md', container);
 
-      expect(() => capturedProgressListener!({ stage: 'parsing', progress: 50, message: 'Parsing...' })).not.toThrow();
+      expect(() =>
+        capturedProgressListener!({ stage: 'parsing', progress: 50, message: 'Parsing...' })
+      ).not.toThrow();
     });
 
     it('should update callback via setOnProgress', async () => {
-      const { RenderPipeline } = await import('@mdview/core');
-      let capturedProgressListener: ((p: { stage: string; progress: number; message: string }) => void) | null = null;
-      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+      const { RenderPipeline } = await import('@mdreview/core');
+      let capturedProgressListener:
+        | ((p: { stage: string; progress: number; message: string }) => void)
+        | null = null;
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (
+        this: Record<string, unknown>
+      ) {
         this.render = vi.fn().mockResolvedValue(undefined);
-        this.onProgress = vi.fn().mockImplementation((listener: (p: { stage: string; progress: number; message: string }) => void) => {
-          capturedProgressListener = listener;
-          return vi.fn();
-        });
+        this.onProgress = vi
+          .fn()
+          .mockImplementation(
+            (listener: (p: { stage: string; progress: number; message: string }) => void) => {
+              capturedProgressListener = listener;
+              return vi.fn();
+            }
+          );
       });
 
       const { DocumentContext } = await import('./document-context');
@@ -592,7 +632,11 @@ describe('DocumentContext', () => {
       await ctx.load('/tmp/test.md', container);
 
       ctx.setOnProgress(spy2);
-      capturedProgressListener!({ stage: 'highlighting', progress: 80, message: 'Highlighting...' });
+      capturedProgressListener!({
+        stage: 'highlighting',
+        progress: 80,
+        message: 'Highlighting...',
+      });
 
       expect(spy1).not.toHaveBeenCalled();
       expect(spy2).toHaveBeenCalledWith({ stage: 'highlighting', percent: 80 });

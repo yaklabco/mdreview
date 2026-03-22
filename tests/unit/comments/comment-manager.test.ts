@@ -7,7 +7,7 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CommentManager } from '../../../packages/chrome-ext/src/comments/comment-manager';
-import type { Comment, CommentParseResult, AppState, CommentTag } from '@mdview/core';
+import type { Comment, CommentParseResult, AppState, CommentTag } from '@mdreview/core';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -631,9 +631,8 @@ describe('CommentManager', () => {
 
   describe('repositionAllCards()', () => {
     test('positions cards based on highlight Y and cascades overlaps', async () => {
-      const { CommentHighlighter } = await import(
-        '../../../packages/core/src/comments/comment-highlight'
-      );
+      const { CommentHighlighter } =
+        await import('../../../packages/core/src/comments/comment-highlight');
 
       // We need fresh initialization to get a highlighter instance
       const mgr = new CommentManager();
@@ -717,7 +716,7 @@ describe('CommentManager', () => {
         this.createGutter = vi.fn(() => document.createElement('div'));
         this.renderCard = vi.fn((comment: Comment) => {
           const card = document.createElement('div');
-          card.className = 'mdview-comment-card';
+          card.className = 'mdreview-comment-card';
           card.dataset.commentId = comment.id;
           Object.defineProperty(card, 'offsetHeight', { value: 40, configurable: true });
           return card;
@@ -734,7 +733,7 @@ describe('CommentManager', () => {
 
       // After initialization, repositionAllCards is called.
       // Get the two cards from the DOM
-      const cards = document.querySelectorAll('.mdview-comment-card');
+      const cards = document.querySelectorAll('.mdreview-comment-card');
       expect(cards.length).toBe(2);
 
       const card1 = cards[0] as HTMLElement;
@@ -857,7 +856,7 @@ describe('CommentManager', () => {
   // ── event wiring ─────────────────────────────────────────────────────
 
   describe('event wiring', () => {
-    test('handles mdview:comment:reply event', async () => {
+    test('handles mdreview:comment:reply event', async () => {
       const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       const mgr = new CommentManager();
@@ -877,7 +876,7 @@ describe('CommentManager', () => {
 
       // Create a card in the DOM so showReplyForm can find it
       const card = document.createElement('div');
-      card.className = 'mdview-comment-card';
+      card.className = 'mdreview-comment-card';
       card.dataset.commentId = 'comment-1';
       const body = document.createElement('div');
       body.className = 'comment-body';
@@ -886,7 +885,7 @@ describe('CommentManager', () => {
 
       // Dispatch the reply event
       document.dispatchEvent(
-        new CustomEvent('mdview:comment:reply', {
+        new CustomEvent('mdreview:comment:reply', {
           detail: { commentId: 'comment-1' },
         })
       );
@@ -897,11 +896,11 @@ describe('CommentManager', () => {
       mgr.destroy();
     });
 
-    test('handles mdview:comment:react event', async () => {
+    test('handles mdreview:comment:react event', async () => {
       await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       document.dispatchEvent(
-        new CustomEvent('mdview:comment:react', {
+        new CustomEvent('mdreview:comment:react', {
           detail: { commentId: 'comment-1', emoji: '\u{1F44D}' },
         })
       );
@@ -938,10 +937,9 @@ describe('CommentManager', () => {
   // ── minimized card support ──────────────────────────────────────────────
 
   describe('minimized card support', () => {
-    test('handles mdview:comment:reposition event by repositioning cards', async () => {
-      const { CommentHighlighter } = await import(
-        '../../../packages/core/src/comments/comment-highlight'
-      );
+    test('handles mdreview:comment:reposition event by repositioning cards', async () => {
+      const { CommentHighlighter } =
+        await import('../../../packages/core/src/comments/comment-highlight');
       const { CommentUI } = await import('../../../packages/core/src/comments/comment-ui');
 
       const mgr = new CommentManager();
@@ -977,7 +975,7 @@ describe('CommentManager', () => {
         this.createGutter = vi.fn(() => document.createElement('div'));
         this.renderCard = vi.fn((comment: Comment) => {
           const card = document.createElement('div');
-          card.className = 'mdview-comment-card';
+          card.className = 'mdreview-comment-card';
           card.dataset.commentId = comment.id;
           Object.defineProperty(card, 'offsetHeight', { value: 40, configurable: true });
           return card;
@@ -993,7 +991,7 @@ describe('CommentManager', () => {
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Get the card and record its initial position
-      const card = document.querySelector('.mdview-comment-card') as HTMLElement;
+      const card = document.querySelector('.mdreview-comment-card') as HTMLElement;
       expect(card).not.toBeNull();
       const initialTop = card.style.top;
 
@@ -1011,7 +1009,7 @@ describe('CommentManager', () => {
       }));
 
       // Dispatch reposition event
-      document.dispatchEvent(new CustomEvent('mdview:comment:reposition'));
+      document.dispatchEvent(new CustomEvent('mdreview:comment:reposition'));
 
       // Card should have been repositioned
       expect(card.style.top).toBe('200px');
@@ -1033,7 +1031,7 @@ describe('CommentManager', () => {
         this.renderCard = vi.fn((comment: Comment) => {
           renderCallCount++;
           const card = document.createElement('div');
-          card.className = 'mdview-comment-card';
+          card.className = 'mdreview-comment-card';
           card.dataset.commentId = comment.id;
           return card;
         });
@@ -1048,7 +1046,7 @@ describe('CommentManager', () => {
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Simulate the user expanding the card (remove .minimized)
-      const card = document.querySelector('.mdview-comment-card') as HTMLElement;
+      const card = document.querySelector('.mdreview-comment-card') as HTMLElement;
       card.classList.remove('minimized');
 
       // Trigger a reply which calls refreshCardContent internally
@@ -1056,7 +1054,7 @@ describe('CommentManager', () => {
 
       // New card should NOT have .minimized (state preserved from expanded old card)
       const newCard = document.querySelector(
-        '.mdview-comment-card[data-comment-id="comment-1"]'
+        '.mdreview-comment-card[data-comment-id="comment-1"]'
       ) as HTMLElement;
       expect(newCard.classList.contains('minimized')).toBe(false);
 
@@ -1072,7 +1070,7 @@ describe('CommentManager', () => {
         this.createGutter = vi.fn(() => document.createElement('div'));
         this.renderCard = vi.fn((comment: Comment) => {
           const card = document.createElement('div');
-          card.className = 'mdview-comment-card minimized';
+          card.className = 'mdreview-comment-card minimized';
           card.dataset.commentId = comment.id;
           return card;
         });
@@ -1087,7 +1085,7 @@ describe('CommentManager', () => {
       await mgr.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Card starts minimized (from renderCard mock)
-      const card = document.querySelector('.mdview-comment-card') as HTMLElement;
+      const card = document.querySelector('.mdreview-comment-card') as HTMLElement;
       expect(card.classList.contains('minimized')).toBe(true);
 
       // Trigger refreshCardContent via addReply
@@ -1095,7 +1093,7 @@ describe('CommentManager', () => {
 
       // New card should still have .minimized
       const newCard = document.querySelector(
-        '.mdview-comment-card[data-comment-id="comment-1"]'
+        '.mdreview-comment-card[data-comment-id="comment-1"]'
       ) as HTMLElement;
       expect(newCard.classList.contains('minimized')).toBe(true);
 
@@ -1110,7 +1108,7 @@ describe('CommentManager', () => {
       await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
       // Import the mock to verify destroy was called
-      const { CommentUI } = await import('@mdview/core');
+      const { CommentUI } = await import('@mdreview/core');
       const mockInstance = vi.mocked(CommentUI).mock.results[0].value as {
         destroy: ReturnType<typeof vi.fn>;
       };

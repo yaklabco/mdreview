@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MessagingAdapter, IPCMessage } from '../adapters';
 
-// Mock heavy dependencies that live outside @mdview/core
+// Mock heavy dependencies that live outside @mdreview/core
 vi.mock('../utils/dom-purifier', () => ({
   domPurifier: {
     sanitize: (html: string) => html,
@@ -92,7 +92,7 @@ describe('RenderPipeline', () => {
     });
 
     it('uses cached result when adapter returns a cache hit', async () => {
-      const cachedHtml = '<div class="mdview-rendered"><p>Cached content</p></div>';
+      const cachedHtml = '<div class="mdreview-rendered"><p>Cached content</p></div>';
       const sendMock = vi.fn().mockImplementation((msg: IPCMessage) => {
         if (msg.type === 'CACHE_GENERATE_KEY') {
           return Promise.resolve({ key: 'cached-key' });

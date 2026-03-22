@@ -1,6 +1,6 @@
-# MDView Feature Showcase
+# Design Review Feature Showcase
 
-Welcome to the MDView feature showcase! This document demonstrates all the rendering capabilities of MDView, from basic Markdown to advanced features like Mermaid diagrams and syntax highlighting.
+Welcome to the Design Review feature showcase! This document demonstrates all the rendering capabilities of Design Review, from basic Markdown to advanced features like Mermaid diagrams and syntax highlighting.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ Inline `code` is great for highlighting function names or commands like `npm ins
 
 ### Headings
 
-MDView supports all six heading levels with automatic anchor links:
+Design Review supports all six heading levels with automatic anchor links:
 
 # Heading 1
 ## Heading 2
@@ -36,7 +36,7 @@ MDView supports all six heading levels with automatic anchor links:
 
 ### Emoji Support
 
-MDView supports emoji shortcodes! :rocket: :sparkles: :heart: :fire: :tada: :computer: :books: :bulb:
+Design Review supports emoji shortcodes! :rocket: :sparkles: :heart: :fire: :tada: :computer: :books: :bulb:
 
 ---
 
@@ -61,7 +61,7 @@ MDView supports emoji shortcodes! :rocket: :sparkles: :heart: :fire: :tada: :com
 
 ### Task Lists
 
-MDView supports GitHub-style task lists:
+Design Review supports GitHub-style task lists:
 
 - [x] Implement core rendering
 - [x] Add syntax highlighting
@@ -305,13 +305,13 @@ ORDER BY rp.month DESC, rp.rank;
 
 ### Links
 
-- External link: [MDView on GitHub](https://github.com/jamesainslie/mdview)
+- External link: [Design Review on GitHub](https://github.com/yaklabco/mdreview)
 - Internal link: [Back to Text Formatting](#text-formatting)
 - Link with title: [Markdown Guide](https://www.markdownguide.org "Learn Markdown")
 
 ### Reference Links
 
-MDView supports [reference-style links][1] which are useful for [longer documents][2].
+Design Review supports [reference-style links][1] which are useful for [longer documents][2].
 
 [1]: https://example.com
 [2]: https://example.org
@@ -348,7 +348,7 @@ MDView supports [reference-style links][1] which are useful for [longer document
 
 ## Mermaid Diagrams
 
-MDView supports interactive Mermaid diagrams with zoom, pan, and export capabilities!
+Design Review supports interactive Mermaid diagrams with zoom, pan, and export capabilities!
 
 ### Flowchart
 
@@ -372,12 +372,12 @@ sequenceDiagram
     participant Server
     participant Database
     
-    User->>Browser: Open MDView
+    User->>Browser: Open Design Review
     Browser->>Server: Request markdown file
     Server->>Database: Query file
     Database-->>Server: Return file
     Server-->>Browser: Send markdown
-    Browser->>Browser: Render with MDView
+    Browser->>Browser: Render with Design Review
     Browser-->>User: Display rendered content
 ```
 
@@ -421,7 +421,7 @@ stateDiagram-v2
 
 ```mermaid
 gantt
-    title MDView Development Timeline
+    title Design Review Development Timeline
     dateFormat  YYYY-MM-DD
     section Planning
     Requirements           :done,    req, 2024-01-01, 2024-01-14
@@ -506,7 +506,7 @@ erDiagram
 
 Here's a sentence with a footnote[^1]. And here's another one[^2].
 
-[^1]: This is the first footnote. MDView renders these at the bottom of the document with automatic numbering and back-references.
+[^1]: This is the first footnote. Design Review renders these at the bottom of the document with automatic numbering and back-references.
 
 [^2]: This is the second footnote. You can include **formatting** and even `code` in footnotes!
 
@@ -530,7 +530,7 @@ ___
 
 ### HTML Entities
 
-MDView safely handles HTML entities: &copy; &trade; &reg; &mdash; &ndash; &hellip;
+Design Review safely handles HTML entities: &copy; &trade; &reg; &mdash; &ndash; &hellip;
 
 ### Definition Lists
 
@@ -545,7 +545,7 @@ Term 2
 
 ## Performance Features
 
-MDView is optimized for large documents:
+Design Review is optimized for large documents:
 
 - **Progressive Hydration**: Instant skeleton rendering followed by progressive content loading
 - **Lazy Loading**: Images and diagrams load as you scroll
@@ -557,7 +557,7 @@ MDView is optimized for large documents:
 
 ## Theme System
 
-MDView includes 8 beautiful themes:
+Design Review includes 8 beautiful themes:
 
 1. **GitHub Light** - Clean and familiar light theme
 2. **GitHub Dark** - Popular dark theme for GitHub users
@@ -589,7 +589,7 @@ Enable **Auto Dark Mode** to automatically switch themes based on your system pr
 
 ## Security
 
-MDView prioritizes security:
+Design Review prioritizes security:
 
 - All content is sanitized with DOMPurify
 - No external network calls
@@ -601,9 +601,9 @@ MDView prioritizes security:
 
 ## Open Source
 
-MDView is open source and MIT licensed. Contributions are welcome!
+Design Review is open source and MIT licensed. Contributions are welcome!
 
-**Repository**: [github.com/jamesainslie/mdview](https://github.com/jamesainslie/mdview)
+**Repository**: [github.com/yaklabco/mdreview](https://github.com/yaklabco/mdreview)
 
 **Technologies**:
 - TypeScript 5.3+
@@ -615,8 +615,8 @@ MDView is open source and MIT licensed. Contributions are welcome!
 
 ---
 
-**Thank you for using MDView!** :heart:
+**Thank you for using Design Review!** :heart:
 
-*This document was created to showcase the full feature set of MDView. Open it in Chrome with the MDView extension to see all these features in action.*
+*This document was created to showcase the full feature set of Design Review. Open it in Chrome with the Design Review extension to see all these features in action.*
 
 

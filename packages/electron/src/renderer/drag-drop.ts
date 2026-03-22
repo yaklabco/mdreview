@@ -16,16 +16,16 @@ export function setupDragAndDrop(options: DragDropOptions): () => void {
 
   const handleDragOver = (e: Event): void => {
     e.preventDefault();
-    target.classList.add('mdview-drag-over');
+    target.classList.add('mdreview-drag-over');
   };
 
   const handleDragLeave = (): void => {
-    target.classList.remove('mdview-drag-over');
+    target.classList.remove('mdreview-drag-over');
   };
 
   const handleDrop = (e: Event): void => {
     e.preventDefault();
-    target.classList.remove('mdview-drag-over');
+    target.classList.remove('mdreview-drag-over');
 
     const dataTransfer = (e as DragEvent).dataTransfer;
     if (!dataTransfer) return;

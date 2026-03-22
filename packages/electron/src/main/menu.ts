@@ -166,7 +166,7 @@ export function buildApplicationMenu(deps: MenuDeps): void {
       label: 'Help',
       submenu: [
         {
-          label: 'About mdview',
+          label: 'About Design Review',
           click: () => onMenuCommand('help:about'),
         },
         {

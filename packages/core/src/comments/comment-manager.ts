@@ -111,7 +111,7 @@ export class CommentManager {
 
     // Set up highlighter - highlight text first, then position cards
     this.highlighter = new CommentHighlighter();
-    const container = document.getElementById('mdview-container') || document.body;
+    const container = document.getElementById('mdreview-container') || document.body;
     for (const comment of this.comments) {
       this.highlighter.highlightComment(container, comment);
     }
@@ -136,29 +136,29 @@ export class CommentManager {
     this.windowListeners.push({ event: 'resize', handler: resizeHandler as EventListener });
 
     // Wire up custom DOM event listeners
-    this.addEventHandler('mdview:comment:edit', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:edit', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string }>).detail;
       if (detail?.commentId) {
         this.showEditForm(detail.commentId);
       }
     });
 
-    this.addEventHandler('mdview:comment:resolve', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:resolve', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string }>).detail;
       if (detail?.commentId) {
         void this.resolveComment(detail.commentId);
       }
     });
 
-    this.addEventHandler('mdview:comment:delete', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:delete', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string }>).detail;
       if (detail?.commentId) {
         void this.deleteComment(detail.commentId);
       }
     });
 
-    this.addEventHandler('mdview:comment:focus', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:focus', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string }>).detail;
       if (detail?.commentId && this.highlighter) {
         this.highlighter.clearActive();
         this.highlighter.setActive(detail.commentId);
@@ -169,26 +169,26 @@ export class CommentManager {
       }
     });
 
-    this.addEventHandler('mdview:comment:reply', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:reply', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string }>).detail;
       if (detail?.commentId) {
         this.showReplyForm(detail.commentId);
       }
     });
 
-    this.addEventHandler('mdview:comment:react', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:react', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string; emoji?: string }>).detail;
       if (detail?.commentId && detail?.emoji) {
         void this.toggleReaction(detail.commentId, detail.emoji);
       }
     });
 
-    this.addEventHandler('mdview:comment:reposition', () => {
+    this.addEventHandler('mdreview:comment:reposition', () => {
       this.repositionAllCards();
     });
 
-    this.addEventHandler('mdview:comment:react:picker', (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    this.addEventHandler('mdreview:comment:react:picker', (e: Event) => {
+      const detail = (e as CustomEvent<{ commentId?: string; anchor?: HTMLElement }>).detail;
       if (detail?.commentId) {
         this.showEmojiPicker(detail.commentId, detail.anchor);
       }
@@ -206,7 +206,7 @@ export class CommentManager {
     if (!this.ui) return;
 
     // Remove any existing input form
-    document.querySelector('.mdview-comment-input')?.remove();
+    document.querySelector('.mdreview-comment-input')?.remove();
 
     // Try to capture DOM context from current selection (may still be active)
     const selection = window.getSelection();
@@ -250,9 +250,7 @@ export class CommentManager {
     if (!comment || !this.ui) return;
 
     // Find the card and replace its body with an input form
-    const card = document.querySelector(
-      `.mdview-comment-card[data-comment-id="${commentId}"]`
-    );
+    const card = document.querySelector(`.mdreview-comment-card[data-comment-id="${commentId}"]`);
     if (!card) return;
 
     // Expand the card if it's minimized so the edit form is visible
@@ -287,7 +285,7 @@ export class CommentManager {
     // Pre-populate textarea
     const textarea = form.querySelector('textarea');
     if (textarea) {
-      (textarea as HTMLTextAreaElement).value = comment.body;
+      textarea.value = comment.body;
     }
 
     // Hide the card body and insert the form
@@ -298,7 +296,7 @@ export class CommentManager {
     card.appendChild(form);
 
     // Focus the textarea
-    if (textarea) (textarea as HTMLTextAreaElement).focus();
+    if (textarea) textarea.focus();
   }
 
   /**
@@ -315,9 +313,8 @@ export class CommentManager {
     // Compute positional context from the offset (or fallback to text search)
     const contentSection = this.getContentSection();
     const contextOffset = offset ?? contentSection.indexOf(selectedText);
-    const context = contextOffset >= 0
-      ? computeCommentContext(contentSection, contextOffset)
-      : undefined;
+    const context =
+      contextOffset >= 0 ? computeCommentContext(contentSection, contextOffset) : undefined;
 
     const comment: Comment = {
       id: nextId,
@@ -334,7 +331,12 @@ export class CommentManager {
 
     // Serialize into markdown using source map for accurate placement
     const updatedMarkdown = this.sourceMap
-      ? serializerAddCommentAtOffset(this.rawMarkdown, comment, this.sourceMap, this.pendingContext ?? undefined)
+      ? serializerAddCommentAtOffset(
+          this.rawMarkdown,
+          comment,
+          this.sourceMap,
+          this.pendingContext ?? undefined
+        )
       : serializerAddComment(this.rawMarkdown, comment);
     this.pendingContext = null;
 
@@ -344,7 +346,7 @@ export class CommentManager {
     this.comments.push(comment);
 
     // Patch DOM immediately (optimistic)
-    const container = document.getElementById('mdview-container') || document.body;
+    const container = document.getElementById('mdreview-container') || document.body;
     if (this.highlighter) {
       this.highlighter.highlightComment(container, comment);
     }
@@ -361,8 +363,11 @@ export class CommentManager {
       await this.writeFile(updatedMarkdown);
       if (this.ui) this.ui.showToast('Comment saved');
     } catch (error) {
-      console.error('[MDView] Comment write failed:', error);
-      if (this.ui) this.ui.showToast(`Write failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('[MDReview] Comment write failed:', error);
+      if (this.ui)
+        this.ui.showToast(
+          `Write failed: ${error instanceof Error ? error.message : String(error)}`
+        );
     }
   }
 
@@ -370,11 +375,7 @@ export class CommentManager {
    * Edit the body of an existing comment.
    */
   async editComment(id: string, newBody: string, tags?: CommentTag[]): Promise<void> {
-    let updatedMarkdown = serializerUpdateComment(
-      this.rawMarkdown,
-      id,
-      newBody
-    );
+    let updatedMarkdown = serializerUpdateComment(this.rawMarkdown, id, newBody);
 
     // Update internal state immediately.
     // No source map rebuild needed — edit only changes the comments section
@@ -386,21 +387,16 @@ export class CommentManager {
       const oldTags = comment.tags ?? [];
       const newTags = tags.length > 0 ? tags : [];
       const tagsChanged =
-        oldTags.length !== newTags.length ||
-        oldTags.some((t, i) => t !== newTags[i]);
+        oldTags.length !== newTags.length || oldTags.some((t, i) => t !== newTags[i]);
 
       if (tagsChanged) {
-        updatedMarkdown = serializerUpdateCommentMetadata(
-          updatedMarkdown,
-          id,
-          (meta) => {
-            if (newTags.length > 0) {
-              meta.tags = newTags;
-            } else {
-              delete meta.tags;
-            }
+        updatedMarkdown = serializerUpdateCommentMetadata(updatedMarkdown, id, (meta) => {
+          if (newTags.length > 0) {
+            meta.tags = newTags;
+          } else {
+            delete meta.tags;
           }
-        );
+        });
       }
     }
 
@@ -466,9 +462,7 @@ export class CommentManager {
     }
 
     // Remove card from DOM and reposition remaining cards
-    const card = document.querySelector(
-      `.mdview-comment-card[data-comment-id="${id}"]`
-    );
+    const card = document.querySelector(`.mdreview-comment-card[data-comment-id="${id}"]`);
     if (card) card.remove();
     this.repositionAllCards();
 
@@ -524,7 +518,7 @@ export class CommentManager {
    * Extract visible text preceding a Range from the DOM.
    */
   private getTextBefore(range: Range, maxChars: number): string {
-    const container = document.getElementById('mdview-container') || document.body;
+    const container = document.getElementById('mdreview-container') || document.body;
     const treeWalker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     const texts: string[] = [];
 
@@ -545,7 +539,7 @@ export class CommentManager {
    * Extract visible text following a Range from the DOM.
    */
   private getTextAfter(range: Range, maxChars: number): string {
-    const container = document.getElementById('mdview-container') || document.body;
+    const container = document.getElementById('mdreview-container') || document.body;
     const treeWalker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     const texts: string[] = [];
     let started = false;
@@ -656,9 +650,7 @@ export class CommentManager {
   private showReplyForm(commentId: string): void {
     if (!this.ui) return;
 
-    const card = document.querySelector(
-      `.mdview-comment-card[data-comment-id="${commentId}"]`
-    );
+    const card = document.querySelector(`.mdreview-comment-card[data-comment-id="${commentId}"]`);
     if (!card) return;
 
     // Remove any existing reply form
@@ -693,11 +685,13 @@ export class CommentManager {
     if (!this.ui) return;
 
     // Remove any existing picker
-    document.querySelector('.mdview-emoji-picker')?.remove();
+    document.querySelector('.mdreview-emoji-picker')?.remove();
 
-    const anchorEl = anchor || document.querySelector(
-      `.mdview-comment-card[data-comment-id="${commentId}"] .comment-reaction-add`
-    ) as HTMLElement;
+    const anchorEl =
+      anchor ||
+      (document.querySelector(
+        `.mdreview-comment-card[data-comment-id="${commentId}"] .comment-reaction-add`
+      ) as HTMLElement);
 
     if (!anchorEl) return;
 
@@ -711,7 +705,7 @@ export class CommentManager {
     );
 
     // Position picker near the anchor
-    const card = anchorEl.closest('.mdview-comment-card');
+    const card = anchorEl.closest('.mdreview-comment-card');
     if (card) {
       card.appendChild(picker);
     } else {
@@ -730,7 +724,7 @@ export class CommentManager {
     if (!comment) return;
 
     const oldCard = document.querySelector(
-      `.mdview-comment-card[data-comment-id="${commentId}"]`
+      `.mdreview-comment-card[data-comment-id="${commentId}"]`
     );
     if (!oldCard) return;
 
@@ -770,16 +764,22 @@ export class CommentManager {
     this.comments = [];
 
     // Remove any floating cards/forms from DOM
-    document.querySelectorAll('.mdview-comment-card, .mdview-comment-input').forEach((el) => el.remove());
+    document
+      .querySelectorAll('.mdreview-comment-card, .mdreview-comment-input')
+      .forEach((el) => el.remove());
   }
 
   /**
    * Extract the content section of markdown (above the comments separator).
    */
   private getContentSection(): string {
-    const v1 = this.rawMarkdown.indexOf('<!-- mdview:comments -->');
-    const v2 = this.rawMarkdown.indexOf('<!-- mdview:annotations');
-    const boundaries = [v1, v2].filter(i => i !== -1);
+    const v1a = this.rawMarkdown.indexOf('<!-- mdreview:comments -->');
+    const v1b = this.rawMarkdown.indexOf('<!-- mdview:comments -->');
+    const v1 = v1a !== -1 && v1b !== -1 ? Math.min(v1a, v1b) : v1a !== -1 ? v1a : v1b;
+    const v2a = this.rawMarkdown.indexOf('<!-- mdreview:annotations');
+    const v2b = this.rawMarkdown.indexOf('<!-- mdview:annotations');
+    const v2 = v2a !== -1 && v2b !== -1 ? Math.min(v2a, v2b) : v2a !== -1 ? v2a : v2b;
+    const boundaries = [v1, v2].filter((i) => i !== -1);
     if (boundaries.length === 0) return this.rawMarkdown;
     return this.rawMarkdown.slice(0, Math.min(...boundaries));
   }
@@ -807,9 +807,7 @@ export class CommentManager {
     if (!this.highlighter) return;
 
     const GAP = 8;
-    const cards = Array.from(
-      document.querySelectorAll<HTMLElement>('.mdview-comment-card')
-    );
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.mdreview-comment-card'));
 
     // Pair each card with its highlight's Y position
     const entries: Array<{ card: HTMLElement; desiredTop: number }> = [];
@@ -833,9 +831,7 @@ export class CommentManager {
     // Cascade: push cards down when they'd overlap the previous card
     let prevBottom = -Infinity;
     for (const { card, desiredTop } of entries) {
-      const top = desiredTop < prevBottom + GAP
-        ? prevBottom + GAP
-        : desiredTop;
+      const top = desiredTop < prevBottom + GAP ? prevBottom + GAP : desiredTop;
       card.style.top = `${top}px`;
       prevBottom = top + card.offsetHeight;
     }

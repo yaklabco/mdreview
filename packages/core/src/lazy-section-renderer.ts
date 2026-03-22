@@ -65,7 +65,7 @@ export class LazySectionRenderer {
    */
   createPlaceholder(section: MarkdownSection): HTMLElement {
     const placeholder = document.createElement('div');
-    placeholder.className = 'mdview-section-placeholder';
+    placeholder.className = 'mdreview-section-placeholder';
     placeholder.dataset.sectionId = section.id;
     placeholder.dataset.heading = section.heading || '';
 
@@ -109,7 +109,7 @@ export class LazySectionRenderer {
 
       // Create section container
       const sectionContainer = document.createElement('div');
-      sectionContainer.className = 'mdview-section';
+      sectionContainer.className = 'mdreview-section';
       sectionContainer.dataset.sectionId = section.id;
       sectionContainer.innerHTML = html;
 
@@ -131,7 +131,7 @@ export class LazySectionRenderer {
 
       // Show error in placeholder
       placeholder.innerHTML = `
-        <div class="mdview-section-error">
+        <div class="mdreview-section-error">
           <p>Failed to render section</p>
           <pre>${String(error)}</pre>
         </div>

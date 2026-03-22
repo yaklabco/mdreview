@@ -9,7 +9,13 @@ import type { Comment, CommentTag, CommentReply, CommentReactions } from '../typ
 import { QUICK_EMOJIS, EMOJI_CATEGORIES, searchEmojis } from './emoji-data';
 
 const ALL_TAGS: CommentTag[] = [
-  'blocking', 'nit', 'suggestion', 'question', 'praise', 'todo', 'fyi',
+  'blocking',
+  'nit',
+  'suggestion',
+  'question',
+  'praise',
+  'todo',
+  'fyi',
 ];
 
 export class CommentUI {
@@ -31,7 +37,7 @@ export class CommentUI {
    */
   createGutter(): HTMLElement {
     this.gutter = document.createElement('div');
-    this.gutter.className = 'mdview-comment-gutter';
+    this.gutter.className = 'mdreview-comment-gutter';
     return this.gutter;
   }
 
@@ -40,7 +46,7 @@ export class CommentUI {
    */
   renderCard(comment: Comment): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'mdview-comment-card minimized';
+    card.className = 'mdreview-comment-card minimized';
     card.dataset.commentId = comment.id;
 
     if (comment.resolved) {
@@ -83,9 +89,8 @@ export class CommentUI {
     const snippet = document.createElement('div');
     snippet.className = 'comment-snippet';
     const maxLen = 60;
-    snippet.textContent = comment.body.length > maxLen
-      ? comment.body.slice(0, maxLen) + '...'
-      : comment.body;
+    snippet.textContent =
+      comment.body.length > maxLen ? comment.body.slice(0, maxLen) + '...' : comment.body;
     card.appendChild(snippet);
 
     // Tag pills
@@ -116,7 +121,7 @@ export class CommentUI {
       replyBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         document.dispatchEvent(
-          new CustomEvent('mdview:comment:reply', {
+          new CustomEvent('mdreview:comment:reply', {
             detail: { commentId: comment.id },
           })
         );
@@ -145,14 +150,14 @@ export class CommentUI {
       // Only focus the highlight when expanding
       if (wasMinimized) {
         document.dispatchEvent(
-          new CustomEvent('mdview:comment:focus', {
+          new CustomEvent('mdreview:comment:focus', {
             detail: { commentId: comment.id },
           })
         );
       }
 
       // Always reposition after size change
-      document.dispatchEvent(new CustomEvent('mdview:comment:reposition'));
+      document.dispatchEvent(new CustomEvent('mdreview:comment:reposition'));
     });
 
     this.cards.push(card);
@@ -218,7 +223,7 @@ export class CommentUI {
       pill.addEventListener('click', (e) => {
         e.stopPropagation();
         document.dispatchEvent(
-          new CustomEvent('mdview:comment:react', {
+          new CustomEvent('mdreview:comment:react', {
             detail: { commentId, emoji },
           })
         );
@@ -233,7 +238,7 @@ export class CommentUI {
     addBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       document.dispatchEvent(
-        new CustomEvent('mdview:comment:react:picker', {
+        new CustomEvent('mdreview:comment:react:picker', {
           detail: { commentId, anchor: addBtn },
         })
       );
@@ -246,10 +251,7 @@ export class CommentUI {
   /**
    * Render a compact reply form (no tag picker)
    */
-  renderReplyForm(
-    onSave: (body: string) => void,
-    onCancel: () => void
-  ): HTMLElement {
+  renderReplyForm(onSave: (body: string) => void, onCancel: () => void): HTMLElement {
     const form = document.createElement('div');
     form.className = 'comment-reply-form';
 
@@ -265,17 +267,17 @@ export class CommentUI {
     });
 
     const actions = document.createElement('div');
-    actions.className = 'mdview-comment-input-actions';
+    actions.className = 'mdreview-comment-input-actions';
 
     const saveBtn = document.createElement('button');
-    saveBtn.className = 'mdview-comment-btn-save';
+    saveBtn.className = 'mdreview-comment-btn-save';
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', () => {
       onSave(textarea.value);
     });
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'mdview-comment-btn-cancel';
+    cancelBtn.className = 'mdreview-comment-btn-cancel';
     cancelBtn.textContent = 'Cancel';
     cancelBtn.addEventListener('click', () => {
       onCancel();
@@ -299,7 +301,7 @@ export class CommentUI {
     onClose: () => void
   ): HTMLElement {
     const picker = document.createElement('div');
-    picker.className = 'mdview-emoji-picker';
+    picker.className = 'mdreview-emoji-picker';
 
     // Quick palette row
     const quickRow = document.createElement('div');
@@ -403,18 +405,18 @@ export class CommentUI {
     this.closeOverflowMenu();
 
     const menu = document.createElement('div');
-    menu.className = 'mdview-comment-menu';
+    menu.className = 'mdreview-comment-menu';
     menu.setAttribute('role', 'menu');
 
     const actions = [
-      { label: 'Edit', event: 'mdview:comment:edit' },
-      { label: 'Resolve', event: 'mdview:comment:resolve' },
-      { label: 'Delete', event: 'mdview:comment:delete' },
+      { label: 'Edit', event: 'mdreview:comment:edit' },
+      { label: 'Resolve', event: 'mdreview:comment:resolve' },
+      { label: 'Delete', event: 'mdreview:comment:delete' },
     ];
 
     for (const action of actions) {
       const item = document.createElement('button');
-      item.className = 'mdview-comment-menu-item';
+      item.className = 'mdreview-comment-menu-item';
       item.setAttribute('role', 'menuitem');
       item.textContent = action.label;
 
@@ -471,7 +473,7 @@ export class CommentUI {
     initialTags?: CommentTag[]
   ): HTMLElement {
     const form = document.createElement('div');
-    form.className = 'mdview-comment-input';
+    form.className = 'mdreview-comment-input';
 
     const selectedTags = new Set<CommentTag>(initialTags ?? []);
 
@@ -479,8 +481,7 @@ export class CommentUI {
     textarea.placeholder = 'Add a comment...';
     textarea.rows = 3;
 
-    const getSelectedTags = (): CommentTag[] =>
-      ALL_TAGS.filter((t) => selectedTags.has(t));
+    const getSelectedTags = (): CommentTag[] => ALL_TAGS.filter((t) => selectedTags.has(t));
 
     // Cmd+Enter or Ctrl+Enter to save
     textarea.addEventListener('keydown', (e) => {
@@ -513,17 +514,17 @@ export class CommentUI {
     }
 
     const actions = document.createElement('div');
-    actions.className = 'mdview-comment-input-actions';
+    actions.className = 'mdreview-comment-input-actions';
 
     const saveBtn = document.createElement('button');
-    saveBtn.className = 'mdview-comment-btn-save';
+    saveBtn.className = 'mdreview-comment-btn-save';
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', () => {
       onSave(textarea.value, getSelectedTags());
     });
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'mdview-comment-btn-cancel';
+    cancelBtn.className = 'mdreview-comment-btn-cancel';
     cancelBtn.textContent = 'Cancel';
     cancelBtn.addEventListener('click', () => {
       onCancel();
@@ -544,7 +545,7 @@ export class CommentUI {
    */
   showToast(message: string, duration: number = 2000): void {
     const toast = document.createElement('div');
-    toast.className = 'mdview-toast';
+    toast.className = 'mdreview-toast';
     toast.textContent = message;
     document.body.appendChild(toast);
 
@@ -607,8 +608,18 @@ export class CommentUI {
     }
 
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
   }

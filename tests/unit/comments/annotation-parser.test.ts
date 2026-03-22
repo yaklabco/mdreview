@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { parseAnnotations, detectFormat } from '@mdview/core';
+import { parseAnnotations, detectFormat } from '@mdreview/core';
 
 describe('detectFormat', () => {
   it('should detect v1 format from sentinel', () => {

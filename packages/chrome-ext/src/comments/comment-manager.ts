@@ -1,14 +1,14 @@
 /**
  * Comment Manager — Chrome extension shim
  *
- * Re-exports the core CommentManager from @mdview/core, pre-configured
+ * Re-exports the core CommentManager from @mdreview/core, pre-configured
  * with Chrome extension adapters that delegate to chrome.runtime.sendMessage
  * for file writes (WRITE_FILE) and username lookup (GET_USERNAME).
  *
  * This shim will be removed once the extension is fully migrated to core.
  */
 
-import { CommentManager as CoreCommentManager, type CommentManagerAdapters } from '@mdview/core';
+import { CommentManager as CoreCommentManager, type CommentManagerAdapters } from '@mdreview/core';
 import { ChromeFileAdapter, ChromeIdentityAdapter } from '../adapters';
 
 /**

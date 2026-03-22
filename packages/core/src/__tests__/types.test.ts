@@ -1,18 +1,6 @@
-import type {
-  Theme,
-  ThemeName,
-  AppState,
-  ConversionResult,
-  Comment,
-  CommentParseResult,
-  ExportFormat,
-  PaperSize,
-  ContentNode,
-  CachedResult,
-  WorkerTask,
-} from '../types/index';
+import type { Theme, ThemeName, Comment, ExportFormat, PaperSize } from '../types/index';
 
-describe('@mdview/core types', () => {
+describe('@mdreview/core types', () => {
   it('should allow creating a Theme object', () => {
     const theme: Theme = {
       name: 'github-light',
@@ -132,7 +120,9 @@ describe('@mdview/core types', () => {
         breadcrumb: ['Introduction'],
       },
       tags: ['nit', 'suggestion'],
-      replies: [{ id: 'reply-1', author: 'reviewer', body: 'agreed', date: new Date().toISOString() }],
+      replies: [
+        { id: 'reply-1', author: 'reviewer', body: 'agreed', date: new Date().toISOString() },
+      ],
       reactions: { '👍': ['tester'] },
     };
     expect(comment.id).toBe('comment-1');

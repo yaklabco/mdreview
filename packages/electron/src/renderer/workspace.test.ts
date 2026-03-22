@@ -3,8 +3,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 describe('Workspace CSS class structure', () => {
   beforeEach(() => {
     document.body.innerHTML = `
-      <div id="mdview-workspace">
-        <div id="mdview-sidebar">
+      <div id="mdreview-workspace">
+        <div id="mdreview-sidebar">
           <div class="file-tree">
             <div class="file-tree-item file-tree-directory">
               <div class="file-tree-children">
@@ -13,9 +13,9 @@ describe('Workspace CSS class structure', () => {
             </div>
           </div>
         </div>
-        <div id="mdview-main">
-          <div id="mdview-toolbar-row">
-            <div id="mdview-tab-bar">
+        <div id="mdreview-main">
+          <div id="mdreview-toolbar-row">
+            <div id="mdreview-tab-bar">
               <button class="tab-button active">
                 <span class="tab-title">readme.md</span>
                 <span class="tab-close">&times;</span>
@@ -25,12 +25,12 @@ describe('Workspace CSS class structure', () => {
                 <span class="tab-close">&times;</span>
               </button>
             </div>
-            <div id="mdview-header-bar"></div>
+            <div id="mdreview-header-bar"></div>
           </div>
-          <div id="mdview-content-area">
-            <div class="mdview-tab-content"></div>
+          <div id="mdreview-content-area">
+            <div class="mdreview-tab-content"></div>
           </div>
-          <div id="mdview-status-bar">
+          <div id="mdreview-status-bar">
             <div class="status-bar-content">readme.md · 100 words</div>
           </div>
         </div>
@@ -39,17 +39,17 @@ describe('Workspace CSS class structure', () => {
   });
 
   it('should have workspace root element', () => {
-    const workspace = document.getElementById('mdview-workspace');
+    const workspace = document.getElementById('mdreview-workspace');
     expect(workspace).not.toBeNull();
   });
 
   it('should have sidebar element', () => {
-    const sidebar = document.getElementById('mdview-sidebar');
+    const sidebar = document.getElementById('mdreview-sidebar');
     expect(sidebar).not.toBeNull();
   });
 
   it('should have tab bar with correct button classes', () => {
-    const tabBar = document.getElementById('mdview-tab-bar');
+    const tabBar = document.getElementById('mdreview-tab-bar');
     expect(tabBar).not.toBeNull();
 
     const tabs = tabBar!.querySelectorAll('.tab-button');
@@ -83,7 +83,7 @@ describe('Workspace CSS class structure', () => {
   });
 
   it('should have status bar with content element', () => {
-    const statusBar = document.getElementById('mdview-status-bar');
+    const statusBar = document.getElementById('mdreview-status-bar');
     expect(statusBar).not.toBeNull();
 
     const content = statusBar!.querySelector('.status-bar-content');
@@ -91,31 +91,31 @@ describe('Workspace CSS class structure', () => {
   });
 
   it('should have content area with tab content', () => {
-    const contentArea = document.getElementById('mdview-content-area');
+    const contentArea = document.getElementById('mdreview-content-area');
     expect(contentArea).not.toBeNull();
 
-    const tabContent = contentArea!.querySelector('.mdview-tab-content');
+    const tabContent = contentArea!.querySelector('.mdreview-tab-content');
     expect(tabContent).not.toBeNull();
   });
 
   it('should support empty state element', () => {
-    const contentArea = document.getElementById('mdview-content-area');
+    const contentArea = document.getElementById('mdreview-content-area');
     const emptyState = document.createElement('div');
-    emptyState.id = 'mdview-empty-state';
+    emptyState.id = 'mdreview-empty-state';
     emptyState.innerHTML =
       '<div class="empty-state-content"><button class="empty-state-btn">Open</button></div>';
     contentArea!.appendChild(emptyState);
 
-    expect(document.getElementById('mdview-empty-state')).not.toBeNull();
+    expect(document.getElementById('mdreview-empty-state')).not.toBeNull();
     expect(document.querySelector('.empty-state-content')).not.toBeNull();
     expect(document.querySelector('.empty-state-btn')).not.toBeNull();
   });
 
   it('should support drag-over class on workspace', () => {
-    const workspace = document.getElementById('mdview-workspace')!;
-    workspace.classList.add('mdview-drag-over');
-    expect(workspace.classList.contains('mdview-drag-over')).toBe(true);
-    workspace.classList.remove('mdview-drag-over');
-    expect(workspace.classList.contains('mdview-drag-over')).toBe(false);
+    const workspace = document.getElementById('mdreview-workspace')!;
+    workspace.classList.add('mdreview-drag-over');
+    expect(workspace.classList.contains('mdreview-drag-over')).toBe(true);
+    workspace.classList.remove('mdreview-drag-over');
+    expect(workspace.classList.contains('mdreview-drag-over')).toBe(false);
   });
 });

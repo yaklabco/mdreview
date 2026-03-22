@@ -323,9 +323,7 @@ export class PreferencesPanel {
       maxWidthNumberEl.disabled = !useMaxWidthInput.checked;
     });
 
-    this.groupsContainer!.appendChild(
-      this.createGroup([useMaxWidthToggle, maxWidthInput])
-    );
+    this.groupsContainer!.appendChild(this.createGroup([useMaxWidthToggle, maxWidthInput]));
   }
 
   private renderToc(): void {
@@ -368,12 +366,7 @@ export class PreferencesPanel {
     );
 
     this.groupsContainer!.appendChild(
-      this.createGroup([
-        showTocToggle,
-        positionSelect,
-        maxDepthSelect,
-        autoCollapseToggle,
-      ])
+      this.createGroup([showTocToggle, positionSelect, maxDepthSelect, autoCollapseToggle])
     );
   }
 
@@ -394,9 +387,7 @@ export class PreferencesPanel {
 
     const pageSizeSelect = this.createPageSizeSelect(p.exportDefaultPageSize ?? 'A4');
 
-    this.groupsContainer!.appendChild(
-      this.createGroup([formatSelect, pageSizeSelect])
-    );
+    this.groupsContainer!.appendChild(this.createGroup([formatSelect, pageSizeSelect]));
 
     // Options group
     const includeTocToggle = this.createToggle(
@@ -423,12 +414,10 @@ export class PreferencesPanel {
     inputEl.addEventListener('input', () => {
       preview.textContent = this.renderFilenamePreview(inputEl.value);
       this.currentPrefs!.exportFilenameTemplate = inputEl.value;
-      void window.mdview.updatePreferences({ exportFilenameTemplate: inputEl.value });
+      void window.mdreview.updatePreferences({ exportFilenameTemplate: inputEl.value });
     });
 
-    this.groupsContainer!.appendChild(
-      this.createGroup([includeTocToggle, templateInput, preview])
-    );
+    this.groupsContainer!.appendChild(this.createGroup([includeTocToggle, templateInput, preview]));
   }
 
   // --- Control factories ---
@@ -459,7 +448,7 @@ export class PreferencesPanel {
     input.setAttribute('data-pref', prefKey);
     input.addEventListener('change', () => {
       this.currentPrefs![prefKey as keyof PreferencesPanelOptions] = input.checked as never;
-      void window.mdview.updatePreferences({ [prefKey]: input.checked });
+      void window.mdreview.updatePreferences({ [prefKey]: input.checked });
     });
     const slider = document.createElement('span');
     slider.className = 'preferences-toggle-slider';
@@ -503,7 +492,7 @@ export class PreferencesPanel {
     select.addEventListener('change', () => {
       const newVal = prefKey === 'tocMaxDepth' ? Number(select.value) : select.value;
       (this.currentPrefs as Record<string, unknown>)[prefKey] = newVal;
-      void window.mdview.updatePreferences({ [prefKey]: newVal });
+      void window.mdreview.updatePreferences({ [prefKey]: newVal });
     });
 
     row.appendChild(labelCol);
@@ -538,7 +527,7 @@ export class PreferencesPanel {
     input.setAttribute('data-pref', prefKey);
     input.addEventListener('change', () => {
       (this.currentPrefs as Record<string, unknown>)[prefKey] = input.value || undefined;
-      void window.mdview.updatePreferences({
+      void window.mdreview.updatePreferences({
         [prefKey]: input.value || undefined,
       });
     });
@@ -580,7 +569,7 @@ export class PreferencesPanel {
     input.addEventListener('change', () => {
       const numVal = Number(input.value);
       (this.currentPrefs as Record<string, unknown>)[prefKey] = numVal;
-      void window.mdview.updatePreferences({ [prefKey]: numVal });
+      void window.mdreview.updatePreferences({ [prefKey]: numVal });
     });
 
     row.appendChild(labelCol);
@@ -635,7 +624,7 @@ export class PreferencesPanel {
     select.appendChild(darkGroup);
     select.addEventListener('change', () => {
       this.currentPrefs!.theme = select.value;
-      void window.mdview.updatePreferences({ theme: select.value });
+      void window.mdreview.updatePreferences({ theme: select.value });
     });
 
     row.appendChild(labelCol);
@@ -684,7 +673,7 @@ export class PreferencesPanel {
     select.appendChild(naGroup);
     select.addEventListener('change', () => {
       (this.currentPrefs as Record<string, unknown>).exportDefaultPageSize = select.value;
-      void window.mdview.updatePreferences({ exportDefaultPageSize: select.value });
+      void window.mdreview.updatePreferences({ exportDefaultPageSize: select.value });
     });
 
     row.appendChild(labelCol);

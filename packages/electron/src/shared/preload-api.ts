@@ -1,8 +1,14 @@
-import type { AppState, Preferences, CachedResult } from '@mdview/core';
-import type { FileChangeInfo, FileWriteResult } from '@mdview/core';
-import type { WorkspaceState, TabState, TabGroupState, TabGroupColor, DirectoryEntry } from './workspace-types';
+import type { AppState, Preferences, CachedResult } from '@mdreview/core';
+import type { FileChangeInfo, FileWriteResult } from '@mdreview/core';
+import type {
+  WorkspaceState,
+  TabState,
+  TabGroupState,
+  TabGroupColor,
+  DirectoryEntry,
+} from './workspace-types';
 
-export interface MdviewPreloadAPI {
+export interface MdreviewPreloadAPI {
   // State
   getState(): Promise<AppState>;
   updatePreferences(prefs: Partial<Preferences>): Promise<void>;
@@ -88,6 +94,6 @@ export interface MdviewPreloadAPI {
 
 declare global {
   interface Window {
-    mdview: MdviewPreloadAPI;
+    mdreview: MdreviewPreloadAPI;
   }
 }

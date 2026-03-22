@@ -6,8 +6,8 @@ describe('DocumentHeaderBar', () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    document.body.innerHTML = '<div id="mdview-header-bar"></div>';
-    container = document.getElementById('mdview-header-bar')!;
+    document.body.innerHTML = '<div id="mdreview-header-bar"></div>';
+    container = document.getElementById('mdreview-header-bar')!;
     headerBar = new DocumentHeaderBar();
     headerBar.render(container);
   });

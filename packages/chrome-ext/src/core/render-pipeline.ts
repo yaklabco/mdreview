@@ -1,7 +1,7 @@
 /**
  * Render Pipeline (Chrome Extension Shim)
  *
- * Re-exports the platform-agnostic RenderPipeline from @mdview/core,
+ * Re-exports the platform-agnostic RenderPipeline from @mdreview/core,
  * pre-configured with a Chrome MessagingAdapter that delegates
  * to chrome.runtime.sendMessage.
  */
@@ -12,7 +12,7 @@ import {
   type RenderProgress,
   type ProgressCallback,
   type RenderPipelineOptions,
-} from '@mdview/core';
+} from '@mdreview/core';
 import { ChromeMessagingAdapter } from '../adapters';
 
 // ---------------------------------------------------------------------------

@@ -47,21 +47,21 @@ export class TocRenderer {
 
     // Create container
     this.container = document.createElement('div');
-    this.container.id = 'mdview-toc';
-    this.container.className = `mdview-toc-overlay position-${this.options.position || 'left'}`;
+    this.container.id = 'mdreview-toc';
+    this.container.className = `mdreview-toc-overlay position-${this.options.position || 'left'}`;
 
     // Create header
     const header = document.createElement('div');
-    header.className = 'mdview-toc-header';
+    header.className = 'mdreview-toc-header';
     header.innerHTML = `
-      <span class="mdview-toc-title">Contents</span>
-      <button class="mdview-toc-close" aria-label="Close table of contents">×</button>
+      <span class="mdreview-toc-title">Contents</span>
+      <button class="mdreview-toc-close" aria-label="Close table of contents">×</button>
     `;
     this.container.appendChild(header);
 
     // Create scrollable content area
     const content = document.createElement('div');
-    content.className = 'mdview-toc-content';
+    content.className = 'mdreview-toc-content';
 
     // Build tree structure
     const tree = this.buildTree(this.headings);
@@ -89,7 +89,7 @@ export class TocRenderer {
     if (this.toggleButton) return;
 
     this.toggleButton = document.createElement('button');
-    this.toggleButton.className = `mdview-toc-toggle-btn position-${this.options.position || 'left'}`;
+    this.toggleButton.className = `mdreview-toc-toggle-btn position-${this.options.position || 'left'}`;
     this.toggleButton.setAttribute('aria-label', 'Toggle table of contents');
     this.toggleButton.setAttribute('title', 'Toggle Table of Contents');
     this.toggleButton.innerHTML = '☰';
@@ -99,7 +99,7 @@ export class TocRenderer {
       // Update preferences when toggled
       const newState = this.container?.classList.contains('visible');
       document.dispatchEvent(
-        new CustomEvent('mdview:toc:toggled', {
+        new CustomEvent('mdreview:toc:toggled', {
           detail: { visible: newState },
         })
       );
@@ -148,21 +148,21 @@ export class TocRenderer {
    */
   private renderTree(nodes: TocNode[]): HTMLElement {
     const ul = document.createElement('ul');
-    ul.className = 'mdview-toc-list';
+    ul.className = 'mdreview-toc-list';
 
     for (const node of nodes) {
       const li = document.createElement('li');
-      li.className = `mdview-toc-item mdview-toc-level-${node.heading.level}`;
+      li.className = `mdreview-toc-item mdreview-toc-level-${node.heading.level}`;
       li.dataset.headingId = node.heading.id;
 
       // Create link
       const link = document.createElement('a');
       link.href = `#${node.heading.id}`;
-      link.className = 'mdview-toc-link';
+      link.className = 'mdreview-toc-link';
       link.dataset.headingId = node.heading.id;
 
       const textSpan = document.createElement('span');
-      textSpan.className = 'mdview-toc-link-text';
+      textSpan.className = 'mdreview-toc-link-text';
       textSpan.textContent = node.heading.text;
       link.appendChild(textSpan);
 
@@ -182,7 +182,7 @@ export class TocRenderer {
         // Add expand/collapse toggle
         if (this.options.autoCollapse) {
           const toggle = document.createElement('button');
-          toggle.className = 'mdview-toc-toggle';
+          toggle.className = 'mdreview-toc-toggle';
           toggle.textContent = node.isExpanded ? '▼' : '▶';
           toggle.setAttribute('aria-label', 'Toggle section');
 
@@ -215,7 +215,7 @@ export class TocRenderer {
 
     node.isExpanded = !node.isExpanded;
 
-    const toggle = node.element.querySelector('.mdview-toc-toggle');
+    const toggle = node.element.querySelector('.mdreview-toc-toggle');
     const childList = node.element.querySelector('ul');
 
     if (toggle) {
@@ -312,7 +312,9 @@ export class TocRenderer {
     };
 
     const listenTarget = scrollTarget || window;
-    listenTarget.addEventListener('scroll', this.scrollListener as EventListener, { passive: true });
+    listenTarget.addEventListener('scroll', this.scrollListener as EventListener, {
+      passive: true,
+    });
 
     // Initial update
     updateActiveHeading();
@@ -343,7 +345,7 @@ export class TocRenderer {
         newActive.classList.add('active');
 
         // Scroll TOC to keep active item visible
-        const tocContent = this.container.querySelector('.mdview-toc-content');
+        const tocContent = this.container.querySelector('.mdreview-toc-content');
         if (tocContent && newActive instanceof HTMLElement) {
           const tocRect = tocContent.getBoundingClientRect();
           const itemRect = newActive.getBoundingClientRect();
@@ -363,7 +365,7 @@ export class TocRenderer {
     if (!this.container) return;
 
     // Close button
-    const closeButton = this.container.querySelector('.mdview-toc-close');
+    const closeButton = this.container.querySelector('.mdreview-toc-close');
     if (closeButton) {
       closeButton.addEventListener('click', () => {
         this.hide();
@@ -398,7 +400,7 @@ export class TocRenderer {
       debug.info('TOC', 'TOC hidden');
 
       // Dispatch event for content script to update state
-      document.dispatchEvent(new CustomEvent('mdview:toc:hidden'));
+      document.dispatchEvent(new CustomEvent('mdreview:toc:hidden'));
     }
   }
 

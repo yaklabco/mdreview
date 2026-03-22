@@ -27,16 +27,27 @@ export interface SelectionContext {
   suffix: string;
 }
 
-const V1_SENTINEL = '<!-- mdview:comments -->';
-const V2_SENTINEL_PREFIX = '<!-- mdview:annotations';
+const V1_SENTINEL = '<!-- mdreview:comments -->';
+const V1_SENTINEL_LEGACY = '<!-- mdview:comments -->';
+const V2_SENTINEL_PREFIX = '<!-- mdreview:annotations';
+const V2_SENTINEL_PREFIX_LEGACY = '<!-- mdview:annotations';
+
+function findEarliest(text: string, ...needles: string[]): number {
+  let best = -1;
+  for (const needle of needles) {
+    const idx = text.indexOf(needle);
+    if (idx !== -1 && (best === -1 || idx < best)) best = idx;
+  }
+  return best;
+}
 
 /**
  * Find the annotation/comment boundary in the markdown.
  * Returns the index of the earlier of v1 or v2 sentinel, or -1 if neither.
  */
 function findAnnotationBoundary(markdown: string): number {
-  const v1 = markdown.indexOf(V1_SENTINEL);
-  const v2 = markdown.indexOf(V2_SENTINEL_PREFIX);
+  const v1 = findEarliest(markdown, V1_SENTINEL, V1_SENTINEL_LEGACY);
+  const v2 = findEarliest(markdown, V2_SENTINEL_PREFIX, V2_SENTINEL_PREFIX_LEGACY);
   if (v1 === -1 && v2 === -1) return -1;
   if (v1 === -1) return v2;
   if (v2 === -1) return v1;
@@ -74,7 +85,7 @@ export function findInsertionPoint(
   // Find all occurrences of selectedText in plainText
   const matches: number[] = [];
   let searchFrom = 0;
-  while (true) {
+  for (;;) {
     const idx = map.plainText.indexOf(selectedText, searchFrom);
     if (idx === -1) break;
     matches.push(idx);
@@ -350,7 +361,12 @@ function buildSourceMapRange(
       const result = parseLinkOrImage(src, i, plainPos, true);
       if (result && result.span.sourceEnd <= end) {
         spans.push(result.span);
-        const inner = buildSourceMapRange(src, result.contentStart, result.contentEnd, basePlainPos + chars.length);
+        const inner = buildSourceMapRange(
+          src,
+          result.contentStart,
+          result.contentEnd,
+          basePlainPos + chars.length
+        );
         for (const ch of inner.chars) chars.push(ch);
         for (const off of inner.offsets) offsets.push(off);
         for (const sp of inner.spans) spans.push(sp);
@@ -366,7 +382,12 @@ function buildSourceMapRange(
       const result = parseLinkOrImage(src, i, plainPos, false);
       if (result && result.span.sourceEnd <= end) {
         spans.push(result.span);
-        const inner = buildSourceMapRange(src, result.contentStart, result.contentEnd, basePlainPos + chars.length);
+        const inner = buildSourceMapRange(
+          src,
+          result.contentStart,
+          result.contentEnd,
+          basePlainPos + chars.length
+        );
         for (const ch of inner.chars) chars.push(ch);
         for (const off of inner.offsets) offsets.push(off);
         for (const sp of inner.spans) spans.push(sp);
@@ -386,7 +407,12 @@ function buildSourceMapRange(
       const result = parseDelimited(src, i, marker, plainPos, 'bold', end);
       if (result && result.span.sourceEnd <= end) {
         spans.push(result.span);
-        const inner = buildSourceMapRange(src, result.contentStart, result.contentEnd, basePlainPos + chars.length);
+        const inner = buildSourceMapRange(
+          src,
+          result.contentStart,
+          result.contentEnd,
+          basePlainPos + chars.length
+        );
         for (const ch of inner.chars) chars.push(ch);
         for (const off of inner.offsets) offsets.push(off);
         for (const sp of inner.spans) spans.push(sp);
@@ -402,7 +428,12 @@ function buildSourceMapRange(
       const result = parseDelimited(src, i, '~~', plainPos, 'strikethrough', end);
       if (result && result.span.sourceEnd <= end) {
         spans.push(result.span);
-        const inner = buildSourceMapRange(src, result.contentStart, result.contentEnd, basePlainPos + chars.length);
+        const inner = buildSourceMapRange(
+          src,
+          result.contentStart,
+          result.contentEnd,
+          basePlainPos + chars.length
+        );
         for (const ch of inner.chars) chars.push(ch);
         for (const off of inner.offsets) offsets.push(off);
         for (const sp of inner.spans) spans.push(sp);
@@ -419,7 +450,12 @@ function buildSourceMapRange(
       const result = parseDelimited(src, i, marker, plainPos, 'italic', end);
       if (result && result.span.sourceEnd <= end) {
         spans.push(result.span);
-        const inner = buildSourceMapRange(src, result.contentStart, result.contentEnd, basePlainPos + chars.length);
+        const inner = buildSourceMapRange(
+          src,
+          result.contentStart,
+          result.contentEnd,
+          basePlainPos + chars.length
+        );
         for (const ch of inner.chars) chars.push(ch);
         for (const off of inner.offsets) offsets.push(off);
         for (const sp of inner.spans) spans.push(sp);

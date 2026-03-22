@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { StateManager } from './state-manager';
-import { NoopStorageAdapter } from '@mdview/core/node';
+import { NoopStorageAdapter } from '@mdreview/core/node';
 
 describe('StateManager', () => {
   let storage: NoopStorageAdapter;

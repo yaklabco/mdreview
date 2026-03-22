@@ -10,11 +10,11 @@ import { FileTree } from './file-tree';
 import { SidebarResizeHandle } from './sidebar-resize';
 import { PreferencesPanel } from './preferences-panel';
 import { ExportModal } from './export-modal';
-import { ThemeEngine } from '@mdview/core';
+import { ThemeEngine } from '@mdreview/core';
 import { setIconTheme } from './file-icons';
 import type { IconThemeId } from './file-icons';
 
-export class MDViewElectronViewer {
+export class MDReviewElectronViewer {
   private tabManager: TabManager;
   private statusBar: StatusBar;
   private headerBar: DocumentHeaderBar;
@@ -47,11 +47,11 @@ export class MDViewElectronViewer {
   }
 
   async initialize(): Promise<void> {
-    const tabBar = document.getElementById('mdview-tab-bar');
-    const contentArea = document.getElementById('mdview-content-area');
+    const tabBar = document.getElementById('mdreview-tab-bar');
+    const contentArea = document.getElementById('mdreview-content-area');
 
     if (!tabBar || !contentArea) {
-      console.error('[mdview] No workspace elements found');
+      console.error('[mdreview] No workspace elements found');
       return;
     }
 
@@ -62,13 +62,13 @@ export class MDViewElectronViewer {
       this.tabManager.setContentArea(contentArea);
     }
 
-    const statusBarEl = document.getElementById('mdview-status-bar');
+    const statusBarEl = document.getElementById('mdreview-status-bar');
     if (statusBarEl) {
       this.statusBar.render(statusBarEl);
     }
 
     // Document header bar
-    const headerBarEl = document.getElementById('mdview-header-bar');
+    const headerBarEl = document.getElementById('mdreview-header-bar');
     if (headerBarEl) {
       this.headerBar.render(headerBarEl);
       this.headerBar.onExport((format) => {
@@ -86,7 +86,7 @@ export class MDViewElectronViewer {
     }
 
     // File tree sidebar
-    const sidebarEl = document.getElementById('mdview-sidebar');
+    const sidebarEl = document.getElementById('mdreview-sidebar');
     if (sidebarEl) {
       this.fileTree.render(sidebarEl);
       this.fileTree.onFileSelected((path) => {
@@ -105,11 +105,11 @@ export class MDViewElectronViewer {
       });
 
       // Sidebar resize handle
-      const workspaceEl = document.getElementById('mdview-workspace');
+      const workspaceEl = document.getElementById('mdreview-workspace');
       if (workspaceEl) {
         this.sidebarResize = new SidebarResizeHandle(sidebarEl);
         this.sidebarResize.onResize = (width) => {
-          void window.mdview.setSidebarWidth(width);
+          void window.mdreview.setSidebarWidth(width);
         };
         this.sidebarResize.render(workspaceEl);
         this.cleanupListeners.push(() => this.sidebarResize?.dispose());
@@ -118,7 +118,7 @@ export class MDViewElectronViewer {
 
     // Restore workspace state (sidebar width, visibility, tab groups)
     try {
-      const workspaceState = await window.mdview.getWorkspaceState();
+      const workspaceState = await window.mdreview.getWorkspaceState();
       if (sidebarEl && workspaceState.sidebarWidth) {
         this.sidebarResize?.setSidebarWidth(workspaceState.sidebarWidth);
       }
@@ -182,7 +182,7 @@ export class MDViewElectronViewer {
     this.cleanupListeners.push(cleanupShortcuts);
 
     // Drag and drop
-    const workspace = document.getElementById('mdview-workspace') ?? document.body;
+    const workspace = document.getElementById('mdreview-workspace') ?? document.body;
     const cleanupDragDrop = setupDragAndDrop({
       target: workspace,
       onFilesDropped: (paths) => {
@@ -198,7 +198,7 @@ export class MDViewElectronViewer {
 
     // Initialize icon theme from saved preferences
     try {
-      const initState = await window.mdview.getState();
+      const initState = await window.mdreview.getState();
       setIconTheme((initState.preferences.iconTheme ?? 'lucide') as IconThemeId);
     } catch {
       // Best-effort
@@ -206,14 +206,14 @@ export class MDViewElectronViewer {
 
     // Check for initial file from CLI args
     try {
-      const filePath = await window.mdview.getOpenFilePath();
+      const filePath = await window.mdreview.getOpenFilePath();
       if (filePath) {
         await this.openFile(filePath);
       } else {
         this.showEmptyState();
       }
     } catch (error) {
-      console.error('[mdview] Initialization error:', error);
+      console.error('[mdreview] Initialization error:', error);
     }
   }
 
@@ -227,7 +227,7 @@ export class MDViewElectronViewer {
     }
 
     // Open tab in main process state
-    const tabState = await window.mdview.openTab(filePath);
+    const tabState = await window.mdreview.openTab(filePath);
 
     // Create tab UI
     this.tabManager.createTab(tabState.id, filePath, tabState.title);
@@ -235,7 +235,7 @@ export class MDViewElectronViewer {
     const tabContainer = this.tabManager.getTabContainer(tabState.id);
 
     if (!tabContainer) {
-      console.error('[mdview] Failed to create tab container');
+      console.error('[mdreview] Failed to create tab container');
       return;
     }
 
@@ -250,18 +250,18 @@ export class MDViewElectronViewer {
     try {
       const metadata = await ctx.load(filePath, tabContainer);
       this.statusBar.hideProgress();
-      await window.mdview.updateTabMetadata(tabState.id, {
+      await window.mdreview.updateTabMetadata(tabState.id, {
         renderState: metadata.renderState,
         wordCount: metadata.wordCount,
         headingCount: metadata.headingCount,
         diagramCount: metadata.diagramCount,
         codeBlockCount: metadata.codeBlockCount,
       });
-      await window.mdview.addRecentFile(filePath);
+      await window.mdreview.addRecentFile(filePath);
       this.updateStatusBar(ctx);
     } catch (error) {
       this.statusBar.hideProgress();
-      console.error('[mdview] Error loading file:', error);
+      console.error('[mdreview] Error loading file:', error);
       tabContainer.innerHTML = `<p style="padding: 2rem; color: red;">Error loading file: ${String(error)}</p>`;
     }
   }
@@ -274,7 +274,7 @@ export class MDViewElectronViewer {
     }
 
     this.tabManager.closeTab(tabId);
-    await window.mdview.closeTab(tabId);
+    await window.mdreview.closeTab(tabId);
 
     if (this.documents.size === 0) {
       this.showEmptyState();
@@ -301,7 +301,7 @@ export class MDViewElectronViewer {
     }
 
     this.tabManager.activateTab(tabId);
-    void window.mdview.setActiveTab(tabId);
+    void window.mdreview.setActiveTab(tabId);
 
     // Restore scroll position
     const ctx = this.documents.get(tabId);
@@ -332,10 +332,10 @@ export class MDViewElectronViewer {
   private togglePanel(panel: 'tab-bar' | 'header-bar' | 'status-bar'): void {
     const elId =
       panel === 'tab-bar'
-        ? 'mdview-tab-bar'
+        ? 'mdreview-tab-bar'
         : panel === 'header-bar'
-          ? 'mdview-header-bar'
-          : 'mdview-status-bar';
+          ? 'mdreview-header-bar'
+          : 'mdreview-status-bar';
 
     const el = document.getElementById(elId);
     if (!el) return;
@@ -349,9 +349,9 @@ export class MDViewElectronViewer {
 
     const visible = isHidden; // toggled
     if (panel === 'tab-bar') {
-      void window.mdview.setTabBarVisible(visible);
+      void window.mdreview.setTabBarVisible(visible);
     } else if (panel === 'header-bar') {
-      void window.mdview.setHeaderBarVisible(visible);
+      void window.mdreview.setHeaderBarVisible(visible);
     }
     // Status bar visibility isn't persisted separately yet
   }
@@ -402,11 +402,11 @@ export class MDViewElectronViewer {
         void this.closeFile(activeTab);
       }
     } else if (command === 'toggle-sidebar') {
-      const sidebarEl = document.getElementById('mdview-sidebar');
+      const sidebarEl = document.getElementById('mdreview-sidebar');
       if (sidebarEl) {
         const isVisible = sidebarEl.style.display !== 'none';
         this.fileTree.setVisible(!isVisible);
-        void window.mdview.setSidebarVisible(!isVisible);
+        void window.mdreview.setSidebarVisible(!isVisible);
       }
     } else if (command === 'toggle-toc') {
       const ctx = this.getActiveDocumentContext();
@@ -432,7 +432,7 @@ export class MDViewElectronViewer {
     } else if (command === 'help:about') {
       this.showAboutModal();
     } else if (command === 'help:github') {
-      void window.mdview.openExternal('https://github.com/jamesainslie/mdview');
+      void window.mdreview.openExternal('https://github.com/yaklabco/mdreview');
     } else if (command === 'preferences') {
       void this.openPreferences();
     }
@@ -463,7 +463,7 @@ export class MDViewElectronViewer {
   }
 
   private async openPreferences(): Promise<void> {
-    const state = await window.mdview.getState();
+    const state = await window.mdreview.getState();
     const p = state.preferences;
 
     this.preferencesPanel.show(
@@ -491,20 +491,20 @@ export class MDViewElectronViewer {
         exportIncludeToc: p.exportIncludeToc,
         exportFilenameTemplate: p.exportFilenameTemplate,
       },
-      MDViewElectronViewer.AVAILABLE_THEMES
+      MDReviewElectronViewer.AVAILABLE_THEMES
     );
   }
 
   private showAboutModal(): void {
     // Don't create duplicate modals
-    if (document.querySelector('.mdview-about-modal')) return;
+    if (document.querySelector('.mdreview-about-modal')) return;
 
     const modal = document.createElement('div');
-    modal.className = 'mdview-about-modal';
+    modal.className = 'mdreview-about-modal';
     modal.innerHTML = `
-      <div class="mdview-about-card">
-        <h2>mdview</h2>
-        <p>Markdown Viewer</p>
+      <div class="mdreview-about-card">
+        <h2>Design Review</h2>
+        <p>An app for design review of software projects</p>
         <p>Version 0.3.4</p>
       </div>
     `;
@@ -524,22 +524,22 @@ export class MDViewElectronViewer {
   }
 
   private setupIPCListeners(): void {
-    const unsubOpenFile = window.mdview.onOpenFile((path: string) => {
+    const unsubOpenFile = window.mdreview.onOpenFile((path: string) => {
       void this.openFile(path);
     });
     this.cleanupListeners.push(unsubOpenFile);
 
-    const unsubMenuCommand = window.mdview.onMenuCommand((command: string) => {
+    const unsubMenuCommand = window.mdreview.onMenuCommand((command: string) => {
       this.handleMenuCommand(command);
     });
     this.cleanupListeners.push(unsubMenuCommand);
 
-    const unsubOpenFolder = window.mdview.onOpenFolder((folderPath: string) => {
+    const unsubOpenFolder = window.mdreview.onOpenFolder((folderPath: string) => {
       void this.loadFolder(folderPath);
     });
     this.cleanupListeners.push(unsubOpenFolder);
 
-    const unsubPrefs = window.mdview.onPreferencesUpdated((prefs) => {
+    const unsubPrefs = window.mdreview.onPreferencesUpdated((prefs) => {
       for (const ctx of this.documents.values()) {
         void ctx.applyPreferences(prefs);
       }
@@ -562,7 +562,7 @@ export class MDViewElectronViewer {
     });
     this.cleanupListeners.push(unsubPrefs);
 
-    const unsubTheme = window.mdview.onThemeChanged((theme: string) => {
+    const unsubTheme = window.mdreview.onThemeChanged((theme: string) => {
       // Always apply theme to app chrome (CSS variables on :root)
       void this.themeEngine.applyTheme(theme);
       for (const ctx of this.documents.values()) {
@@ -587,16 +587,16 @@ export class MDViewElectronViewer {
   }
 
   private showEmptyState(): void {
-    const contentArea = document.getElementById('mdview-content-area');
+    const contentArea = document.getElementById('mdreview-content-area');
     if (!contentArea) return;
 
-    let emptyState = document.getElementById('mdview-empty-state');
+    let emptyState = document.getElementById('mdreview-empty-state');
     if (!emptyState) {
       emptyState = document.createElement('div');
-      emptyState.id = 'mdview-empty-state';
+      emptyState.id = 'mdreview-empty-state';
       emptyState.innerHTML = `
         <div class="empty-state-content">
-          <h2>mdview</h2>
+          <h2>Design Review</h2>
           <p>Open a file to get started</p>
           <div class="empty-state-actions">
             <button id="empty-open-file" class="empty-state-btn">Open File</button>
@@ -618,14 +618,14 @@ export class MDViewElectronViewer {
   }
 
   private hideEmptyState(): void {
-    const emptyState = document.getElementById('mdview-empty-state');
+    const emptyState = document.getElementById('mdreview-empty-state');
     if (emptyState) {
       emptyState.style.display = 'none';
     }
   }
 
   private async handleOpenFileDialog(): Promise<void> {
-    const paths = await window.mdview.showOpenFileDialog();
+    const paths = await window.mdreview.showOpenFileDialog();
     if (paths) {
       for (const p of paths) {
         await this.openFile(p);
@@ -634,7 +634,7 @@ export class MDViewElectronViewer {
   }
 
   private async handleOpenFolderDialog(): Promise<void> {
-    const folderPath = await window.mdview.showOpenFolderDialog();
+    const folderPath = await window.mdreview.showOpenFolderDialog();
     if (folderPath) {
       await this.loadFolder(folderPath);
     }
@@ -645,41 +645,41 @@ export class MDViewElectronViewer {
   ): Promise<void> {
     try {
       // Get current persisted groups
-      const ws = await window.mdview.getWorkspaceState();
+      const ws = await window.mdreview.getWorkspaceState();
       const existingIds = new Set(ws.tabGroups.map((g) => g.id));
       const newIds = new Set(groups.map((g) => g.id));
 
       // Delete removed groups
       for (const id of existingIds) {
         if (!newIds.has(id)) {
-          await window.mdview.deleteTabGroup(id);
+          await window.mdreview.deleteTabGroup(id);
         }
       }
 
       // Create or update groups
       for (const group of groups) {
         if (existingIds.has(group.id)) {
-          await window.mdview.updateTabGroup(group.id, {
+          await window.mdreview.updateTabGroup(group.id, {
             name: group.name,
             color: group.color,
             collapsed: group.collapsed,
             tabIds: group.tabIds,
           });
         } else {
-          await window.mdview.createTabGroup(group.name, group.color, group.tabIds);
+          await window.mdreview.createTabGroup(group.name, group.color, group.tabIds);
         }
       }
     } catch (error) {
-      console.error('[mdview] Error syncing groups:', error);
+      console.error('[mdreview] Error syncing groups:', error);
     }
   }
 
   private async loadFolder(folderPath: string): Promise<void> {
     this.openFolderPath = folderPath;
-    await window.mdview.setOpenFolder(folderPath);
-    const state = await window.mdview.getState();
+    await window.mdreview.setOpenFolder(folderPath);
+    const state = await window.mdreview.getState();
     const showAllFiles = state.preferences.showAllFiles ?? false;
-    const entries = await window.mdview.listDirectory(folderPath, { showAllFiles });
+    const entries = await window.mdreview.listDirectory(folderPath, { showAllFiles });
     this.fileTree.setRootPath(folderPath);
     this.fileTree.loadDirectory(entries);
     this.fileTree.setVisible(true);

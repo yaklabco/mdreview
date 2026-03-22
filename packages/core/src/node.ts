@@ -1,4 +1,4 @@
-// @mdview/core/node - lightweight entry point for Node.js (Electron main process)
+// @mdreview/core/node - lightweight entry point for Node.js (Electron main process)
 // Excludes browser-only modules (workers, mermaid, DOM renderers)
 
 export const VERSION = '0.0.1';

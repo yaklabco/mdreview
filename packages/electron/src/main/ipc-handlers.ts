@@ -7,7 +7,7 @@ import type { ElectronIdentityAdapter } from './adapters/identity-adapter';
 import type { ElectronExportAdapter } from './adapters/export-adapter';
 import type { RecentFilesManager } from './recent-files';
 import type { DirectoryService } from './directory-service';
-import type { CacheManager, CachedResult, Preferences } from '@mdview/core/node';
+import type { CacheManager, CachedResult, Preferences } from '@mdreview/core/node';
 import type { TabState, TabGroupState, TabGroupColor } from '../shared/workspace-types';
 
 export interface IPCHandlerDeps {
@@ -48,8 +48,8 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
     const win = getWindow();
     if (win && !win.isDestroyed()) {
       win.webContents.send(IPC_CHANNELS.PREFERENCES_UPDATED, prefs);
-      if (prefs.theme) {
-        win.webContents.send(IPC_CHANNELS.THEME_CHANGED, prefs.theme);
+      if ((prefs as Record<string, unknown>).theme) {
+        win.webContents.send(IPC_CHANNELS.THEME_CHANGED, (prefs as Record<string, unknown>).theme);
       }
     }
   });
@@ -251,7 +251,11 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
 
   ipcMain.handle(
     IPC_CHANNELS.UPDATE_TAB_GROUP,
-    (_event, groupId: string, updates: Partial<Pick<TabGroupState, 'name' | 'color' | 'collapsed' | 'tabIds'>>) => {
+    (
+      _event,
+      groupId: string,
+      updates: Partial<Pick<TabGroupState, 'name' | 'color' | 'collapsed' | 'tabIds'>>
+    ) => {
       stateManager.updateTabGroup(groupId, updates);
     }
   );
@@ -261,9 +265,12 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
   });
 
   // Directory service
-  ipcMain.handle(IPC_CHANNELS.LIST_DIRECTORY, (_event, dirPath: string, options?: { showAllFiles?: boolean }) => {
-    return directoryService?.listDirectory(dirPath, options) ?? [];
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.LIST_DIRECTORY,
+    (_event, dirPath: string, options?: { showAllFiles?: boolean }) => {
+      return directoryService?.listDirectory(dirPath, options) ?? [];
+    }
+  );
 
   ipcMain.handle(IPC_CHANNELS.WATCH_DIRECTORY, (_event, dirPath: string) => {
     directoryService?.watchDirectory(dirPath, () => {

@@ -16,10 +16,10 @@ import {
   updateCommentMetadata,
   addReply,
   toggleReaction,
-} from '@mdview/core';
-import { parseAnnotations } from '@mdview/core';
-import { buildSourceMap } from '@mdview/core';
-import type { Comment, CommentContext, CommentReply } from '@mdview/core';
+} from '@mdreview/core';
+import { parseAnnotations } from '@mdreview/core';
+import { buildSourceMap } from '@mdreview/core';
+import type { Comment, CommentContext, CommentReply } from '@mdreview/core';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {
@@ -86,7 +86,7 @@ describe('addComment', () => {
     const result = addComment(md, comment);
 
     expect(result).toContain('Some highlighted text[@1] in context.');
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
     expect(result).toContain('"id": 1');
     expect(result).toContain('"text": "highlighted text"');
     expect(result).toContain('"body": "This is a comment"');
@@ -98,8 +98,8 @@ describe('addComment', () => {
     const comment = makeComment();
     const result = addComment(md, comment);
 
-    expect(result).toContain('<!-- mdview:annotations');
-    const blockCount = (result.match(/<!-- mdview:annotations/g) || []).length;
+    expect(result).toContain('<!-- mdreview:annotations');
+    const blockCount = (result.match(/<!-- mdreview:annotations/g) || []).length;
     expect(blockCount).toBe(1);
   });
 
@@ -122,7 +122,7 @@ describe('addComment', () => {
     });
     const result = addComment(md, comment);
 
-    const blockCount = (result.match(/<!-- mdview:annotations/g) || []).length;
+    const blockCount = (result.match(/<!-- mdreview:annotations/g) || []).length;
     expect(blockCount).toBe(1);
     expect(result).toContain('"id": 1');
     expect(result).toContain('"id": 2');
@@ -240,7 +240,7 @@ describe('removeComment', () => {
 ] -->`;
     const result = removeComment(md, 'comment-1');
 
-    expect(result).not.toContain('<!-- mdview:annotations');
+    expect(result).not.toContain('<!-- mdreview:annotations');
   });
 
   it('should keep other annotations when one of many is deleted', () => {
@@ -266,7 +266,7 @@ describe('removeComment', () => {
 
     expect(result).not.toContain('[@1]');
     expect(result).not.toContain('First comment');
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
     expect(result).toContain('[@2]');
     expect(result).toContain('Second comment');
     expect(result).toContain('Text A and text B[@2] here.');
@@ -400,7 +400,7 @@ describe('addCommentAtOffset', () => {
     const result = addCommentAtOffset(md, comment, sourceMap);
 
     expect(result).toContain('**important**[@1]');
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
   });
 
   it('should insert marker after link using source map', () => {
@@ -419,7 +419,7 @@ describe('addCommentAtOffset', () => {
     const result = addCommentAtOffset(md, comment, sourceMap);
 
     expect(result).toContain('Some text here.');
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
   });
 
   it('should disambiguate with context', () => {
@@ -833,7 +833,7 @@ describe('v1 input migration', () => {
     const result = addComment(v1Md, newComment);
 
     // Should be v2 format now
-    expect(result).toContain('<!-- mdview:annotations');
+    expect(result).toContain('<!-- mdreview:annotations');
     expect(result).not.toContain('<!-- mdview:comments -->');
     expect(result).not.toContain('[^comment-');
 

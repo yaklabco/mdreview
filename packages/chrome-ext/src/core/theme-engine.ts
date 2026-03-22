@@ -5,10 +5,10 @@
  * All DOM operations (applyTheme, watchSystemTheme) are handled by the core engine.
  */
 
-import { ThemeEngine as CoreThemeEngine } from '@mdview/core';
+import { ThemeEngine as CoreThemeEngine } from '@mdreview/core';
 import { ChromeStorageAdapter } from '../adapters';
 
-export type { ThemeInfo } from '@mdview/core';
+export type { ThemeInfo } from '@mdreview/core';
 
 export class ThemeEngine extends CoreThemeEngine {
   constructor() {

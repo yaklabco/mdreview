@@ -9,7 +9,7 @@ vi.mock('electron', () => ({
     setApplicationMenu: mockSetApplicationMenu,
   },
   app: {
-    name: 'mdview',
+    name: 'Design Review',
   },
 }));
 
@@ -144,7 +144,7 @@ describe('buildApplicationMenu', () => {
       label?: string;
       submenu?: Array<{ label?: string; accelerator?: string; click?: () => void }>;
     }>;
-    const appMenu = template.find((item) => item.label === 'mdview');
+    const appMenu = template.find((item) => item.label === 'Design Review');
     const prefsItem = appMenu?.submenu?.find((item) => item.label === 'Preferences...');
     expect(prefsItem).toBeDefined();
     expect(prefsItem?.accelerator).toBe('CmdOrCtrl+,');

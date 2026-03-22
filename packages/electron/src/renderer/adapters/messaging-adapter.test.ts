@@ -30,7 +30,7 @@ describe('ElectronMessagingAdapter', () => {
   beforeEach(() => {
     mockMdview = createMockMdview();
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    (globalThis as Record<string, unknown>).window = { mdview: mockMdview } as never;
+    (globalThis as Record<string, unknown>).window = { mdreview: mockMdview } as never;
     adapter = new ElectronMessagingAdapter();
   });
 

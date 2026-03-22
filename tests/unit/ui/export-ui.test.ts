@@ -76,7 +76,7 @@ describe('ExportUI', () => {
 
       expect(button).toBeDefined();
       expect(button.tagName).toBe('BUTTON');
-      expect(button.classList.contains('mdview-export-btn')).toBe(true);
+      expect(button.classList.contains('mdreview-export-btn')).toBe(true);
     });
 
     test('should position left by default', () => {
@@ -131,7 +131,7 @@ describe('ExportUI', () => {
 
       exportUI.showMenu();
 
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu).toBeDefined();
     });
 
@@ -177,7 +177,7 @@ describe('ExportUI', () => {
       document.body.appendChild(button);
 
       exportUI.showMenu();
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
 
       // Menu is created but visibility is controlled by CSS class
       expect(menu?.classList.contains('visible')).toBe(true);
@@ -190,7 +190,7 @@ describe('ExportUI', () => {
 
       button.click();
 
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu?.classList.contains('visible')).toBe(true);
     });
 
@@ -204,7 +204,7 @@ describe('ExportUI', () => {
       const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
       document.dispatchEvent(escapeEvent);
 
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu?.classList.contains('visible')).toBe(false);
     });
 
@@ -219,7 +219,7 @@ describe('ExportUI', () => {
       const clickEvent = new MouseEvent('click', { bubbles: true });
       document.body.dispatchEvent(clickEvent);
 
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu?.classList.contains('visible')).toBe(false);
     });
   });
@@ -235,7 +235,7 @@ describe('ExportUI', () => {
       // Wait for focus to be set (setTimeout in showMenu)
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      const firstItem = document.querySelector('.mdview-export-menu-item') as HTMLElement;
+      const firstItem = document.querySelector('.mdreview-export-menu-item') as HTMLElement;
       expect(document.activeElement).toBe(firstItem);
     });
 
@@ -247,7 +247,9 @@ describe('ExportUI', () => {
       exportUI.showMenu();
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      const items = Array.from(document.querySelectorAll<HTMLElement>('.mdview-export-menu-item'));
+      const items = Array.from(
+        document.querySelectorAll<HTMLElement>('.mdreview-export-menu-item')
+      );
 
       // Focus first item
       items[0].focus();
@@ -266,7 +268,7 @@ describe('ExportUI', () => {
 
       // Create container for PDF export
       const container = document.createElement('div');
-      container.id = 'mdview-container';
+      container.id = 'mdreview-container';
       container.innerHTML = '<h1>Test</h1>';
       document.body.appendChild(container);
 
@@ -285,7 +287,7 @@ describe('ExportUI', () => {
       // PDFGenerator should have been called (which calls window.print internally)
       // Since PDFGenerator is mocked at the module level, we can't easily verify this
       // Instead, verify the menu was closed
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu?.classList.contains('visible')).toBe(false);
     });
 
@@ -299,7 +301,7 @@ describe('ExportUI', () => {
       const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
       document.dispatchEvent(escapeEvent);
 
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu?.classList.contains('visible')).toBe(false);
     });
   });
@@ -314,7 +316,7 @@ describe('ExportUI', () => {
         message: 'Collecting content...',
       });
 
-      const overlay = document.querySelector('.mdview-export-progress-overlay');
+      const overlay = document.querySelector('.mdreview-export-progress-overlay');
       expect(overlay).toBeDefined();
     });
 
@@ -327,7 +329,7 @@ describe('ExportUI', () => {
         message: 'Converting diagrams...',
       });
 
-      const fill = document.querySelector('.mdview-export-progress-fill') as HTMLElement;
+      const fill = document.querySelector('.mdreview-export-progress-fill') as HTMLElement;
       expect(fill.style.width).toBe('45%');
     });
 
@@ -340,7 +342,7 @@ describe('ExportUI', () => {
         message: 'Generating DOCX...',
       });
 
-      const text = document.querySelector('.mdview-export-progress-text');
+      const text = document.querySelector('.mdreview-export-progress-text');
       expect(text?.textContent).toBe('Generating DOCX...');
     });
 
@@ -353,7 +355,7 @@ describe('ExportUI', () => {
         message: 'Collecting...',
       });
 
-      const cancelButton = document.querySelector('.mdview-export-progress-cancel');
+      const cancelButton = document.querySelector('.mdreview-export-progress-cancel');
       expect(cancelButton).toBeDefined();
       expect(cancelButton?.textContent).toBe('Cancel');
     });
@@ -365,7 +367,7 @@ describe('ExportUI', () => {
 
       exportUI.showSuccess('document-export.docx');
 
-      const toast = document.querySelector('.mdview-export-toast');
+      const toast = document.querySelector('.mdreview-export-toast');
       expect(toast).toBeDefined();
       expect(toast?.classList.contains('success')).toBe(true);
       expect(toast?.textContent).toBe('document-export.docx');
@@ -376,7 +378,7 @@ describe('ExportUI', () => {
 
       exportUI.showError(new Error('Export failed'));
 
-      const toast = document.querySelector('.mdview-export-toast');
+      const toast = document.querySelector('.mdreview-export-toast');
       expect(toast).toBeDefined();
       expect(toast?.classList.contains('error')).toBe(true);
       expect(toast?.textContent).toContain('Export failed');
@@ -391,7 +393,7 @@ describe('ExportUI', () => {
       // Wait for toast to be shown (setTimeout in showSuccess)
       vi.advanceTimersByTime(20);
 
-      const toast = document.querySelector('.mdview-export-toast');
+      const toast = document.querySelector('.mdreview-export-toast');
       expect(toast?.classList.contains('visible')).toBe(true);
 
       // Fast-forward time to auto-dismiss
@@ -408,9 +410,9 @@ describe('ExportUI', () => {
 
       exportUI.showSuccess('test.docx');
 
-      const toast = document.querySelector('.mdview-export-toast') as HTMLElement;
+      const toast = document.querySelector('.mdreview-export-toast') as HTMLElement;
       // Position is set via CSS class, not inline style
-      expect(toast.classList.contains('mdview-export-toast')).toBe(true);
+      expect(toast.classList.contains('mdreview-export-toast')).toBe(true);
       expect(toast).toBeDefined();
     });
   });
@@ -423,11 +425,11 @@ describe('ExportUI', () => {
 
       exportUI.showMenu();
 
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu?.getAttribute('role')).toBe('menu');
       expect(menu?.getAttribute('aria-label')).toBe('Export options');
 
-      const menuItems = document.querySelectorAll('.mdview-export-menu-item');
+      const menuItems = document.querySelectorAll('.mdreview-export-menu-item');
       menuItems.forEach((item) => {
         expect(item.getAttribute('role')).toBe('menuitem');
       });
@@ -443,7 +445,7 @@ describe('ExportUI', () => {
       // Wait for focus
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      const firstItem = document.querySelector('.mdview-export-menu-item') as HTMLElement;
+      const firstItem = document.querySelector('.mdreview-export-menu-item') as HTMLElement;
       expect(document.activeElement).toBe(firstItem);
     }, 15000);
 
@@ -472,10 +474,10 @@ describe('ExportUI', () => {
 
       exportUI.destroy();
 
-      expect(document.querySelector('.mdview-export-btn')).toBeNull();
-      expect(document.querySelector('.mdview-export-menu')).toBeNull();
-      expect(document.querySelector('.mdview-export-progress-overlay')).toBeNull();
-      expect(document.querySelector('.mdview-export-toast')).toBeNull();
+      expect(document.querySelector('.mdreview-export-btn')).toBeNull();
+      expect(document.querySelector('.mdreview-export-menu')).toBeNull();
+      expect(document.querySelector('.mdreview-export-progress-overlay')).toBeNull();
+      expect(document.querySelector('.mdreview-export-toast')).toBeNull();
     });
 
     test('should remove event listeners', () => {
@@ -492,7 +494,7 @@ describe('ExportUI', () => {
 
       // Click event should not trigger menu toggle
       button.click();
-      const menu = document.querySelector('.mdview-export-menu');
+      const menu = document.querySelector('.mdreview-export-menu');
       expect(menu).toBeNull();
 
       document.removeEventListener('click', initialListeners);
@@ -511,7 +513,7 @@ describe('ExportUI', () => {
       exportUI.destroy();
 
       // Button should be removed from DOM
-      expect(document.querySelector('.mdview-export-btn')).toBeNull();
+      expect(document.querySelector('.mdreview-export-btn')).toBeNull();
     });
   });
 });

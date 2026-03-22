@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseAnnotations } from '@mdview/core';
+import { parseAnnotations } from '@mdreview/core';
 import {
   addComment,
   removeComment,
@@ -15,8 +15,8 @@ import {
   addReply,
   toggleReaction,
   generateNextCommentId,
-} from '@mdview/core';
-import type { Comment, CommentContext } from '@mdview/core';
+} from '@mdreview/core';
+import type { Comment, CommentContext } from '@mdreview/core';
 
 function makeComment(overrides: Partial<Comment> = {}): Comment {
   return {

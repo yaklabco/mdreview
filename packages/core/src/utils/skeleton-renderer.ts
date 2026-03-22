@@ -32,7 +32,7 @@ export class SkeletonRenderer {
 
         return `
         <div
-          class="mdview-section mdview-section-skeleton"
+          class="mdreview-section mdreview-section-skeleton"
           id="${section.id}"
           data-section-id="${section.id}"
           data-hydrated="false"
@@ -71,8 +71,8 @@ export class SkeletonRenderer {
    */
   static markHydrated(sectionElement: HTMLElement): void {
     sectionElement.dataset.hydrated = 'true';
-    sectionElement.classList.remove('mdview-section-skeleton');
-    sectionElement.classList.add('mdview-section-hydrated');
+    sectionElement.classList.remove('mdreview-section-skeleton');
+    sectionElement.classList.add('mdreview-section-hydrated');
 
     // Remove skeleton min-height (let content determine height)
     sectionElement.style.minHeight = '';
@@ -88,7 +88,7 @@ export class SkeletonRenderer {
    * Get all unhydrated sections
    */
   static getUnhydratedSections(container: HTMLElement): HTMLElement[] {
-    const sections = container.querySelectorAll('.mdview-section[data-hydrated="false"]');
+    const sections = container.querySelectorAll('.mdreview-section[data-hydrated="false"]');
     return Array.from(sections) as HTMLElement[];
   }
 

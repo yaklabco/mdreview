@@ -566,7 +566,7 @@ export class RenderPipeline {
 
       // Render chunk
       const chunkContainer = document.createElement('div');
-      chunkContainer.className = 'mdview-chunk';
+      chunkContainer.className = 'mdreview-chunk';
 
       await this.render({
         container: chunkContainer,
@@ -820,7 +820,7 @@ export class RenderPipeline {
   private applyTheming(container: HTMLElement): void {
     // Theme will be applied by theme engine
     // This is a placeholder for theme-specific transformations
-    container.classList.add('mdview-rendered');
+    container.classList.add('mdreview-rendered');
   }
 
   /**
@@ -1039,7 +1039,7 @@ export class RenderPipeline {
   private showError(container: HTMLElement, error: unknown): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
     container.innerHTML = `
-      <div class="mdview-error" role="alert">
+      <div class="mdreview-error" role="alert">
         <h2>Rendering Error</h2>
         <p>Failed to render markdown content.</p>
         <details>

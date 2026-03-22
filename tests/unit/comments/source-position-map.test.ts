@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildSourceMap, findInsertionPoint } from '@mdview/core';
+import { buildSourceMap, findInsertionPoint } from '@mdreview/core';
 
 // ─── buildSourceMap ──────────────────────────────────────────────────
 

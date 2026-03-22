@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommentHighlighter } from '@mdview/core';
-import type { Comment } from '@mdview/core';
+import { CommentHighlighter } from '@mdreview/core';
+import type { Comment } from '@mdreview/core';
 
 describe('CommentHighlighter', () => {
   let container: HTMLElement;
@@ -26,7 +26,7 @@ describe('CommentHighlighter', () => {
       const span = highlighter.highlightComment(container, comment);
 
       expect(span).not.toBeNull();
-      expect(span!.className).toBe('mdview-comment-highlight');
+      expect(span!.className).toBe('mdreview-comment-highlight');
       expect(span!.dataset.commentId).toBe('comment-1');
       expect(span!.textContent).toBe('brown fox');
       expect(container.textContent).toBe('The quick brown fox jumps over.');
@@ -179,7 +179,7 @@ describe('CommentHighlighter', () => {
       // getHighlightElement should find the first span
       const el = highlighter.getHighlightElement('comment-1');
       expect(el).not.toBeNull();
-      expect(el!.classList.contains('mdview-comment-highlight')).toBe(true);
+      expect(el!.classList.contains('mdreview-comment-highlight')).toBe(true);
 
       document.body.removeChild(container);
     });
@@ -188,12 +188,12 @@ describe('CommentHighlighter', () => {
   describe('removeHighlight', () => {
     it('should unwrap the highlight span', () => {
       container.innerHTML =
-        '<p>The <span class="mdview-comment-highlight" data-comment-id="comment-1">brown fox</span> jumps.</p>';
+        '<p>The <span class="mdreview-comment-highlight" data-comment-id="comment-1">brown fox</span> jumps.</p>';
       document.body.appendChild(container);
 
       highlighter.removeHighlight('comment-1');
 
-      expect(container.querySelector('.mdview-comment-highlight')).toBeNull();
+      expect(container.querySelector('.mdreview-comment-highlight')).toBeNull();
       expect(container.textContent).toBe('The brown fox jumps.');
 
       document.body.removeChild(container);
@@ -202,13 +202,13 @@ describe('CommentHighlighter', () => {
     it('should unwrap multiple highlight spans from cross-node highlights', () => {
       // Simulate cross-node highlight: two spans with same comment ID
       container.innerHTML =
-        '<p>Some <span class="mdview-comment-highlight" data-comment-id="comment-1">bold</span>' +
-        '<span class="mdview-comment-highlight" data-comment-id="comment-1"> text</span> here.</p>';
+        '<p>Some <span class="mdreview-comment-highlight" data-comment-id="comment-1">bold</span>' +
+        '<span class="mdreview-comment-highlight" data-comment-id="comment-1"> text</span> here.</p>';
       document.body.appendChild(container);
 
       highlighter.removeHighlight('comment-1');
 
-      expect(container.querySelector('.mdview-comment-highlight')).toBeNull();
+      expect(container.querySelector('.mdreview-comment-highlight')).toBeNull();
       expect(container.textContent).toBe('Some bold text here.');
 
       document.body.removeChild(container);
@@ -218,7 +218,7 @@ describe('CommentHighlighter', () => {
   describe('setActive / clearActive', () => {
     it('should toggle active class', () => {
       container.innerHTML =
-        '<p><span class="mdview-comment-highlight" data-comment-id="comment-1">text</span></p>';
+        '<p><span class="mdreview-comment-highlight" data-comment-id="comment-1">text</span></p>';
       document.body.appendChild(container);
 
       highlighter.setActive('comment-1');
@@ -235,7 +235,7 @@ describe('CommentHighlighter', () => {
   describe('setResolved', () => {
     it('should add resolved class', () => {
       container.innerHTML =
-        '<p><span class="mdview-comment-highlight" data-comment-id="comment-1">text</span></p>';
+        '<p><span class="mdreview-comment-highlight" data-comment-id="comment-1">text</span></p>';
       document.body.appendChild(container);
 
       highlighter.setResolved('comment-1');
@@ -249,7 +249,7 @@ describe('CommentHighlighter', () => {
   describe('getHighlightElement', () => {
     it('should return the highlight element', () => {
       container.innerHTML =
-        '<p><span class="mdview-comment-highlight" data-comment-id="comment-1">text</span></p>';
+        '<p><span class="mdreview-comment-highlight" data-comment-id="comment-1">text</span></p>';
       document.body.appendChild(container);
 
       const el = highlighter.getHighlightElement('comment-1');

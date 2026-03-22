@@ -87,9 +87,7 @@ describe('Platform Adapters', () => {
     });
 
     it('readFile throws', async () => {
-      await expect(file.readFile('/tmp/test.md')).rejects.toThrow(
-        'No file adapter configured'
-      );
+      await expect(file.readFile('/tmp/test.md')).rejects.toThrow('No file adapter configured');
     });
 
     it('checkChanged returns unchanged', async () => {
@@ -135,6 +133,7 @@ describe('Platform Adapters', () => {
     });
 
     it('printToPDF is not defined on noop adapter', () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(exporter.printToPDF).toBeUndefined();
     });
   });
@@ -154,16 +153,17 @@ describe('Platform Adapters', () => {
     it('custom StorageAdapter implementation works', async () => {
       const store = new Map<string, unknown>();
       const custom: StorageAdapter = {
-        async getSync(keys) {
+        getSync(keys) {
           const keyList = Array.isArray(keys) ? keys : [keys];
           const result: Record<string, unknown> = {};
           for (const k of keyList) {
             if (store.has(k)) result[k] = store.get(k);
           }
-          return result;
+          return Promise.resolve(result);
         },
-        async setSync(data) {
+        setSync(data) {
           for (const [k, v] of Object.entries(data)) store.set(k, v);
+          return Promise.resolve();
         },
         async getLocal(keys) {
           return this.getSync(keys);
@@ -180,17 +180,17 @@ describe('Platform Adapters', () => {
     it('custom FileAdapter with in-memory fs works', async () => {
       const files = new Map<string, string>();
       const custom: FileAdapter = {
-        async writeFile(path, content) {
+        writeFile(path, content) {
           files.set(path, content);
-          return { success: true };
+          return Promise.resolve({ success: true });
         },
-        async readFile(path) {
+        readFile(path) {
           const content = files.get(path);
-          if (!content) throw new Error(`File not found: ${path}`);
-          return content;
+          if (!content) return Promise.reject(new Error(`File not found: ${path}`));
+          return Promise.resolve(content);
         },
-        async checkChanged(_url, _lastHash) {
-          return { changed: true, newHash: 'new-hash' };
+        checkChanged(_url, _lastHash) {
+          return Promise.resolve({ changed: true, newHash: 'new-hash' });
         },
         watch(_path, _callback) {
           return () => {};

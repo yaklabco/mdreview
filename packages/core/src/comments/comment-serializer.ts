@@ -7,8 +7,8 @@
  * Markdown format:
  *   Some highlighted text[^comment-1] in context.
  *
- *   <!-- mdview:comments -->
- *   [^comment-1]: <!-- mdview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
+ *   <!-- mdreview:comments -->
+ *   [^comment-1]: <!-- mdreview:comment {"author":"reviewer","date":"2026-03-03T14:30:00Z"} -->
  *       This API endpoint needs error handling
  *       for the 404 case.
  *
@@ -20,10 +20,10 @@ import type { Comment, CommentMetadata, CommentReply } from '../types/index';
 import type { SourcePositionMap, SelectionContext } from './source-position-map';
 import { findInsertionPoint } from './source-position-map';
 
-const COMMENT_SEPARATOR = '<!-- mdview:comments -->';
+const COMMENT_SEPARATOR = '<!-- mdreview:comments -->';
+const COMMENT_SEPARATOR_LEGACY = '<!-- mdview:comments -->';
 const COMMENT_ID_PATTERN = /\[\^comment-(\d+)\]/g;
-const FOOTNOTE_DEF_PATTERN =
-  /^\[\^(comment-\d+)\]: <!-- mdview:comment (.+?) -->/;
+const FOOTNOTE_DEF_PATTERN = /^\[\^(comment-\d+)\]: <!-- md(?:view|review):comment (.+?) -->/;
 
 /**
  * Scan the markdown for `[^comment-N]` patterns and return `comment-(max+1)`.
@@ -121,7 +121,7 @@ function buildFootnoteBlock(comment: Comment): string {
     meta.reactions = comment.reactions;
   }
   const metaJson = buildMetadataJson(meta);
-  const header = `[^${comment.id}]: <!-- mdview:comment ${metaJson} -->`;
+  const header = `[^${comment.id}]: <!-- mdreview:comment ${metaJson} -->`;
   const body = formatFootnoteBody(comment.body);
   return `${header}\n${body}`;
 }
@@ -134,36 +134,22 @@ function buildFootnoteBlock(comment: Comment): string {
  * "Unmatched" means the occurrence is not already immediately followed by
  * a `[^comment-N]` reference.
  */
-function insertReference(
-  contentSection: string,
-  selectedText: string,
-  commentId: string
-): string {
+function insertReference(contentSection: string, selectedText: string, commentId: string): string {
   const ref = `[^${commentId}]`;
   // We need to find the first occurrence of selectedText that is NOT
   // already followed by [^comment-...]
   const escapedText = selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(
-    `${escapedText}(?!\\[\\^comment-\\d+\\])`,
-  );
+  const pattern = new RegExp(`${escapedText}(?!\\[\\^comment-\\d+\\])`);
   const match = pattern.exec(contentSection);
   if (match) {
     const insertPos = match.index + match[0].length;
-    return (
-      contentSection.slice(0, insertPos) +
-      ref +
-      contentSection.slice(insertPos)
-    );
+    return contentSection.slice(0, insertPos) + ref + contentSection.slice(insertPos);
   }
   // Fallback: if no unmatched occurrence, just append to first occurrence
   const idx = contentSection.indexOf(selectedText);
   if (idx !== -1) {
     const insertPos = idx + selectedText.length;
-    return (
-      contentSection.slice(0, insertPos) +
-      ref +
-      contentSection.slice(insertPos)
-    );
+    return contentSection.slice(0, insertPos) + ref + contentSection.slice(insertPos);
   }
   return contentSection;
 }
@@ -173,12 +159,17 @@ function insertReference(
  * Returns [contentSection, commentsSection | null].
  */
 function splitAtSeparator(markdown: string): [string, string | null] {
-  const sepIdx = markdown.indexOf(COMMENT_SEPARATOR);
+  let sepIdx = markdown.indexOf(COMMENT_SEPARATOR);
+  let sepLen = COMMENT_SEPARATOR.length;
+  if (sepIdx === -1) {
+    sepIdx = markdown.indexOf(COMMENT_SEPARATOR_LEGACY);
+    sepLen = COMMENT_SEPARATOR_LEGACY.length;
+  }
   if (sepIdx === -1) {
     return [markdown, null];
   }
   const content = markdown.slice(0, sepIdx);
-  const comments = markdown.slice(sepIdx + COMMENT_SEPARATOR.length);
+  const comments = markdown.slice(sepIdx + sepLen);
   return [content, comments];
 }
 
@@ -190,11 +181,7 @@ export function addComment(markdown: string, comment: Comment): string {
   const [contentSection, existingComments] = splitAtSeparator(markdown);
 
   // Insert reference in content
-  const updatedContent = insertReference(
-    contentSection,
-    comment.selectedText,
-    comment.id
-  );
+  const updatedContent = insertReference(contentSection, comment.selectedText, comment.id);
 
   // Build footnote block
   const footnoteBlock = buildFootnoteBlock(comment);
@@ -206,18 +193,13 @@ export function addComment(markdown: string, comment: Comment): string {
       updatedContent +
       COMMENT_SEPARATOR +
       (trimmedComments ? trimmedComments + '\n\n' : '\n') +
-      footnoteBlock + '\n'
+      footnoteBlock +
+      '\n'
     );
   } else {
     // No separator yet; add it
     const trimmedContent = updatedContent.trimEnd();
-    return (
-      trimmedContent +
-      '\n\n' +
-      COMMENT_SEPARATOR +
-      '\n' +
-      footnoteBlock + '\n'
-    );
+    return trimmedContent + '\n\n' + COMMENT_SEPARATOR + '\n' + footnoteBlock + '\n';
   }
 }
 
@@ -242,8 +224,7 @@ export function addCommentAtOffset(
 
   // Insert the reference at the exact offset in the content section
   const ref = `[^${comment.id}]`;
-  const updatedContent =
-    contentSection.slice(0, offset) + ref + contentSection.slice(offset);
+  const updatedContent = contentSection.slice(0, offset) + ref + contentSection.slice(offset);
 
   // Build footnote block
   const footnoteBlock = buildFootnoteBlock(comment);
@@ -254,17 +235,12 @@ export function addCommentAtOffset(
       updatedContent +
       COMMENT_SEPARATOR +
       (trimmedComments ? trimmedComments + '\n\n' : '\n') +
-      footnoteBlock + '\n'
+      footnoteBlock +
+      '\n'
     );
   } else {
     const trimmedContent = updatedContent.trimEnd();
-    return (
-      trimmedContent +
-      '\n\n' +
-      COMMENT_SEPARATOR +
-      '\n' +
-      footnoteBlock + '\n'
-    );
+    return trimmedContent + '\n\n' + COMMENT_SEPARATOR + '\n' + footnoteBlock + '\n';
   }
 }
 
@@ -312,9 +288,7 @@ function parseFootnoteBlocks(commentsSection: string): FootnoteBlock[] {
  * Serialize footnote blocks back to a comments section string.
  */
 function serializeFootnoteBlocks(blocks: FootnoteBlock[]): string {
-  return blocks
-    .map((b) => [b.headerLine, ...b.bodyLines].join('\n'))
-    .join('\n\n');
+  return blocks.map((b) => [b.headerLine, ...b.bodyLines].join('\n')).join('\n\n');
 }
 
 /**
@@ -343,23 +317,14 @@ export function removeComment(markdown: string, commentId: string): string {
 
   // Rebuild with separator and remaining blocks
   const serialized = serializeFootnoteBlocks(remaining);
-  return (
-    cleanedContent +
-    COMMENT_SEPARATOR +
-    '\n' +
-    serialized + '\n'
-  );
+  return cleanedContent + COMMENT_SEPARATOR + '\n' + serialized + '\n';
 }
 
 /**
  * Update a comment's body: replace the body lines under the matching footnote
  * while keeping the metadata header unchanged.
  */
-export function updateComment(
-  markdown: string,
-  commentId: string,
-  newBody: string
-): string {
+export function updateComment(markdown: string, commentId: string, newBody: string): string {
   const [contentSection, commentsSection] = splitAtSeparator(markdown);
 
   if (commentsSection === null) {
@@ -378,12 +343,7 @@ export function updateComment(
   });
 
   const serialized = serializeFootnoteBlocks(updatedBlocks);
-  return (
-    contentSection +
-    COMMENT_SEPARATOR +
-    '\n' +
-    serialized + '\n'
-  );
+  return contentSection + COMMENT_SEPARATOR + '\n' + serialized + '\n';
 }
 
 /**
@@ -419,10 +379,10 @@ export function updateCommentMetadata(
       const defMatch = FOOTNOTE_DEF_PATTERN.exec(b.headerLine);
       if (defMatch) {
         found = true;
-        const meta: CommentMetadata = JSON.parse(defMatch[2]);
+        const meta: CommentMetadata = JSON.parse(defMatch[2]) as CommentMetadata;
         updater(meta);
         const metaJson = buildMetadataJson(meta);
-        const newHeader = `[^${b.id}]: <!-- mdview:comment ${metaJson} -->`;
+        const newHeader = `[^${b.id}]: <!-- mdreview:comment ${metaJson} -->`;
         return { ...b, headerLine: newHeader };
       }
     }
@@ -434,12 +394,7 @@ export function updateCommentMetadata(
   }
 
   const serialized = serializeFootnoteBlocks(updatedBlocks);
-  return (
-    contentSection +
-    COMMENT_SEPARATOR +
-    '\n' +
-    serialized + '\n'
-  );
+  return contentSection + COMMENT_SEPARATOR + '\n' + serialized + '\n';
 }
 
 /**

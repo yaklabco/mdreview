@@ -1,12 +1,12 @@
 /**
- * Platform adapter interfaces for @mdview/core.
+ * Platform adapter interfaces for @mdreview/core.
  *
  * These abstractions replace direct Chrome extension API calls,
  * allowing the core rendering engine to run in any environment
  * (Chrome extension, Electron, Node.js, tests).
  */
 
-import type { AppState, ThemeName, CachedResult } from './types/index';
+import type {} from './types/index';
 
 // ---------------------------------------------------------------------------
 // StorageAdapter — replaces chrome.storage.sync/local
@@ -118,7 +118,7 @@ export class NoopStorageAdapter implements StorageAdapter {
   private syncStore = new Map<string, unknown>();
   private localStore = new Map<string, unknown>();
 
-  async getSync(keys: string | string[]): Promise<Record<string, unknown>> {
+  getSync(keys: string | string[]): Promise<Record<string, unknown>> {
     const keyList = Array.isArray(keys) ? keys : [keys];
     const result: Record<string, unknown> = {};
     for (const key of keyList) {
@@ -126,16 +126,17 @@ export class NoopStorageAdapter implements StorageAdapter {
         result[key] = this.syncStore.get(key);
       }
     }
-    return result;
+    return Promise.resolve(result);
   }
 
-  async setSync(data: Record<string, unknown>): Promise<void> {
+  setSync(data: Record<string, unknown>): Promise<void> {
     for (const [key, value] of Object.entries(data)) {
       this.syncStore.set(key, value);
     }
+    return Promise.resolve();
   }
 
-  async getLocal(keys: string | string[]): Promise<Record<string, unknown>> {
+  getLocal(keys: string | string[]): Promise<Record<string, unknown>> {
     const keyList = Array.isArray(keys) ? keys : [keys];
     const result: Record<string, unknown> = {};
     for (const key of keyList) {
@@ -143,38 +144,36 @@ export class NoopStorageAdapter implements StorageAdapter {
         result[key] = this.localStore.get(key);
       }
     }
-    return result;
+    return Promise.resolve(result);
   }
 
-  async setLocal(data: Record<string, unknown>): Promise<void> {
+  setLocal(data: Record<string, unknown>): Promise<void> {
     for (const [key, value] of Object.entries(data)) {
       this.localStore.set(key, value);
     }
+    return Promise.resolve();
   }
 }
 
 /** Messaging adapter that returns empty responses */
 export class NoopMessagingAdapter implements MessagingAdapter {
-  async send(_message: IPCMessage): Promise<unknown> {
-    return {};
+  send(_message: IPCMessage): Promise<unknown> {
+    return Promise.resolve({});
   }
 }
 
 /** File adapter that rejects all operations */
 export class NoopFileAdapter implements FileAdapter {
-  async writeFile(_path: string, _content: string): Promise<FileWriteResult> {
-    return { success: false, error: 'No file adapter configured' };
+  writeFile(_path: string, _content: string): Promise<FileWriteResult> {
+    return Promise.resolve({ success: false, error: 'No file adapter configured' });
   }
 
-  async readFile(_path: string): Promise<string> {
-    throw new Error('No file adapter configured');
+  readFile(_path: string): Promise<string> {
+    return Promise.reject(new Error('No file adapter configured'));
   }
 
-  async checkChanged(
-    _url: string,
-    _lastHash: string
-  ): Promise<FileChangeInfo> {
-    return { changed: false };
+  checkChanged(_url: string, _lastHash: string): Promise<FileChangeInfo> {
+    return Promise.resolve({ changed: false });
   }
 
   watch(_path: string, _callback: () => void): () => void {
@@ -184,8 +183,8 @@ export class NoopFileAdapter implements FileAdapter {
 
 /** Identity adapter that returns empty username */
 export class NoopIdentityAdapter implements IdentityAdapter {
-  async getUsername(): Promise<string> {
-    return '';
+  getUsername(): Promise<string> {
+    return Promise.resolve('');
   }
 }
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "MDView - Markdown Viewer",
+  "name": "Design Review",
   "version": "0.3.4",
-  "description": "Beautiful markdown file viewer with themes, syntax highlighting, and interactive Mermaid diagrams",
+  "description": "An app for design review of software projects",
   "permissions": [
     "storage",
     "nativeMessaging",

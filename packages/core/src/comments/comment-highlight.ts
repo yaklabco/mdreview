@@ -1,6 +1,6 @@
 import type { Comment } from '../types/index';
 
-const HIGHLIGHT_CLASS = 'mdview-comment-highlight';
+const HIGHLIGHT_CLASS = 'mdreview-comment-highlight';
 const COMMENT_ID_ATTR = 'data-comment-id';
 
 /**
@@ -21,19 +21,12 @@ export class CommentHighlighter {
    *
    * Returns `null` if no matching text is found.
    */
-  highlightComment(
-    container: HTMLElement,
-    comment: Comment
-  ): HTMLElement | null {
+  highlightComment(container: HTMLElement, comment: Comment): HTMLElement | null {
     const { selectedText, id, resolved } = comment;
 
     // Collect all text nodes and build a concatenated string
     const textNodes: Text[] = [];
-    const walker = document.createTreeWalker(
-      container,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
     let node: Text | null;
     while ((node = walker.nextNode() as Text | null)) {
       textNodes.push(node);
@@ -44,10 +37,38 @@ export class CommentHighlighter {
     // parents so cross-block selections can match even when the DOM has no
     // whitespace text node between adjacent block elements.
     const BLOCK_TAGS = new Set([
-      'ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DD', 'DETAILS', 'DIV',
-      'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM',
-      'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR',
-      'LI', 'MAIN', 'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'UL',
+      'ADDRESS',
+      'ARTICLE',
+      'ASIDE',
+      'BLOCKQUOTE',
+      'DD',
+      'DETAILS',
+      'DIV',
+      'DL',
+      'DT',
+      'FIELDSET',
+      'FIGCAPTION',
+      'FIGURE',
+      'FOOTER',
+      'FORM',
+      'H1',
+      'H2',
+      'H3',
+      'H4',
+      'H5',
+      'H6',
+      'HEADER',
+      'HGROUP',
+      'HR',
+      'LI',
+      'MAIN',
+      'NAV',
+      'OL',
+      'P',
+      'PRE',
+      'SECTION',
+      'TABLE',
+      'UL',
     ]);
 
     const closestBlock = (node: Node): Element | null => {
@@ -69,12 +90,7 @@ export class CommentHighlighter {
       const block = closestBlock(textNode);
       // Insert a space when crossing block boundaries (if concat doesn't
       // already end with whitespace)
-      if (
-        prevBlock !== null &&
-        block !== prevBlock &&
-        concat.length > 0 &&
-        !/\s$/.test(concat)
-      ) {
+      if (prevBlock !== null && block !== prevBlock && concat.length > 0 && !/\s$/.test(concat)) {
         concat += ' ';
       }
       prevBlock = block;
@@ -115,9 +131,7 @@ export class CommentHighlighter {
       matchIndex = normalizedChars[normIdx];
       // Map the end: normIdx + normalizedSearch.length may be past the end
       const normEnd = normIdx + normalizedSearch.length;
-      matchEnd = normEnd < normalizedChars.length
-        ? normalizedChars[normEnd]
-        : concat.length;
+      matchEnd = normEnd < normalizedChars.length ? normalizedChars[normEnd] : concat.length;
     }
 
     // Find which text nodes overlap with the match
@@ -157,10 +171,7 @@ export class CommentHighlighter {
     for (let i = overlapping.length - 1; i >= 0; i--) {
       const entry = overlapping[i];
       const localStart = Math.max(0, matchIndex - entry.start);
-      const localEnd = Math.min(
-        entry.node.textContent?.length ?? 0,
-        matchEnd - entry.start
-      );
+      const localEnd = Math.min(entry.node.textContent?.length ?? 0, matchEnd - entry.start);
 
       const range = document.createRange();
       range.setStart(entry.node, localStart);
