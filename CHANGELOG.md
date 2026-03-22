@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/yaklabco/mdreview/compare/v0.3.3...v0.3.4) (2026-03-22)
+
+
+### Bug Fixes
+
+* **ci:** trigger release workflows on release event instead of tag push ([1a5775b](https://github.com/yaklabco/mdreview/commit/1a5775b2077f5e8e8bfc08959e5a617fdc54000c))
+
 ## [0.3.3](https://github.com/yaklabco/mdreview/compare/v0.3.2...v0.3.3) (2026-03-22)
 
 
