@@ -1,6 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Theme } from '../types/index';
-import type { StorageAdapter } from '../adapters';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { NoopStorageAdapter } from '../adapters';
 import githubLight from '../themes/github-light';
 import githubDark from '../themes/github-dark';

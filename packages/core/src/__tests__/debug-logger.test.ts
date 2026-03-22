@@ -5,16 +5,20 @@ describe('DebugLogger', () => {
   describe('works with mock StorageAdapter that returns preferences', () => {
     it('loads log level from storage adapter', async () => {
       const mockAdapter: StorageAdapter = {
-        async getSync(_keys: string | string[]) {
-          return {
+        getSync(_keys: string | string[]) {
+          return Promise.resolve({
             preferences: { logLevel: 'debug' },
-          };
+          });
         },
-        async setSync() {},
-        async getLocal() {
-          return {};
+        setSync() {
+          return Promise.resolve();
         },
-        async setLocal() {},
+        getLocal() {
+          return Promise.resolve({});
+        },
+        setLocal() {
+          return Promise.resolve();
+        },
       };
 
       const logger = new DebugLogger(mockAdapter);
@@ -26,16 +30,20 @@ describe('DebugLogger', () => {
 
     it('respects legacy debug boolean from storage', async () => {
       const mockAdapter: StorageAdapter = {
-        async getSync(_keys: string | string[]) {
-          return {
+        getSync(_keys: string | string[]) {
+          return Promise.resolve({
             preferences: { debug: true },
-          };
+          });
         },
-        async setSync() {},
-        async getLocal() {
-          return {};
+        setSync() {
+          return Promise.resolve();
         },
-        async setLocal() {},
+        getLocal() {
+          return Promise.resolve({});
+        },
+        setLocal() {
+          return Promise.resolve();
+        },
       };
 
       const logger = new DebugLogger(mockAdapter);
@@ -46,16 +54,20 @@ describe('DebugLogger', () => {
 
     it('defaults to error when storage has preferences without logLevel or debug', async () => {
       const mockAdapter: StorageAdapter = {
-        async getSync(_keys: string | string[]) {
-          return {
+        getSync(_keys: string | string[]) {
+          return Promise.resolve({
             preferences: { theme: 'github-light' },
-          };
+          });
         },
-        async setSync() {},
-        async getLocal() {
-          return {};
+        setSync() {
+          return Promise.resolve();
         },
-        async setLocal() {},
+        getLocal() {
+          return Promise.resolve({});
+        },
+        setLocal() {
+          return Promise.resolve();
+        },
       };
 
       const logger = new DebugLogger(mockAdapter);
@@ -66,14 +78,18 @@ describe('DebugLogger', () => {
 
     it('defaults to error when storage adapter rejects', async () => {
       const mockAdapter: StorageAdapter = {
-        async getSync() {
-          throw new Error('storage unavailable');
+        getSync() {
+          return Promise.reject(new Error('storage unavailable'));
         },
-        async setSync() {},
-        async getLocal() {
-          return {};
+        setSync() {
+          return Promise.resolve();
         },
-        async setLocal() {},
+        getLocal() {
+          return Promise.resolve({});
+        },
+        setLocal() {
+          return Promise.resolve();
+        },
       };
 
       const logger = new DebugLogger(mockAdapter);
@@ -207,14 +223,18 @@ describe('DebugLogger', () => {
 
     it('createDebugLogger accepts an optional adapter', async () => {
       const mockAdapter: StorageAdapter = {
-        async getSync() {
-          return { preferences: { logLevel: 'warn' as const } };
+        getSync() {
+          return Promise.resolve({ preferences: { logLevel: 'warn' as const } });
         },
-        async setSync() {},
-        async getLocal() {
-          return {};
+        setSync() {
+          return Promise.resolve();
         },
-        async setLocal() {},
+        getLocal() {
+          return Promise.resolve({});
+        },
+        setLocal() {
+          return Promise.resolve();
+        },
       };
 
       const logger = createDebugLogger(mockAdapter);

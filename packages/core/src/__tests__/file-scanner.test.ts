@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FileScanner } from '../utils/file-scanner';
 import type { FileAdapter, FileChangeInfo } from '../adapters';
-import { NoopFileAdapter } from '../adapters';
 
 describe('FileScanner (core)', () => {
   describe('hasMarkdownExtension', () => {
@@ -28,44 +27,74 @@ describe('FileScanner (core)', () => {
   describe('matchesPattern (blocklist)', () => {
     it('matches exact hostname', () => {
       expect(
-        FileScanner.matchesBlocklistPattern('github.com', 'https://github.com/repo', 'github.com', '/repo')
+        FileScanner.matchesBlocklistPattern(
+          'github.com',
+          'https://github.com/repo',
+          'github.com',
+          '/repo'
+        )
       ).toBe(true);
     });
 
     it('does not match different hostname', () => {
       expect(
-        FileScanner.matchesBlocklistPattern('gitlab.com', 'https://github.com/repo', 'github.com', '/repo')
+        FileScanner.matchesBlocklistPattern(
+          'gitlab.com',
+          'https://github.com/repo',
+          'github.com',
+          '/repo'
+        )
       ).toBe(false);
     });
 
     it('matches wildcard subdomain', () => {
       expect(
-        FileScanner.matchesBlocklistPattern('*.github.com', 'https://raw.github.com/file', 'raw.github.com', '/file')
+        FileScanner.matchesBlocklistPattern(
+          '*.github.com',
+          'https://raw.github.com/file',
+          'raw.github.com',
+          '/file'
+        )
       ).toBe(true);
     });
 
     it('matches wildcard subdomain against base domain', () => {
       expect(
-        FileScanner.matchesBlocklistPattern('*.github.com', 'https://github.com/file', 'github.com', '/file')
+        FileScanner.matchesBlocklistPattern(
+          '*.github.com',
+          'https://github.com/file',
+          'github.com',
+          '/file'
+        )
       ).toBe(true);
     });
 
     it('matches path pattern', () => {
       expect(
-        FileScanner.matchesBlocklistPattern('github.com/*/blob/*', 'https://github.com/user/blob/main', 'github.com', '/user/blob/main')
+        FileScanner.matchesBlocklistPattern(
+          'github.com/*/blob/*',
+          'https://github.com/user/blob/main',
+          'github.com',
+          '/user/blob/main'
+        )
       ).toBe(true);
     });
 
     it('matches full URL pattern', () => {
       expect(
-        FileScanner.matchesBlocklistPattern('https://raw.githubusercontent.com/*', 'https://raw.githubusercontent.com/file.md', 'raw.githubusercontent.com', '/file.md')
+        FileScanner.matchesBlocklistPattern(
+          'https://raw.githubusercontent.com/*',
+          'https://raw.githubusercontent.com/file.md',
+          'raw.githubusercontent.com',
+          '/file.md'
+        )
       ).toBe(true);
     });
 
     it('rejects empty pattern', () => {
-      expect(
-        FileScanner.matchesBlocklistPattern('', 'https://github.com', 'github.com', '/')
-      ).toBe(false);
+      expect(FileScanner.matchesBlocklistPattern('', 'https://github.com', 'github.com', '/')).toBe(
+        false
+      );
     });
 
     it('rejects whitespace-only pattern', () => {
@@ -77,7 +106,9 @@ describe('FileScanner (core)', () => {
 
   describe('isSiteBlockedFromList', () => {
     it('returns false for empty blocklist', () => {
-      expect(FileScanner.isSiteBlockedFromList([], 'https://github.com', 'github.com', '/')).toBe(false);
+      expect(FileScanner.isSiteBlockedFromList([], 'https://github.com', 'github.com', '/')).toBe(
+        false
+      );
     });
 
     it('returns true when URL matches a pattern', () => {
@@ -114,13 +145,14 @@ describe('FileScanner (core)', () => {
       // The global test setup mocks crypto.subtle.digest to always return
       // zeroed ArrayBuffer(32). Override it to return content-dependent results.
       let callCount = 0;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const originalDigest = crypto.subtle.digest;
-      crypto.subtle.digest = vi.fn(async () => {
+      crypto.subtle.digest = vi.fn(() => {
         callCount++;
         const buf = new ArrayBuffer(32);
         const view = new Uint8Array(buf);
         view[0] = callCount; // Make each call return a unique hash
-        return buf;
+        return Promise.resolve(buf);
       });
 
       try {
@@ -192,21 +224,22 @@ describe('FileScanner (core)', () => {
       mockAdapter = {
         writeFile: vi.fn(),
         readFile: vi.fn(),
-        checkChanged: vi.fn().mockResolvedValue({ changed: true, newHash: 'new-hash-123' } as FileChangeInfo),
+        checkChanged: vi
+          .fn()
+          .mockResolvedValue({ changed: true, newHash: 'new-hash-123' } as FileChangeInfo),
         watch: vi.fn().mockReturnValue(() => {}),
       };
 
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        { fileAdapter: mockAdapter, interval: 1000 }
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {
+        fileAdapter: mockAdapter,
+        interval: 1000,
+      });
 
       // Advance timer to trigger the check
       await vi.advanceTimersByTimeAsync(1000);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockAdapter.checkChanged).toHaveBeenCalledWith('file:///test.md', 'initial-hash');
       expect(callback).toHaveBeenCalledTimes(1);
 
@@ -222,15 +255,14 @@ describe('FileScanner (core)', () => {
       };
 
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        { fileAdapter: mockAdapter, interval: 1000 }
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {
+        fileAdapter: mockAdapter,
+        interval: 1000,
+      });
 
       await vi.advanceTimersByTimeAsync(1000);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockAdapter.checkChanged).toHaveBeenCalled();
       expect(callback).not.toHaveBeenCalled();
 
@@ -241,26 +273,27 @@ describe('FileScanner (core)', () => {
       mockAdapter = {
         writeFile: vi.fn(),
         readFile: vi.fn(),
-        checkChanged: vi.fn()
+        checkChanged: vi
+          .fn()
           .mockResolvedValueOnce({ changed: true, newHash: 'second-hash' } as FileChangeInfo)
           .mockResolvedValueOnce({ changed: false } as FileChangeInfo),
         watch: vi.fn().mockReturnValue(() => {}),
       };
 
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'first-hash',
-        callback,
-        { fileAdapter: mockAdapter, interval: 1000 }
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'first-hash', callback, {
+        fileAdapter: mockAdapter,
+        interval: 1000,
+      });
 
       // First check — file changed
       await vi.advanceTimersByTimeAsync(1000);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockAdapter.checkChanged).toHaveBeenCalledWith('file:///test.md', 'first-hash');
 
       // Second check — should use the updated hash
       await vi.advanceTimersByTimeAsync(1000);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockAdapter.checkChanged).toHaveBeenCalledWith('file:///test.md', 'second-hash');
 
       cleanup();
@@ -275,12 +308,10 @@ describe('FileScanner (core)', () => {
       };
 
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        { fileAdapter: mockAdapter, interval: 1000 }
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {
+        fileAdapter: mockAdapter,
+        interval: 1000,
+      });
 
       // Should not throw
       await vi.advanceTimersByTimeAsync(1000);
@@ -294,17 +325,17 @@ describe('FileScanner (core)', () => {
       mockAdapter = {
         writeFile: vi.fn(),
         readFile: vi.fn(),
-        checkChanged: vi.fn().mockResolvedValue({ changed: false, error: 'File not found' } as FileChangeInfo),
+        checkChanged: vi
+          .fn()
+          .mockResolvedValue({ changed: false, error: 'File not found' } as FileChangeInfo),
         watch: vi.fn().mockReturnValue(() => {}),
       };
 
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        { fileAdapter: mockAdapter, interval: 1000 }
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {
+        fileAdapter: mockAdapter,
+        interval: 1000,
+      });
 
       await vi.advanceTimersByTimeAsync(1000);
 
@@ -317,23 +348,24 @@ describe('FileScanner (core)', () => {
       mockAdapter = {
         writeFile: vi.fn(),
         readFile: vi.fn(),
-        checkChanged: vi.fn().mockResolvedValue({ changed: true, newHash: 'new' } as FileChangeInfo),
+        checkChanged: vi
+          .fn()
+          .mockResolvedValue({ changed: true, newHash: 'new' } as FileChangeInfo),
         watch: vi.fn().mockReturnValue(() => {}),
       };
 
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        { fileAdapter: mockAdapter, interval: 1000 }
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {
+        fileAdapter: mockAdapter,
+        interval: 1000,
+      });
 
       // Stop before any tick
       cleanup();
 
       await vi.advanceTimersByTimeAsync(5000);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockAdapter.checkChanged).not.toHaveBeenCalled();
       expect(callback).not.toHaveBeenCalled();
     });
@@ -350,12 +382,7 @@ describe('FileScanner (core)', () => {
 
     it('returns a cleanup function without an adapter', () => {
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        {}
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {});
 
       expect(typeof cleanup).toBe('function');
       cleanup(); // should not throw
@@ -363,12 +390,7 @@ describe('FileScanner (core)', () => {
 
     it('never calls callback without an adapter', async () => {
       const callback = vi.fn();
-      const cleanup = FileScanner.watchFile(
-        'file:///test.md',
-        'initial-hash',
-        callback,
-        {}
-      );
+      const cleanup = FileScanner.watchFile('file:///test.md', 'initial-hash', callback, {});
 
       await vi.advanceTimersByTimeAsync(5000);
 
