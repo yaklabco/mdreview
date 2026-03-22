@@ -398,9 +398,9 @@ describe('ThemeEngine', () => {
   });
 
   describe('Available Themes', () => {
-    test('should list all 8 themes', () => {
+    test('should list all 9 themes', () => {
       const themes = engine.getAvailableThemes();
-      expect(themes).toHaveLength(8);
+      expect(themes).toHaveLength(9);
     });
 
     test('should include theme info with name and display name', () => {
