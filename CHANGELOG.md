@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/yaklabco/mdreview/compare/v0.3.4...v0.3.5) (2026-03-22)
+
+
+### Bug Fixes
+
+* **ci:** consolidate release workflows into release-please ([5dacc12](https://github.com/yaklabco/mdreview/commit/5dacc12b4c6548bd834e4cdafd6dbca9e2edc0c1))
+
 ## [0.3.4](https://github.com/yaklabco/mdreview/compare/v0.3.3...v0.3.4) (2026-03-22)
 
 
