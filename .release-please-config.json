@@ -5,7 +5,6 @@
       "release-type": "node",
       "package-name": "mdview",
       "include-component-in-tag": false,
-      "last-release-sha": "ed0c7132aa3d9e442e7cf61064181967408b1e55",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "changelog-sections": [
