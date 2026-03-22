@@ -1,7 +1,7 @@
 {
-  "name": "@mdview/core",
+  "name": "@mdreview/core",
   "version": "0.0.1",
-  "description": "Core rendering engine for mdview",
+  "description": "Core rendering engine for mdreview",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -11,6 +11,7 @@
     "./styles/content.css": "./styles/content.css"
   },
   "scripts": {
+    "build": "echo 'Core uses source exports, no build needed'",
     "test": "vitest",
     "test:ci": "vitest --run"
   },

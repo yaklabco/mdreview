@@ -1,5 +1,5 @@
 {
-  "name": "@mdview/chrome-ext",
+  "name": "@mdreview/chrome-ext",
   "version": "0.3.4",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@mdview/core": "*"
+    "@mdreview/core": "workspace:*"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
