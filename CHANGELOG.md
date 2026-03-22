@@ -5,6 +5,22 @@
 
 * **changelog:** remove duplicate 0.2.0 section ([2e2cfd5](https://github.com/jamesainslie/mdview/commit/2e2cfd5b698b77d8c88244a3a0ed86ba6751de88))
 
+## [0.4.0](https://github.com/yaklabco/mdreview/compare/mdview-v0.3.6...mdview-v0.4.0) (2026-03-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* Release artifacts now include Electron desktop binaries (macOS, Linux, Windows) alongside the Chrome extension zip. The release body format has changed to document both distribution channels.
+
+### Features
+
+* add multi-platform desktop app distribution ([4367064](https://github.com/yaklabco/mdreview/commit/43670641bf5bcbfa7efa3a576e8487dd67097cd4))
+
+
+### Bug Fixes
+
+* resolve ESLint errors for CI ([2abba31](https://github.com/yaklabco/mdreview/commit/2abba316c56fb3b4b0a04cbe047d7d06e9e89cba))
+
 ## [0.3.6](https://github.com/yaklabco/mdreview/compare/mdview-v0.3.5...mdview-v0.3.6) (2026-03-22)
 
 
