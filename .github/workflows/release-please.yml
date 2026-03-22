@@ -58,32 +58,6 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: extension.zip
-          body: |
-            ## Design Review ${{ needs.release-please.outputs.tag_name }}
-
-            ### Chrome Extension
-
-            1. Download `extension.zip` from the assets below
-            2. Extract the zip file to a folder
-            3. Open Chrome → `chrome://extensions/` → Enable "Developer mode"
-            4. Click "Load unpacked" and select the extracted folder
-
-            ### Desktop App
-
-            | Platform | File |
-            |----------|------|
-            | macOS (Apple Silicon) | `.dmg` (arm64) |
-            | macOS (Intel) | `.dmg` (x64) |
-            | Linux | `.AppImage` |
-            | Windows | `.exe` installer |
-
-            **macOS:** Open the DMG and drag to Applications.
-            **Linux:** `chmod +x *.AppImage && ./*.AppImage`
-            **Windows:** Run the installer and follow the prompts.
-
-            ### Changes
-
-            See the full changelog below.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -110,7 +84,7 @@ jobs:
               packages/electron/dist/*.dmg
               packages/electron/dist/*.zip
           - name: macOS (x64)
-            os: macos-13
+            os: macos-15-large
             dist-cmd: dist:mac
             artifact-name: electron-mac-x64
             artifact-path: |
