@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="pics/logo.png" alt="Design Review Logo" width="400" />
+  <img src="pics/logo.png" alt="Design Review" width="200" />
 </p>
 
 <h1 align="center">Design Review</h1>
