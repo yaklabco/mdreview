@@ -5,6 +5,13 @@
 
 * **changelog:** remove duplicate 0.2.0 section ([2e2cfd5](https://github.com/jamesainslie/mdview/commit/2e2cfd5b698b77d8c88244a3a0ed86ba6751de88))
 
+## [0.3.6](https://github.com/yaklabco/mdreview/compare/mdview-v0.3.5...mdview-v0.3.6) (2026-03-22)
+
+
+### Features
+
+* add Electron app distribution to release workflow ([4181999](https://github.com/yaklabco/mdreview/commit/418199923068aa8e027dd2d462f5e909690a4344))
+
 ## [0.3.5](https://github.com/yaklabco/mdreview/compare/mdview-v0.3.4...mdview-v0.3.5) (2026-03-22)
 
 
