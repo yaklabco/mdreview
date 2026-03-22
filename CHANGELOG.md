@@ -2,7 +2,7 @@
 
 ---
 
-**Note:** All releases below are historical. The GitHub releases and tags were deleted during a release infrastructure migration (March 2026). These entries are retained for documentation purposes only. New releases will be appended above this line by release-please.
+**Breaking change:** All releases below this point are included only for historical purposes. At v0.3.0 we changed the name from mdview to mdreview. We will no longer be publishing the Chrome extension on the Chrome Web Store and while it will continue to be supported, it is included only as a convenience. The Electron app is the primary artifact of this project.
 
 ---
 
