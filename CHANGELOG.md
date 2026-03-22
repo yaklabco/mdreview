@@ -6,6 +6,13 @@
 
 ---
 
+## [0.3.1](https://github.com/yaklabco/mdreview/compare/v0.3.0...v0.3.1) (2026-03-22)
+
+
+### Documentation
+
+* update changelog breaking change notice ([b83fd76](https://github.com/yaklabco/mdreview/commit/b83fd7671a693b9f55f7e9da47333f0fabe36846))
+
 ## [0.3.0](https://github.com/yaklabco/mdreview/compare/v0.3.0...v0.3.0) (2026-03-22)
 
 
