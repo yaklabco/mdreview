@@ -5,6 +5,108 @@
 
 * **changelog:** remove duplicate 0.2.0 section ([2e2cfd5](https://github.com/jamesainslie/mdview/commit/2e2cfd5b698b77d8c88244a3a0ed86ba6751de88))
 
+## [0.3.5](https://github.com/yaklabco/mdreview/compare/mdview-v0.3.4...mdview-v0.3.5) (2026-03-22)
+
+
+### Features
+
+* add One Dark Pro theme, colorful icon themes, compact folders, and preferences panel redesign ([eb61796](https://github.com/yaklabco/mdreview/commit/eb6179601c589186fd0ca6ea10b61569cbef74bd))
+* annotation format v2 ([32c7d66](https://github.com/yaklabco/mdreview/commit/32c7d66680feb63dd0710eedf98ea39725b1d112))
+* **comments:** add comment manager orchestrating CRUD and file writes ([dbfb279](https://github.com/yaklabco/mdreview/commit/dbfb279b50f9b9026b561162b4b0948243620766))
+* **comments:** add comment parser for extracting footnote comments ([c090d18](https://github.com/yaklabco/mdreview/commit/c090d18a1e9f887cd7764299e1ce9237411cc7fd))
+* **comments:** add comment serializer for markdown footnote operations ([e6bedb3](https://github.com/yaklabco/mdreview/commit/e6bedb3f2a915e33a0984e69beed9fdcba4f0d65))
+* **comments:** add comment UI with cards, gutter, context menu, and input form ([3aaa6e6](https://github.com/yaklabco/mdreview/commit/3aaa6e6d716a3857a18260221e4d51c7c9841a37))
+* **comments:** add native messaging host for file writes ([304edb2](https://github.com/yaklabco/mdreview/commit/304edb24b89ea01ba3ecaa30ac8d6fbd40d86f5f))
+* **comments:** add replies, reactions, tags, and context menu ([615f425](https://github.com/yaklabco/mdreview/commit/615f4257f08d23b1d140875578b32544bedd9dea))
+* **comments:** add source position map, comment context, and emoji data ([b762c9a](https://github.com/yaklabco/mdreview/commit/b762c9a35cbd641ed4a63da4fe8a09a3f3c3e3b6))
+* **comments:** add text highlight module for comment markers ([7b0ebc0](https://github.com/yaklabco/mdreview/commit/7b0ebc0bebd5fdb6f2f080f1bdd7caac1fb1f773))
+* **comments:** implement annotation format v2 with citation-style markers ([37d7231](https://github.com/yaklabco/mdreview/commit/37d7231169f04e4e05f258c37644f1da533d7a5e))
+* **comments:** integrate comment manager into content script ([87aee0a](https://github.com/yaklabco/mdreview/commit/87aee0a9a0ba8269c240504103d61385a5e61f38))
+* **core:** define platform adapter interfaces ([994190f](https://github.com/yaklabco/mdreview/commit/994190f7ae3f117ac7fa7ac8ead2e52d768029fa))
+* **core:** extract and render YAML frontmatter as collapsible card ([73afffa](https://github.com/yaklabco/mdreview/commit/73afffaa3c71557f53d3ab267d65b360478cdd5a))
+* **css:** add comment system styles, gutter layout, and responsive breakpoints ([84d6c8e](https://github.com/yaklabco/mdreview/commit/84d6c8e242aae102b2b7df881c900fca9b2e4c53))
+* **electron:** add electron-builder config and placeholder icons ([60b030a](https://github.com/yaklabco/mdreview/commit/60b030add7f2e8de935b28287e647923b17266c4))
+* **electron:** add keyboard shortcuts, drag-drop, and file tree sidebar ([5b423ac](https://github.com/yaklabco/mdreview/commit/5b423ac450eb28a97681da86e78fec3bd30f037a))
+* **electron:** add main process, IPC handlers, state manager, and renderer adapters ([d54a9f9](https://github.com/yaklabco/mdreview/commit/d54a9f986279688f6d2fcd4fb656681d15c07ea8))
+* **electron:** add main-process adapters, IPC channels, and preload bridge ([94ed62a](https://github.com/yaklabco/mdreview/commit/94ed62ade033fdcb9d1d264b0cc152288cc5e2ad))
+* **electron:** add menu bar, file dialogs, recent files, and workspace state model ([ef1544a](https://github.com/yaklabco/mdreview/commit/ef1544acd8322b13782c7a6b15a733251885ecd7))
+* **electron:** add preferences panel with live preview and keyboard shortcut ([6716178](https://github.com/yaklabco/mdreview/commit/6716178b46728d483fdf354c0c16685727e89160))
+* **electron:** add renderer viewer with full rendering pipeline ([722229a](https://github.com/yaklabco/mdreview/commit/722229ac297dd0b22c14d87c380e8b6ad2696e92))
+* **electron:** add session restore, wire all workspace features, polish main process ([84c82c5](https://github.com/yaklabco/mdreview/commit/84c82c57fd10d65c33b867329c624d316dcbfe30))
+* **electron:** add status bar with document metadata ([9512e31](https://github.com/yaklabco/mdreview/commit/9512e31dee01bae28bcd98da6a9b503c30330ea8))
+* **electron:** add tab bar, document context, and multi-document renderer ([72808cb](https://github.com/yaklabco/mdreview/commit/72808cb3b58110da27ef4b266eb1429f430937bf))
+* **electron:** add workspace CSS and IPC plumbing for sidebar width/open external ([f197dfd](https://github.com/yaklabco/mdreview/commit/f197dfdb46bccc888eef91c317fb9cee74215a57))
+* **electron:** scaffold Electron package with stub entry points ([4a74701](https://github.com/yaklabco/mdreview/commit/4a74701e7d3ce5aeb48541e713cdc02cfbd1218b))
+* **electron:** wire menu commands, theme/prefs handlers, resizable sidebar, render progress ([189649f](https://github.com/yaklabco/mdreview/commit/189649fe0c454a367264a02d53b70d849eee78c4))
+* implement persistent margin comments ([aa52927](https://github.com/yaklabco/mdreview/commit/aa529273bb41526066d7f5e51a97d4a406bdf9f2))
+* **pipeline:** integrate comment parser into render pre-parse stage ([959eb35](https://github.com/yaklabco/mdreview/commit/959eb35bcff936fd332d40c34b2489ad22a99363))
+* rebrand mdview to mdreview across all packages ([4cf004f](https://github.com/yaklabco/mdreview/commit/4cf004fd46413108ee1ec19522d7f7344f89c048))
+* render YAML frontmatter as collapsible card ([08cb660](https://github.com/yaklabco/mdreview/commit/08cb6609797937b9a3e317114930b6187d73761e))
+* **settings:** add comment author name and enable toggle to options and popup ([e9b30f5](https://github.com/yaklabco/mdreview/commit/e9b30f5e34364025855954e9f66f304ef06ae781))
+* **themes:** add comment highlight and card CSS variables to all themes ([1c76632](https://github.com/yaklabco/mdreview/commit/1c76632a66362acc27b81324d3604fff0f9ce643))
+* **types:** add comment type definitions ([479a653](https://github.com/yaklabco/mdreview/commit/479a653a963b4b018f110c5feb629ba7cf7941ee))
+
+
+### Bug Fixes
+
+* **chrome-ext:** add build and dev scripts to package.json ([b9678ee](https://github.com/yaklabco/mdreview/commit/b9678eefa6ad9a80ae95c1dea8f0f4a42a231eec))
+* **comments:** add card minimization, improve highlight robustness ([1a24bea](https://github.com/yaklabco/mdreview/commit/1a24bea44d62389525f01e996719ed14dfc7561c))
+* **comments:** address code review findings ([0410622](https://github.com/yaklabco/mdreview/commit/041062288b1462edcebd61930bdc15aa71786eb4))
+* **comments:** floating cards, native host fixes, write safety ([409368b](https://github.com/yaklabco/mdreview/commit/409368bcd13073bf89562a01e38042bdcc9de77d))
+* **comments:** support cross-node text highlighting ([4934b7a](https://github.com/yaklabco/mdreview/commit/4934b7a1359c9eb9c00a5ab775722bd96f01c597))
+* **core:** improve mermaid cache race handling and renderer robustness ([04c755d](https://github.com/yaklabco/mdreview/commit/04c755da5d4fd9cb66992655567b362bafaa302b))
+* **electron:** resolve runtime bugs preventing markdown rendering ([db55bac](https://github.com/yaklabco/mdreview/commit/db55bac8794a04aa93236c7c5974cce6864b6a31))
+* **electron:** set worker format to ES for renderer build ([c774e39](https://github.com/yaklabco/mdreview/commit/c774e393b4a0c030fbb64b96fb30f5503bcd4fe2))
+* **test:** add comment color properties to mock theme and fix type errors ([d202ee4](https://github.com/yaklabco/mdreview/commit/d202ee47041378cf4d506c8dbd30d63fe06a5735))
+* **tests:** repair vi.mock factories for Node built-ins and class constructors ([235293b](https://github.com/yaklabco/mdreview/commit/235293b6c6671794c792809c468fad16903a88da))
+* update root theme-engine test to expect 9 themes ([e1adb5b](https://github.com/yaklabco/mdreview/commit/e1adb5b1cb0c99ae1904c0f3efa7ef9d9e5940c5))
+
+
+### Code Refactoring
+
+* **chrome-ext:** consolidate adapter classes into src/adapters/ ([4e931f6](https://github.com/yaklabco/mdreview/commit/4e931f68ec81ecb627cfa5a619ed616407eee1c9))
+* **core:** add barrel export for @mdview/core ([6b2e88b](https://github.com/yaklabco/mdreview/commit/6b2e88ba9d7310ed457f9db9045a126a5635ca4b))
+* **core:** add barrel exports for TOC renderer, lazy section renderer, and comment UI ([306ca21](https://github.com/yaklabco/mdreview/commit/306ca2179df4d5c58c23de72e44b6c5d039a3d69))
+* **core:** add FileScanner to barrel export ([4610406](https://github.com/yaklabco/mdreview/commit/4610406d2d755b756e30608750ba94a4a423e71d))
+* **core:** extract comment-manager with FileAdapter and IdentityAdapter ([b05200f](https://github.com/yaklabco/mdreview/commit/b05200ff4e5687b5d9f758f90020c46c4e736ad7))
+* **core:** extract debug-logger with StorageAdapter ([0d2287e](https://github.com/yaklabco/mdreview/commit/0d2287ebbba040e7ddb8d1adc1f2e5925b621f23))
+* **core:** extract DEFAULT_STATE and DEFAULT_PREFERENCES to @mdview/core ([c0cd82b](https://github.com/yaklabco/mdreview/commit/c0cd82b37c445dd9c5d1466d6ec1e2997b70c2b9))
+* **core:** extract file-scanner with MessagingAdapter ([055c462](https://github.com/yaklabco/mdreview/commit/055c462cfc0684fb01d38991d2e93debdf8ff7a7))
+* **core:** extract file-scanner with MessagingAdapter ([76eb366](https://github.com/yaklabco/mdreview/commit/76eb366c43288d1ea693d493cacec589b95a32c4))
+* **core:** extract render-pipeline with MessagingAdapter ([df11f56](https://github.com/yaklabco/mdreview/commit/df11f560bc84afddd761913b2b03f4466dfac2cf))
+* **core:** extract theme-engine with StorageAdapter ([34d7c8e](https://github.com/yaklabco/mdreview/commit/34d7c8e751ee4b231645595e41ffc9160f60a9cd))
+* **core:** move comment parsers and serializers to @mdview/core ([f2db9ab](https://github.com/yaklabco/mdreview/commit/f2db9aba151400b3c649035a79ca9397d626373e))
+* **core:** move comment UI modules to @mdview/core ([58ff331](https://github.com/yaklabco/mdreview/commit/58ff331a96d824afadbc7396b12e93ea3990de4f))
+* **core:** move DOM utilities to @mdview/core ([341982f](https://github.com/yaklabco/mdreview/commit/341982f7d5648984fc3e6f479931941ed4694ff1))
+* **core:** move export modules to @mdview/core ([d07db38](https://github.com/yaklabco/mdreview/commit/d07db38d2d85bbfd75f860a695814d82fa9df60d))
+* **core:** move markdown-converter, cache-manager, frontmatter to @mdview/core ([8c6a3c9](https://github.com/yaklabco/mdreview/commit/8c6a3c9d4d83484fb233ad423451cdf92a1595d2))
+* **core:** move pure utility modules to @mdview/core ([a96ec94](https://github.com/yaklabco/mdreview/commit/a96ec9452f840b31b2997b8f2e6221580a5b2664))
+* **core:** move renderers to @mdview/core ([f3b48c6](https://github.com/yaklabco/mdreview/commit/f3b48c63005ea62b8d3485d9a020afd9a569200f))
+* **core:** move shared content.css to @mdview/core/styles ([d80bb96](https://github.com/yaklabco/mdreview/commit/d80bb9649ff37c2ad9f6ee44cac1cc8a4ef985aa))
+* **core:** move theme data modules to @mdview/core ([995c97f](https://github.com/yaklabco/mdreview/commit/995c97ff4cd31b506d5a4b5d9d7958e8e2943cee))
+* **core:** move type definitions to @mdview/core ([31fe07e](https://github.com/yaklabco/mdreview/commit/31fe07e3c9645018e71262c5ae0623b9bcd693b3))
+* **core:** move worker modules to @mdview/core ([5b9d5e7](https://github.com/yaklabco/mdreview/commit/5b9d5e7a9893b7155d0acaaf43093392d1a1178b))
+* **core:** promote applyTheme and watchSystemTheme to core ThemeEngine ([2bb19da](https://github.com/yaklabco/mdreview/commit/2bb19da62a1606229ed438a2e53759255600640c))
+* extract @mdview/core and monorepo structure ([7805588](https://github.com/yaklabco/mdreview/commit/7805588f8df7de4a57939bd8e7c5f43feebae884))
+* move Chrome extension to packages/chrome-ext ([f0253d0](https://github.com/yaklabco/mdreview/commit/f0253d01124f8c49ed5173abcec7fc2b9c71a011))
+
+
+### Documentation
+
+* add margin comments feature design ([b98b052](https://github.com/yaklabco/mdreview/commit/b98b0521315af13f439b0b4c32389ca7ce57c907))
+* add margin comments implementation plan ([a521aef](https://github.com/yaklabco/mdreview/commit/a521aef2b7ffe275d8b7c3ada4e59b418505e725))
+* rewrite README for design review focus and update all docs ([17391c0](https://github.com/yaklabco/mdreview/commit/17391c065f53ed7b0b6b4bca9df7f76c4ae5593c))
+
+
+### Tests
+
+* **comments:** add integration tests for full comment lifecycle ([c8e0d66](https://github.com/yaklabco/mdreview/commit/c8e0d66e5373e3df50da225782c9985dfa980233))
+
+
+### Build System
+
+* migrate from npm to bun + turborepo ([608966e](https://github.com/yaklabco/mdreview/commit/608966e5c38fa650de4535ee7f3c8ac7632a646f))
+
 ## [0.3.4](https://github.com/jamesainslie/mdview/compare/mdview-v0.3.3...mdview-v0.3.4) (2025-12-06)
 
 
