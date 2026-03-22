@@ -16,7 +16,7 @@ vi.mock('@mdview/core', async () => {
       ]);
     }),
     TocRenderer: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-      this.render = vi.fn();
+      this.render = vi.fn().mockReturnValue(document.createElement('div'));
       this.toggle = vi.fn();
       this.show = vi.fn();
       this.hide = vi.fn();
@@ -152,8 +152,6 @@ describe('DocumentContext', () => {
 
     expect(metadata.renderState).toBe('complete');
     expect(metadata.filePath).toBe('/tmp/test.md');
-    // ExportUI button should have been appended
-    expect(container.querySelector('button')).not.toBeNull();
   });
 
   it('should store and return scroll position', async () => {
@@ -368,6 +366,162 @@ describe('DocumentContext', () => {
 
       const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
       expect(mockInstance.hide).toHaveBeenCalled();
+    });
+  });
+
+  describe('content URL preprocessing (resolveContentUrls)', () => {
+    it('should rewrite markdown image relative paths', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '![logo](img/logo.png)',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('![logo](local-asset:///Users/test/project/img/logo.png)');
+    });
+
+    it('should rewrite markdown image with title', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '![logo](img/logo.png "My Logo")',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('![logo](local-asset:///Users/test/project/img/logo.png "My Logo")');
+    });
+
+    it('should not rewrite markdown images with absolute URLs', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '![badge](https://img.shields.io/badge.svg)',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('![badge](https://img.shields.io/badge.svg)');
+    });
+
+    it('should rewrite HTML img src attributes', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '<img src="img/basset.jpg" alt="basset" width="400">',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('<img src="local-asset:///Users/test/project/img/basset.jpg" alt="basset" width="400">');
+    });
+
+    it('should not rewrite HTML img src with https URL', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '<img src="https://example.com/img.jpg">',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('<img src="https://example.com/img.jpg">');
+    });
+
+    it('should rewrite markdown link relative paths', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '[Guide](docs/guide.md)',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('[Guide](local-asset:///Users/test/project/docs/guide.md)');
+    });
+
+    it('should not rewrite anchor links', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '[Section](#section-1)',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('[Section](#section-1)');
+    });
+
+    it('should not rewrite mailto links', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '[Email](mailto:user@example.com)',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('[Email](mailto:user@example.com)');
+    });
+
+    it('should rewrite HTML href attributes', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '<a href="docs/guide.md">Guide</a>',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('<a href="local-asset:///Users/test/project/docs/guide.md">Guide</a>');
+    });
+
+    it('should handle absolute file paths (starting with /)', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const result = DocumentContext.resolveContentUrls(
+        '![logo](/absolute/path/logo.png)',
+        '/Users/test/project/README.md'
+      );
+      expect(result).toBe('![logo](local-asset:///absolute/path/logo.png)');
+    });
+
+    it('should handle mixed content with multiple URLs', async () => {
+      const { DocumentContext } = await import('./document-context');
+      const content = [
+        '# README',
+        '![logo](img/logo.png)',
+        '<img src="img/basset.jpg" alt="basset">',
+        '![badge](https://shields.io/badge.svg)',
+        '[docs](docs/guide.md) and [home](https://example.com)',
+      ].join('\n');
+      const result = DocumentContext.resolveContentUrls(content, '/Users/test/project/README.md');
+
+      expect(result).toContain('![logo](local-asset:///Users/test/project/img/logo.png)');
+      expect(result).toContain('src="local-asset:///Users/test/project/img/basset.jpg"');
+      expect(result).toContain('![badge](https://shields.io/badge.svg)');
+      expect(result).toContain('[docs](local-asset:///Users/test/project/docs/guide.md)');
+      expect(result).toContain('[home](https://example.com)');
+    });
+  });
+
+  describe('post-render URL resolution (DOM rewrite)', () => {
+    it('should resolve relative image paths after rendering', async () => {
+      // Mock render to inject an img with relative src
+      const { RenderPipeline } = await import('@mdview/core');
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+        this.render = vi.fn().mockImplementation(({ container }: { container: HTMLElement }) => {
+          container.innerHTML = '<img src="img/photo.jpg" alt="photo"><img src="https://example.com/badge.svg" alt="badge">';
+          return Promise.resolve();
+        });
+        this.onProgress = vi.fn().mockReturnValue(vi.fn());
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-url-2');
+      await ctx.load('/Users/test/project/README.md', container);
+
+      const imgs = container.querySelectorAll('img');
+      // Relative path should be rewritten
+      expect(imgs[0].src).toBe('local-asset:///Users/test/project/img/photo.jpg');
+      // Absolute URL should be untouched
+      expect(imgs[1].src).toBe('https://example.com/badge.svg');
+    });
+
+    it('should resolve relative link hrefs after rendering', async () => {
+      const { RenderPipeline } = await import('@mdview/core');
+      (RenderPipeline as unknown as ReturnType<typeof vi.fn>).mockImplementation(function (this: Record<string, unknown>) {
+        this.render = vi.fn().mockImplementation(({ container }: { container: HTMLElement }) => {
+          container.innerHTML = '<a href="docs/guide.md">Guide</a><a href="https://github.com">GH</a><a href="#section">Anchor</a>';
+          return Promise.resolve();
+        });
+        this.onProgress = vi.fn().mockReturnValue(vi.fn());
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-url-3');
+      await ctx.load('/Users/test/project/README.md', container);
+
+      const links = container.querySelectorAll('a');
+      expect(links[0].href).toBe('local-asset:///Users/test/project/docs/guide.md');
+      expect(links[1].href).toBe('https://github.com/');
+      expect(links[2].getAttribute('href')).toBe('#section');
     });
   });
 

@@ -1,5 +1,6 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, protocol, net } from 'electron';
 import { join, extname, basename } from 'path';
+import { pathToFileURL } from 'url';
 import ElectronStore from 'electron-store';
 import { CacheManager } from '@mdview/core/node';
 import { ElectronStorageAdapter } from './adapters/storage-adapter';
@@ -15,6 +16,28 @@ import { buildApplicationMenu } from './menu';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 
 const MD_EXTENSIONS = new Set(['.md', '.markdown', '.mdown', '.mkd', '.mkdn', '.mdx']);
+
+// Theme background colors for BrowserWindow — avoids white flash before renderer loads
+const THEME_BACKGROUNDS: Record<string, string> = {
+  'github-light': '#ffffff',
+  'github-dark': '#0d1117',
+  'catppuccin-latte': '#eff1f5',
+  'catppuccin-frappe': '#303446',
+  'catppuccin-macchiato': '#24273a',
+  'catppuccin-mocha': '#1e1e2e',
+  'monokai': '#272822',
+  'monokai-pro': '#2d2a2e',
+  'one-dark-pro': '#282c34',
+};
+
+// Register custom protocol for serving local assets (images, etc.)
+// Must be called before app.whenReady()
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local-asset',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+]);
 
 let mainWindow: BrowserWindow | null = null;
 let openFilePath: string | null = null;
@@ -32,10 +55,11 @@ function parseOpenFilePath(): string | null {
   return null;
 }
 
-function createWindow(): BrowserWindow {
+function createWindow(backgroundColor?: string): BrowserWindow {
   const win = new BrowserWindow({
     width: 1024,
     height: 768,
+    backgroundColor: backgroundColor || '#ffffff',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -118,6 +142,15 @@ function rebuildMenu(): void {
     onToggleToc: () => {
       mainWindow?.webContents.send(IPC_CHANNELS.MENU_COMMAND, 'toggle-toc');
     },
+    onToggleTabBar: () => {
+      mainWindow?.webContents.send(IPC_CHANNELS.MENU_COMMAND, 'toggle-tab-bar');
+    },
+    onToggleHeaderBar: () => {
+      mainWindow?.webContents.send(IPC_CHANNELS.MENU_COMMAND, 'toggle-header-bar');
+    },
+    onToggleStatusBar: () => {
+      mainWindow?.webContents.send(IPC_CHANNELS.MENU_COMMAND, 'toggle-status-bar');
+    },
     onMenuCommand: (command: string) => {
       if (command.startsWith('open:')) {
         sendOpenFileToRenderer(command.slice(5));
@@ -138,6 +171,24 @@ function saveSession(): void {
 }
 
 void app.whenReady().then(async () => {
+  // Handle local-asset:// protocol — serves local files for relative image/link paths.
+  // Because local-asset is a standard scheme, the browser parses
+  // local-asset:///Volumes/Code/file.jpg as host="volumes", path="/Code/file.jpg"
+  // (hostname is lowercased per URL spec). We reconstruct the original absolute
+  // path from the raw URL to preserve case.
+  protocol.handle('local-asset', (request) => {
+    try {
+      // Extract path directly from raw URL to preserve original case.
+      // Format: local-asset:///absolute/path or local-asset://host/path
+      const raw = decodeURIComponent(request.url.replace(/^local-asset:\/\//, ''));
+      const filePath = raw.startsWith('/') ? raw : `/${raw}`;
+      return net.fetch(pathToFileURL(filePath).href);
+    } catch (err) {
+      console.error('[mdview] local-asset protocol error:', request.url, err);
+      return new Response('Not Found', { status: 404 });
+    }
+  });
+
   openFilePath = parseOpenFilePath();
 
   const syncStore = new ElectronStore({ name: 'preferences' });
@@ -158,7 +209,9 @@ void app.whenReady().then(async () => {
 
   await stateManager.initialize();
 
-  mainWindow = createWindow();
+  const themeName = stateManager.getPreferences().theme || 'github-light';
+  const themeBg = THEME_BACKGROUNDS[themeName] || '#ffffff';
+  mainWindow = createWindow(themeBg);
 
   const win = mainWindow;
   const exportAdapter = new ElectronExportAdapter(
@@ -166,7 +219,7 @@ void app.whenReady().then(async () => {
     (options) => win.webContents.printToPDF(options ?? {})
   );
 
-  registerIpcHandlers({
+  const disposeIpcWatchers = registerIpcHandlers({
     stateManager,
     cacheManager,
     fileAdapter,
@@ -188,14 +241,22 @@ void app.whenReady().then(async () => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createWindow();
+      const activateTheme = stateManagerRef?.getPreferences().theme || 'github-light';
+      const activateBg = THEME_BACKGROUNDS[activateTheme] || '#ffffff';
+      mainWindow = createWindow(activateBg);
     }
   });
 
-  mainWindow.on('closed', () => {
+  mainWindow.on('close', () => {
+    // Clean up watchers BEFORE the window is destroyed to prevent
+    // callbacks firing on a destroyed webContents.
     saveSession();
-    fileAdapter.dispose();
+    disposeIpcWatchers();
     directoryService.dispose();
+    fileAdapter.dispose();
+  });
+
+  mainWindow.on('closed', () => {
     mainWindow = null;
   });
 

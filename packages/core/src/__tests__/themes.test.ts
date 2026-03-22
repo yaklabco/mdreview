@@ -8,6 +8,7 @@ import githubDark from '../themes/github-dark';
 import githubLight from '../themes/github-light';
 import monokaiPro from '../themes/monokai-pro';
 import monokai from '../themes/monokai';
+import oneDarkPro from '../themes/one-dark-pro';
 
 const requiredFields: (keyof Theme)[] = [
   'name',
@@ -29,6 +30,7 @@ const themes: { label: string; theme: Theme }[] = [
   { label: 'github-light', theme: githubLight },
   { label: 'monokai-pro', theme: monokaiPro },
   { label: 'monokai', theme: monokai },
+  { label: 'one-dark-pro', theme: oneDarkPro },
 ];
 
 describe('@mdview/core themes', () => {

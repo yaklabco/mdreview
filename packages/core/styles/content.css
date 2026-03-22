@@ -1247,94 +1247,20 @@ img[loading="lazy"].loaded {
   }
 }
 
-/* Table of Contents - Floating Card Style (default) */
+/* Table of Contents — layout-agnostic base styles.
+   Consumers (Chrome extension, Electron) provide their own positioning. */
 .mdview-toc-overlay {
-  position: fixed;
-  top: 60px;
-  width: 280px;
-  max-height: calc(100vh - 120px);
-  background-color: var(--md-bg);
-  z-index: 1000;
-  display: flex;
+  display: none;
   flex-direction: column;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  border-radius: 8px;
-  border: 1px solid var(--md-border);
-  box-shadow: 0 4px 12px var(--md-shadow);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.mdview-toc-overlay.position-left {
-  left: 16px;
-  transform: translateX(-8px);
-}
-
-.mdview-toc-overlay.position-right {
-  right: 16px;
-  transform: translateX(8px);
+  width: 280px;
+  background-color: var(--md-bg);
 }
 
 .mdview-toc-overlay.visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
+  display: flex;
 }
 
-/* Fixed sidebar style variant */
-.mdview-toc-overlay.toc-style-fixed {
-  top: 0;
-  max-height: 100vh;
-  height: 100vh;
-  border-radius: 0;
-  box-shadow: none;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.mdview-toc-overlay.toc-style-fixed.position-left {
-  left: 0;
-  border-right: 1px solid var(--md-border);
-  border-left: none;
-  border-top: none;
-  border-bottom: none;
-  transform: translateX(-100%);
-}
-
-.mdview-toc-overlay.toc-style-fixed.position-right {
-  right: 0;
-  border-left: 1px solid var(--md-border);
-  border-right: none;
-  border-top: none;
-  border-bottom: none;
-  transform: translateX(100%);
-}
-
-.mdview-toc-overlay.toc-style-fixed.visible {
-  transform: translateX(0);
-}
-
-/* Push content when fixed TOC is visible */
-body.toc-style-fixed.toc-visible-left #mdview-container {
-  margin-left: 280px;
-  transition: margin-left 0.3s ease;
-}
-
-body.toc-style-fixed.toc-visible-right #mdview-container {
-  margin-right: 280px;
-  transition: margin-right 0.3s ease;
-}
-
-/* Move export button when fixed TOC is visible */
-body.toc-style-fixed.toc-visible-left .mdview-export-btn.position-left {
-  left: 296px;
-}
-
-body.toc-style-fixed.toc-visible-right .mdview-export-btn.position-right {
-  right: 336px;
-}
-
-/* TOC Toggle Button - Matches export button style */
+/* TOC Toggle Button (Chrome extension only — Electron uses menu) */
 .mdview-toc-toggle-btn {
   position: fixed;
   top: 16px;
@@ -1368,9 +1294,45 @@ body.toc-style-fixed.toc-visible-right .mdview-export-btn.position-right {
   right: 16px;
 }
 
-/* Active state when TOC is visible */
-body.toc-visible-left .mdview-toc-toggle-btn.position-left,
-body.toc-visible-right .mdview-toc-toggle-btn.position-right {
+/* Chrome extension: position:fixed overlay with content push.
+   Uses direct-child selector because Chrome appends TOC to body;
+   Electron places TOC inside .mdview-tab-content-wrapper instead. */
+body.mdview-active > .mdview-toc-overlay {
+  position: fixed;
+  top: 0;
+  height: 100vh;
+  z-index: 1000;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.mdview-active > .mdview-toc-overlay.position-left {
+  left: 0;
+  border-right: 1px solid var(--md-border);
+}
+
+body.mdview-active > .mdview-toc-overlay.position-right {
+  right: 0;
+  border-left: 1px solid var(--md-border);
+}
+
+body.mdview-active.toc-visible-left #mdview-container {
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+body.mdview-active.toc-visible-right #mdview-container {
+  margin-right: 280px;
+  transition: margin-right 0.3s ease;
+}
+
+body.mdview-active.toc-visible-left .mdview-toc-toggle-btn.position-left {
+  opacity: 1;
+  background: var(--md-code-bg);
+  border-color: var(--md-link);
+}
+
+body.mdview-active.toc-visible-right .mdview-toc-toggle-btn.position-right {
   opacity: 1;
   background: var(--md-code-bg);
   border-color: var(--md-link);
@@ -1451,9 +1413,14 @@ body.toc-visible-right .mdview-toc-toggle-btn.position-right {
   transition: all 0.15s ease;
   border-radius: 6px;
   margin: 2px 8px;
+  min-width: 0;
+}
+
+.mdview-toc-link-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .mdview-toc-link::before {
@@ -1640,11 +1607,11 @@ body.toc-visible-right .mdview-toc-toggle-btn.position-right {
 }
 
 /* Shift export button when TOC is visible */
-body.toc-visible-left .mdview-export-btn.position-left {
+body.mdview-active.toc-visible-left .mdview-export-btn.position-left {
   left: 336px; /* 296px (TOC button position) + 32px + 8px gap */
 }
 
-body.toc-visible-right .mdview-export-btn.position-right {
+body.mdview-active.toc-visible-right .mdview-export-btn.position-right {
   right: 336px;
 }
 

@@ -128,7 +128,10 @@ describe('MDViewElectronViewer', () => {
       <div id="mdview-workspace">
         <div id="mdview-sidebar"></div>
         <div id="mdview-main">
-          <div id="mdview-tab-bar"></div>
+          <div id="mdview-toolbar-row">
+            <div id="mdview-tab-bar"></div>
+            <div id="mdview-header-bar"></div>
+          </div>
           <div id="mdview-content-area"></div>
           <div id="mdview-status-bar"></div>
         </div>

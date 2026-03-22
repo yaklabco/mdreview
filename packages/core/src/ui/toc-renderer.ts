@@ -1,6 +1,6 @@
 /**
  * TOC Renderer
- * Generates and manages a floating Table of Contents overlay
+ * Generates and manages a Table of Contents panel
  */
 
 import type { HeadingInfo } from '../types/index';
@@ -10,6 +10,7 @@ interface TocOptions {
   maxDepth?: number; // Max heading level to show (1-6)
   autoCollapse?: boolean; // Auto-collapse nested sections
   position?: 'left' | 'right'; // Position of TOC
+  scrollContainer?: HTMLElement; // Scroll target (default: window)
 }
 
 interface TocNode {
@@ -32,6 +33,7 @@ export class TocRenderer {
       maxDepth: options.maxDepth || 6,
       autoCollapse: options.autoCollapse !== undefined ? options.autoCollapse : false,
       position: options.position || 'left',
+      scrollContainer: options.scrollContainer,
     };
   }
 
@@ -157,8 +159,12 @@ export class TocRenderer {
       const link = document.createElement('a');
       link.href = `#${node.heading.id}`;
       link.className = 'mdview-toc-link';
-      link.textContent = node.heading.text;
       link.dataset.headingId = node.heading.id;
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'mdview-toc-link-text';
+      textSpan.textContent = node.heading.text;
+      link.appendChild(textSpan);
 
       // Handle click
       link.addEventListener('click', (e) => {
@@ -231,7 +237,16 @@ export class TocRenderer {
       return;
     }
 
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const scrollTarget = this.options.scrollContainer;
+    if (scrollTarget) {
+      // Scroll within the container
+      const containerRect = scrollTarget.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const offset = targetRect.top - containerRect.top + scrollTarget.scrollTop;
+      scrollTarget.scrollTo({ top: offset, behavior: 'smooth' });
+    } else {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     // Update active state immediately
     this.setActiveHeading(headingId);
@@ -241,21 +256,40 @@ export class TocRenderer {
    * Set up scroll spy to highlight current section
    */
   private setupScrollSpy(): void {
-    const updateActiveHeading = () => {
-      const scrollPosition = window.scrollY + 100; // Offset for better UX
+    const scrollTarget = this.options.scrollContainer;
 
-      // Find the current heading
+    const updateActiveHeading = () => {
       let currentHeading: HeadingInfo | null = null;
 
-      for (let i = this.headings.length - 1; i >= 0; i--) {
-        const heading = this.headings[i];
-        const element = document.getElementById(heading.id);
+      if (scrollTarget) {
+        // Container-relative scroll spy
+        const containerRect = scrollTarget.getBoundingClientRect();
+        const offset = containerRect.top + 100;
 
-        if (element) {
-          const offsetTop = element.getBoundingClientRect().top + window.scrollY;
-          if (offsetTop <= scrollPosition) {
-            currentHeading = heading;
-            break;
+        for (let i = this.headings.length - 1; i >= 0; i--) {
+          const heading = this.headings[i];
+          const element = document.getElementById(heading.id);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            if (rect.top <= offset) {
+              currentHeading = heading;
+              break;
+            }
+          }
+        }
+      } else {
+        // Window-based scroll spy (Chrome extension)
+        const scrollPosition = window.scrollY + 100;
+
+        for (let i = this.headings.length - 1; i >= 0; i--) {
+          const heading = this.headings[i];
+          const element = document.getElementById(heading.id);
+          if (element) {
+            const offsetTop = element.getBoundingClientRect().top + window.scrollY;
+            if (offsetTop <= scrollPosition) {
+              currentHeading = heading;
+              break;
+            }
           }
         }
       }
@@ -277,7 +311,8 @@ export class TocRenderer {
       }
     };
 
-    window.addEventListener('scroll', this.scrollListener, { passive: true });
+    const listenTarget = scrollTarget || window;
+    listenTarget.addEventListener('scroll', this.scrollListener as EventListener, { passive: true });
 
     // Initial update
     updateActiveHeading();
@@ -350,8 +385,6 @@ export class TocRenderer {
   show(): void {
     if (this.container) {
       this.container.classList.add('visible');
-      const position = this.options.position || 'left';
-      document.body.classList.add(`toc-visible-${position}`);
       debug.info('TOC', 'TOC shown');
     }
   }
@@ -362,7 +395,6 @@ export class TocRenderer {
   hide(): void {
     if (this.container) {
       this.container.classList.remove('visible');
-      document.body.classList.remove('toc-visible-left', 'toc-visible-right');
       debug.info('TOC', 'TOC hidden');
 
       // Dispatch event for content script to update state
@@ -386,7 +418,8 @@ export class TocRenderer {
    */
   destroy(): void {
     if (this.scrollListener) {
-      window.removeEventListener('scroll', this.scrollListener);
+      const listenTarget = this.options.scrollContainer || window;
+      listenTarget.removeEventListener('scroll', this.scrollListener as EventListener);
       this.scrollListener = null;
     }
 
@@ -400,8 +433,6 @@ export class TocRenderer {
       this.container = null;
     }
 
-    document.body.classList.remove('toc-visible-left', 'toc-visible-right');
-
     debug.info('TOC', 'TOC destroyed');
   }
 
@@ -414,9 +445,14 @@ export class TocRenderer {
     // Re-render if container exists
     if (this.container && this.headings.length > 0) {
       const wasVisible = this.container.classList.contains('visible');
+      const parent = this.container.parentElement;
       this.destroy();
       const newContainer = this.render(this.headings);
-      document.body.appendChild(newContainer);
+      if (parent) {
+        parent.appendChild(newContainer);
+      } else {
+        document.body.appendChild(newContainer);
+      }
       // Recreate the toggle button
       this.createToggleButton();
       if (wasVisible) {

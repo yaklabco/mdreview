@@ -123,4 +123,61 @@ describe('registerKeyboardShortcuts', () => {
     dispatchKey({ key: 'Tab', ctrlKey: true, shiftKey: true });
     expect(partial.prevTab).toHaveBeenCalledTimes(1);
   });
+
+  it('should call toggleTabBar on Cmd/Ctrl+Shift+B', () => {
+    const h = { ...handlers, toggleTabBar: vi.fn() };
+    cleanup = registerKeyboardShortcuts(h);
+
+    dispatchKey({ key: 'b', metaKey: true, shiftKey: true });
+    expect(h.toggleTabBar).toHaveBeenCalledTimes(1);
+
+    dispatchKey({ key: 'b', ctrlKey: true, shiftKey: true });
+    expect(h.toggleTabBar).toHaveBeenCalledTimes(2);
+  });
+
+  it('should call toggleHeaderBar on Cmd/Ctrl+Shift+H', () => {
+    const h = { ...handlers, toggleHeaderBar: vi.fn() };
+    cleanup = registerKeyboardShortcuts(h);
+
+    dispatchKey({ key: 'h', metaKey: true, shiftKey: true });
+    expect(h.toggleHeaderBar).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call toggleToc on Cmd/Ctrl+Shift+T', () => {
+    const h = { ...handlers, toggleToc: vi.fn() };
+    cleanup = registerKeyboardShortcuts(h);
+
+    dispatchKey({ key: 't', metaKey: true, shiftKey: true });
+    expect(h.toggleToc).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not fire panel toggles without Shift', () => {
+    const h = {
+      ...handlers,
+      toggleTabBar: vi.fn(),
+      toggleHeaderBar: vi.fn(),
+      toggleToc: vi.fn(),
+    };
+    cleanup = registerKeyboardShortcuts(h);
+
+    // Cmd+B without shift should NOT trigger toggleTabBar
+    dispatchKey({ key: 'b', metaKey: true });
+    expect(h.toggleTabBar).not.toHaveBeenCalled();
+  });
+
+  it('should call openExportModal on Cmd/Ctrl+E', () => {
+    const h = { ...handlers, openExportModal: vi.fn() };
+    cleanup = registerKeyboardShortcuts(h);
+
+    dispatchKey({ key: 'e', metaKey: true });
+    expect(h.openExportModal).toHaveBeenCalledTimes(1);
+
+    dispatchKey({ key: 'e', ctrlKey: true });
+    expect(h.openExportModal).toHaveBeenCalledTimes(2);
+  });
+
+  it('should not throw when openExportModal is undefined and Cmd+E pressed', () => {
+    cleanup = registerKeyboardShortcuts(handlers);
+    expect(() => dispatchKey({ key: 'e', metaKey: true })).not.toThrow();
+  });
 });

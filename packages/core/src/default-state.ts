@@ -15,10 +15,11 @@ export const DEFAULT_PREFERENCES: AppState['preferences'] = {
   tocMaxDepth: 6,
   tocAutoCollapse: false,
   tocPosition: 'left',
-  tocStyle: 'floating',
   commentsEnabled: true,
   commentAuthor: '',
   blockedSites: [],
+  showAllFiles: false,
+  iconTheme: 'lucide',
 };
 
 export const DEFAULT_STATE: AppState = {

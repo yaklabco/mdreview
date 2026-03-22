@@ -149,7 +149,7 @@ describe('ThemeEngine', () => {
   describe('getAvailableThemes', () => {
     it('returns list of available themes', () => {
       const themes = engine.getAvailableThemes();
-      expect(themes.length).toBe(8);
+      expect(themes.length).toBe(9);
       const names = themes.map((t) => t.name);
       expect(names).toContain('github-light');
       expect(names).toContain('github-dark');

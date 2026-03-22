@@ -30,6 +30,8 @@ export const IPC_CHANNELS = {
   UPDATE_TAB_SCROLL: 'mdview:update-tab-scroll',
   SET_SIDEBAR_VISIBLE: 'mdview:set-sidebar-visible',
   SET_SIDEBAR_WIDTH: 'mdview:set-sidebar-width',
+  SET_TAB_BAR_VISIBLE: 'mdview:set-tab-bar-visible',
+  SET_HEADER_BAR_VISIBLE: 'mdview:set-header-bar-visible',
   SET_OPEN_FOLDER: 'mdview:set-open-folder',
   OPEN_EXTERNAL: 'mdview:open-external',
 
@@ -37,6 +39,11 @@ export const IPC_CHANNELS = {
   LIST_DIRECTORY: 'mdview:list-directory',
   WATCH_DIRECTORY: 'mdview:watch-directory',
   UNWATCH_DIRECTORY: 'mdview:unwatch-directory',
+
+  // Tab groups
+  CREATE_TAB_GROUP: 'mdview:create-tab-group',
+  UPDATE_TAB_GROUP: 'mdview:update-tab-group',
+  DELETE_TAB_GROUP: 'mdview:delete-tab-group',
 
   // Events from main → renderer
   FILE_CHANGED: 'mdview:file-changed',

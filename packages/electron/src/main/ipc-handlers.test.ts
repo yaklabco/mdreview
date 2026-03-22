@@ -69,6 +69,7 @@ function createMockDeps() {
     },
     getWindow: vi.fn().mockReturnValue({
       webContents: { send: vi.fn() },
+      isDestroyed: vi.fn().mockReturnValue(false),
     }),
     getOpenFilePath: vi.fn().mockReturnValue('/tmp/test.md'),
   };
@@ -213,6 +214,59 @@ describe('IPC Handlers', () => {
     await handler?.({}, 'https://github.com/test');
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(electron.shell.openExternal).toHaveBeenCalledWith('https://github.com/test');
+  });
+
+  it('should not send to destroyed window', async () => {
+    const destroyedWin = {
+      webContents: { send: vi.fn() },
+      isDestroyed: vi.fn().mockReturnValue(true),
+    };
+    deps.getWindow.mockReturnValue(destroyedWin);
+
+    handlers.clear();
+    registerIpcHandlers(deps as never);
+
+    const handler = handlers.get(IPC_CHANNELS.SET_ACTIVE_TAB);
+    await handler?.({}, 'tab-1');
+
+    expect(destroyedWin.webContents.send).not.toHaveBeenCalled();
+  });
+
+  it('dispose should clean up all file watchers', () => {
+    const unwatchFn1 = vi.fn();
+    const unwatchFn2 = vi.fn();
+    let callCount = 0;
+    deps.fileAdapter.watch.mockImplementation(() => {
+      callCount++;
+      return callCount === 1 ? unwatchFn1 : unwatchFn2;
+    });
+
+    handlers.clear();
+    const dispose = registerIpcHandlers(deps as never);
+
+    const watchHandler = handlers.get(IPC_CHANNELS.WATCH_FILE);
+    void watchHandler?.({}, '/tmp/a.md');
+    void watchHandler?.({}, '/tmp/b.md');
+
+    dispose();
+
+    expect(unwatchFn1).toHaveBeenCalled();
+    expect(unwatchFn2).toHaveBeenCalled();
+  });
+
+  it('LIST_DIRECTORY should pass options to directoryService', async () => {
+    const mockDirectoryService = {
+      listDirectory: vi.fn().mockReturnValue([]),
+      watchDirectory: vi.fn(),
+      unwatchDirectory: vi.fn(),
+      dispose: vi.fn(),
+    };
+    handlers.clear();
+    registerIpcHandlers({ ...deps, directoryService: mockDirectoryService } as never);
+
+    const handler = handlers.get(IPC_CHANNELS.LIST_DIRECTORY);
+    await handler?.({}, '/tmp/folder', { showAllFiles: true });
+    expect(mockDirectoryService.listDirectory).toHaveBeenCalledWith('/tmp/folder', { showAllFiles: true });
   });
 
   it('UNWATCH_FILE should clean up watcher', async () => {

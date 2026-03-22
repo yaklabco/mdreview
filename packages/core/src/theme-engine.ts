@@ -39,6 +39,7 @@ function getThemeRegistry(): Map<ThemeName, () => Promise<Theme>> {
       ['catppuccin-mocha', () => import('./themes/catppuccin-mocha').then((m) => m.default)],
       ['monokai', () => import('./themes/monokai').then((m) => m.default)],
       ['monokai-pro', () => import('./themes/monokai-pro').then((m) => m.default)],
+      ['one-dark-pro', () => import('./themes/one-dark-pro').then((m) => m.default)],
     ]);
   }
   return themeRegistry;
@@ -139,6 +140,7 @@ export class ThemeEngine {
       { name: 'catppuccin-mocha', displayName: 'Catppuccin Mocha', variant: 'dark' },
       { name: 'monokai', displayName: 'Monokai', variant: 'dark' },
       { name: 'monokai-pro', displayName: 'Monokai Pro', variant: 'dark' },
+      { name: 'one-dark-pro', displayName: 'One Dark Pro', variant: 'dark' },
     ];
   }
 

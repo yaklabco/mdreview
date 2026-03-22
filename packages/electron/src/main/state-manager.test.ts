@@ -20,6 +20,11 @@ describe('StateManager', () => {
       expect(state.document.renderState).toBe('pending');
     });
 
+    it('should default enableHtml to true for Electron', () => {
+      const state = manager.getState();
+      expect(state.preferences.enableHtml).toBe(true);
+    });
+
     it('should return a copy, not the internal state', () => {
       const state1 = manager.getState();
       const state2 = manager.getState();
@@ -279,6 +284,110 @@ describe('StateManager', () => {
         await new Promise((r) => setTimeout(r, 10));
         const stored = await storage.getLocal(['workspace']);
         expect(stored.workspace).toBeDefined();
+      });
+    });
+
+    describe('tab groups', () => {
+      it('should default to empty tab groups', () => {
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabGroups).toEqual([]);
+      });
+
+      it('should create a tab group', () => {
+        const tab1 = manager.openTab('/tmp/a.md');
+        const tab2 = manager.openTab('/tmp/b.md');
+
+        const group = manager.createTabGroup('Research', 'blue', [tab1.id, tab2.id]);
+        expect(group.id).toBeTruthy();
+        expect(group.name).toBe('Research');
+        expect(group.color).toBe('blue');
+        expect(group.collapsed).toBe(false);
+        expect(group.tabIds).toEqual([tab1.id, tab2.id]);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabGroups).toHaveLength(1);
+      });
+
+      it('should update a tab group', () => {
+        const tab = manager.openTab('/tmp/a.md');
+        const group = manager.createTabGroup('Research', 'blue', [tab.id]);
+
+        manager.updateTabGroup(group.id, { name: 'Docs', color: 'green', collapsed: true });
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabGroups[0].name).toBe('Docs');
+        expect(ws.tabGroups[0].color).toBe('green');
+        expect(ws.tabGroups[0].collapsed).toBe(true);
+      });
+
+      it('should delete a tab group', () => {
+        const tab = manager.openTab('/tmp/a.md');
+        const group = manager.createTabGroup('Research', 'blue', [tab.id]);
+
+        manager.deleteTabGroup(group.id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabGroups).toHaveLength(0);
+      });
+
+      it('should ignore updates to nonexistent group', () => {
+        manager.updateTabGroup('nonexistent', { name: 'Nope' });
+        expect(manager.getWorkspaceState().tabGroups).toHaveLength(0);
+      });
+
+      it('should ignore deletion of nonexistent group', () => {
+        const tab = manager.openTab('/tmp/a.md');
+        manager.createTabGroup('Research', 'blue', [tab.id]);
+        manager.deleteTabGroup('nonexistent');
+        expect(manager.getWorkspaceState().tabGroups).toHaveLength(1);
+      });
+
+      it('should remove tab from groups when tab is closed', () => {
+        const tab1 = manager.openTab('/tmp/a.md');
+        const tab2 = manager.openTab('/tmp/b.md');
+        manager.createTabGroup('Research', 'blue', [tab1.id, tab2.id]);
+
+        manager.closeTab(tab1.id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabGroups[0].tabIds).toEqual([tab2.id]);
+      });
+
+      it('should delete group when last tab is closed', () => {
+        const tab = manager.openTab('/tmp/a.md');
+        manager.createTabGroup('Research', 'blue', [tab.id]);
+
+        manager.closeTab(tab.id);
+
+        const ws = manager.getWorkspaceState();
+        expect(ws.tabGroups).toHaveLength(0);
+      });
+
+      it('should persist tab groups', async () => {
+        const tab = manager.openTab('/tmp/a.md');
+        manager.createTabGroup('Research', 'blue', [tab.id]);
+
+        await new Promise((r) => setTimeout(r, 10));
+        const stored = await storage.getLocal(['workspace']);
+        const ws = stored.workspace as Record<string, unknown>;
+        expect(ws.tabGroups).toBeDefined();
+      });
+
+      it('should restore tab groups from storage', async () => {
+        const tab = manager.openTab('/tmp/a.md');
+        await storage.setLocal({
+          workspace: {
+            tabGroups: [
+              { id: 'g-1', name: 'Saved', color: 'red', collapsed: false, tabIds: [tab.id] },
+            ],
+          },
+        });
+        // Create a new manager instance and initialize
+        const manager2 = new StateManager(storage);
+        await manager2.initialize();
+        const ws = manager2.getWorkspaceState();
+        expect(ws.tabGroups).toHaveLength(1);
+        expect(ws.tabGroups[0].name).toBe('Saved');
       });
     });
   });

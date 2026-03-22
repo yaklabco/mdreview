@@ -4,6 +4,11 @@ import { watch } from 'chokidar';
 import type { DirectoryEntry } from '../shared/workspace-types';
 
 const MD_EXTENSIONS = new Set(['.md', '.markdown', '.mdown', '.mkd', '.mkdn', '.mdx']);
+const EXCLUDED_DIRS = new Set(['node_modules']);
+
+export interface ListDirectoryOptions {
+  showAllFiles?: boolean;
+}
 
 interface WatcherHandle {
   close(): Promise<void>;
@@ -12,9 +17,9 @@ interface WatcherHandle {
 export class DirectoryService {
   private watchers = new Map<string, WatcherHandle>();
 
-  listDirectory(dirPath: string): DirectoryEntry[] {
+  listDirectory(dirPath: string, options?: ListDirectoryOptions): DirectoryEntry[] {
     try {
-      return this.readDirectoryRecursive(dirPath);
+      return this.readDirectoryRecursive(dirPath, options?.showAllFiles ?? false);
     } catch {
       return [];
     }
@@ -57,7 +62,7 @@ export class DirectoryService {
     this.watchers.clear();
   }
 
-  private readDirectoryRecursive(dirPath: string): DirectoryEntry[] {
+  private readDirectoryRecursive(dirPath: string, showAllFiles: boolean): DirectoryEntry[] {
     const rawEntries = readdirSync(dirPath);
     const directories: DirectoryEntry[] = [];
     const files: DirectoryEntry[] = [];
@@ -75,8 +80,11 @@ export class DirectoryService {
       }
 
       if (stat.isDirectory()) {
-        const children = this.readDirectoryRecursive(fullPath);
-        // Only include directories that contain markdown files (directly or nested)
+        // Skip excluded directories
+        if (EXCLUDED_DIRS.has(name)) continue;
+
+        const children = this.readDirectoryRecursive(fullPath, showAllFiles);
+        // Only include directories that have children (MD-only or all files depending on mode)
         if (children.length > 0) {
           directories.push({
             name,
@@ -85,12 +93,14 @@ export class DirectoryService {
             children,
           });
         }
-      } else if (stat.isFile() && MD_EXTENSIONS.has(extname(name).toLowerCase())) {
-        files.push({
-          name,
-          path: fullPath,
-          type: 'file',
-        });
+      } else if (stat.isFile()) {
+        if (showAllFiles || MD_EXTENSIONS.has(extname(name).toLowerCase())) {
+          files.push({
+            name,
+            path: fullPath,
+            type: 'file',
+          });
+        }
       }
     }
 

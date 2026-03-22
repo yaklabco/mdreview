@@ -24,6 +24,9 @@ function createMockDeps() {
     onCloseTab: vi.fn(),
     onToggleSidebar: vi.fn(),
     onToggleToc: vi.fn(),
+    onToggleTabBar: vi.fn(),
+    onToggleHeaderBar: vi.fn(),
+    onToggleStatusBar: vi.fn(),
     onMenuCommand: vi.fn(),
   };
 }
@@ -119,6 +122,20 @@ describe('buildApplicationMenu', () => {
     const toggleSidebar = viewMenu?.submenu?.find((item) => item.label === 'Toggle Sidebar');
     toggleSidebar?.click?.();
     expect(deps.onToggleSidebar).toHaveBeenCalled();
+  });
+
+  it('should include Export... item with CmdOrCtrl+E accelerator', () => {
+    buildApplicationMenu(deps);
+    const template = mockBuildFromTemplate.mock.calls[0][0] as Array<{
+      label?: string;
+      submenu?: Array<{ label?: string; accelerator?: string; click?: () => void }>;
+    }>;
+    const exportMenu = template.find((item) => item.label === 'Export');
+    const exportItem = exportMenu?.submenu?.find((item) => item.label === 'Export...');
+    expect(exportItem).toBeDefined();
+    expect(exportItem?.accelerator).toBe('CmdOrCtrl+E');
+    exportItem?.click?.();
+    expect(deps.onMenuCommand).toHaveBeenCalledWith('export:modal');
   });
 
   it('should include Preferences item in macOS app menu', () => {

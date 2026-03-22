@@ -355,4 +355,5 @@ export const SYNTAX_THEME_MAP: Record<string, string> = {
   'catppuccin-mocha': 'github-dark',
   monokai: 'monokai',
   'monokai-pro': 'monokai',
+  'one-dark-pro': 'github-dark',
 };

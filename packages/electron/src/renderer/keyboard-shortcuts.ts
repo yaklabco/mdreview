@@ -3,6 +3,10 @@ export interface KeyboardShortcutHandlers {
   prevTab: () => void;
   switchToTab: (index: number) => void;
   openPreferences?: () => void;
+  openExportModal?: () => void;
+  toggleTabBar?: () => void;
+  toggleHeaderBar?: () => void;
+  toggleToc?: () => void;
 }
 
 export function registerKeyboardShortcuts(handlers: KeyboardShortcutHandlers): () => void {
@@ -14,6 +18,32 @@ export function registerKeyboardShortcuts(handlers: KeyboardShortcutHandlers): (
       handlers.openPreferences?.();
       e.preventDefault();
       return;
+    }
+
+    if (e.key === 'e' && !e.shiftKey && !e.altKey) {
+      handlers.openExportModal?.();
+      e.preventDefault();
+      return;
+    }
+
+    // Cmd/Ctrl+Shift shortcuts for panel toggles
+    if (e.shiftKey && !e.altKey) {
+      const lower = e.key.toLowerCase();
+      if (lower === 'b') {
+        handlers.toggleTabBar?.();
+        e.preventDefault();
+        return;
+      }
+      if (lower === 'h') {
+        handlers.toggleHeaderBar?.();
+        e.preventDefault();
+        return;
+      }
+      if (lower === 't') {
+        handlers.toggleToc?.();
+        e.preventDefault();
+        return;
+      }
     }
 
     if (e.key === 'Tab') {

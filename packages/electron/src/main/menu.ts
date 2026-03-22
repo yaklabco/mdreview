@@ -9,6 +9,9 @@ export interface MenuDeps {
   onCloseTab: () => void;
   onToggleSidebar: () => void;
   onToggleToc: () => void;
+  onToggleTabBar: () => void;
+  onToggleHeaderBar: () => void;
+  onToggleStatusBar: () => void;
   onMenuCommand: (command: string) => void;
 }
 
@@ -21,6 +24,9 @@ export function buildApplicationMenu(deps: MenuDeps): void {
     onCloseTab,
     onToggleSidebar,
     onToggleToc,
+    onToggleTabBar,
+    onToggleHeaderBar,
+    onToggleStatusBar,
     onMenuCommand,
   } = deps;
 
@@ -110,8 +116,23 @@ export function buildApplicationMenu(deps: MenuDeps): void {
           click: onToggleSidebar,
         },
         {
+          label: 'Toggle Tab Bar',
+          accelerator: 'CmdOrCtrl+Shift+B',
+          click: onToggleTabBar,
+        },
+        {
+          label: 'Toggle Header Bar',
+          accelerator: 'CmdOrCtrl+Shift+H',
+          click: onToggleHeaderBar,
+        },
+        {
           label: 'Toggle Table of Contents',
+          accelerator: 'CmdOrCtrl+Shift+T',
           click: onToggleToc,
+        },
+        {
+          label: 'Toggle Status Bar',
+          click: onToggleStatusBar,
         },
         { type: 'separator' },
         { role: 'zoomIn' },
@@ -125,6 +146,12 @@ export function buildApplicationMenu(deps: MenuDeps): void {
     {
       label: 'Export',
       submenu: [
+        {
+          label: 'Export...',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => onMenuCommand('export:modal'),
+        },
+        { type: 'separator' },
         {
           label: 'Export as PDF...',
           click: () => onMenuCommand('export:pdf'),

@@ -49,11 +49,21 @@ const api: MdviewPreloadAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_TAB_SCROLL, tabId, position),
   setSidebarVisible: (visible) => ipcRenderer.invoke(IPC_CHANNELS.SET_SIDEBAR_VISIBLE, visible),
   setSidebarWidth: (width) => ipcRenderer.invoke(IPC_CHANNELS.SET_SIDEBAR_WIDTH, width),
+  setTabBarVisible: (visible) => ipcRenderer.invoke(IPC_CHANNELS.SET_TAB_BAR_VISIBLE, visible),
+  setHeaderBarVisible: (visible) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SET_HEADER_BAR_VISIBLE, visible),
   setOpenFolder: (path) => ipcRenderer.invoke(IPC_CHANNELS.SET_OPEN_FOLDER, path),
   openExternal: (url) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
 
+  // Tab groups
+  createTabGroup: (name, color, tabIds) =>
+    ipcRenderer.invoke(IPC_CHANNELS.CREATE_TAB_GROUP, name, color, tabIds),
+  updateTabGroup: (groupId, updates) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_TAB_GROUP, groupId, updates),
+  deleteTabGroup: (groupId) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_TAB_GROUP, groupId),
+
   // Directory
-  listDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.LIST_DIRECTORY, dirPath),
+  listDirectory: (dirPath, options) => ipcRenderer.invoke(IPC_CHANNELS.LIST_DIRECTORY, dirPath, options),
   watchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.WATCH_DIRECTORY, dirPath),
   unwatchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.UNWATCH_DIRECTORY, dirPath),
 

@@ -1,3 +1,11 @@
+/* Prevent window-level scrollbars — all scrolling happens inside .mdview-tab-content */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
 /* Workspace layout */
 #mdview-workspace {
   display: flex;
@@ -35,18 +43,31 @@
   overflow: hidden;
 }
 
+/* Toolbar row — single bar containing tabs + breadcrumb/actions */
+#mdview-toolbar-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  background-color: var(--md-bg-secondary);
+  border-bottom: 1px solid var(--md-border);
+  height: 34px;
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+}
+
 /* Tab bar */
 #mdview-tab-bar {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
-  background-color: var(--md-bg-secondary);
-  border-bottom: 1px solid var(--md-border);
-  min-height: 38px;
+  align-items: flex-end;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   -webkit-app-region: drag;
-  padding-left: 78px; /* macOS traffic light spacing */
+  padding-left: 12px;
   user-select: none;
 }
 
@@ -59,35 +80,102 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 0 14px;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
   background: transparent;
   color: var(--md-fg-muted);
-  font-family: var(--md-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
   position: relative;
   min-width: 0;
   max-width: 200px;
+  height: 28px;
+  margin: 0 1px;
 }
 
 .tab-button:hover {
-  background-color: var(--md-bg);
+  background-color: color-mix(in srgb, var(--md-bg) 60%, var(--md-bg-secondary));
   color: var(--md-fg);
 }
 
 .tab-button.active {
   background-color: var(--md-bg);
   color: var(--md-fg);
-  border-bottom-color: var(--md-link);
+  z-index: 2;
+  margin-bottom: -1px;
+  padding-bottom: 1px;
 }
 
-.tab-title {
+/* Chrome-style inverse rounded corners on active tab */
+.tab-button.active::before,
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  background: transparent;
+}
+
+.tab-button.active::before {
+  left: -8px;
+  border-bottom-right-radius: 8px;
+  box-shadow: 4px 0 0 0 var(--md-bg);
+}
+
+.tab-button.active::after {
+  right: -8px;
+  border-bottom-left-radius: 8px;
+  box-shadow: -4px 0 0 0 var(--md-bg);
+}
+
+/* Group color indicator on grouped tabs */
+.tab-button[data-group-color] {
+  border-bottom: 3px solid var(--tab-group-color, transparent);
+}
+
+.tab-button.active[data-group-color] {
+  border-bottom: 3px solid var(--tab-group-color, transparent);
+  margin-bottom: -1px;
+}
+
+.tab-label {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Tab icon — inline document icon, hidden by default */
+.tab-icon {
+  display: none;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tab-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* Icon-only mode */
+.tab-button.icon-only {
+  justify-content: center;
+  padding: 6px;
+}
+
+.tab-button.icon-only .tab-icon {
+  display: flex;
+}
+
+.tab-button.icon-only .tab-label,
+.tab-button.icon-only .tab-close {
+  display: none !important;
 }
 
 .tab-close {
@@ -107,9 +195,390 @@
   display: flex;
 }
 
+.tab-button.icon-only:hover .tab-close {
+  display: none;
+}
+
 .tab-close:hover {
   background-color: var(--md-border);
   color: var(--md-fg);
+}
+
+/* Tab group chip */
+.tab-group-chip {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 8px;
+  margin: 0 2px 5px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 18px;
+  min-width: 14px;
+  position: relative;
+  align-self: flex-end;
+  transition: opacity 150ms ease;
+}
+
+.tab-group-chip:hover {
+  opacity: 0.8;
+}
+
+.tab-group-chip.collapsed {
+  border-radius: 99px;
+}
+
+.tab-group-chip-label {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-group-chip-dot {
+  display: none;
+}
+
+/* Dot mode — empty name */
+.tab-group-chip.dot-mode {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.tab-group-chip.dot-mode .tab-group-chip-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.tab-group-chip.dot-mode .tab-group-chip-label {
+  display: none;
+}
+
+/* 9 Chrome-style group color presets */
+.tab-group-color-grey {
+  background-color: #5f6368;
+  color: #fff;
+  --tab-group-color: #5f6368;
+}
+
+.tab-group-color-blue {
+  background-color: #1a73e8;
+  color: #fff;
+  --tab-group-color: #1a73e8;
+}
+
+.tab-group-color-red {
+  background-color: #d93025;
+  color: #fff;
+  --tab-group-color: #d93025;
+}
+
+.tab-group-color-yellow {
+  background-color: #f9ab00;
+  color: #202124;
+  --tab-group-color: #f9ab00;
+}
+
+.tab-group-color-green {
+  background-color: #188038;
+  color: #fff;
+  --tab-group-color: #188038;
+}
+
+.tab-group-color-pink {
+  background-color: #d01884;
+  color: #fff;
+  --tab-group-color: #d01884;
+}
+
+.tab-group-color-purple {
+  background-color: #a142f4;
+  color: #fff;
+  --tab-group-color: #a142f4;
+}
+
+.tab-group-color-cyan {
+  background-color: #007b83;
+  color: #fff;
+  --tab-group-color: #007b83;
+}
+
+.tab-group-color-orange {
+  background-color: #e8710a;
+  color: #fff;
+  --tab-group-color: #e8710a;
+}
+
+/* Tab group editor bubble */
+.tab-group-editor-bubble {
+  position: fixed;
+  z-index: 10001;
+  width: 220px;
+  background-color: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--md-shadow, rgba(0, 0, 0, 0.15));
+  padding: 12px;
+  font-size: 13px;
+  font-family: var(--md-font-family);
+}
+
+.tab-group-editor-name {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+  font-size: 13px;
+  font-family: var(--md-font-family);
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.tab-group-editor-name::placeholder {
+  color: var(--md-fg-muted);
+}
+
+.tab-group-editor-colors {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tab-group-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 150ms ease;
+  position: relative;
+}
+
+.tab-group-color-swatch:hover {
+  border-color: var(--md-fg-muted);
+}
+
+.tab-group-color-swatch.selected {
+  border-color: var(--md-fg);
+}
+
+.tab-group-color-swatch.selected::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.tab-group-editor-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--md-border);
+  padding-top: 10px;
+}
+
+.tab-group-editor-action {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--md-fg);
+  font-size: 13px;
+  font-family: var(--md-font-family);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.tab-group-editor-action:hover {
+  background-color: var(--md-selection, rgba(0, 0, 0, 0.06));
+}
+
+.tab-group-editor-action-danger {
+  color: #d93025;
+}
+
+.tab-group-editor-action-danger:hover {
+  background-color: rgba(217, 48, 37, 0.1);
+}
+
+/* Tab context menu */
+.tab-context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 180px;
+  background-color: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--md-shadow, rgba(0, 0, 0, 0.15));
+  padding: 4px 0;
+  font-size: 13px;
+  font-family: var(--md-font-family);
+}
+
+.tab-context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  cursor: pointer;
+  color: var(--md-fg);
+  white-space: nowrap;
+}
+
+.tab-context-menu-item:hover {
+  background-color: var(--md-selection, rgba(0, 0, 0, 0.06));
+}
+
+.tab-context-menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background-color: var(--md-border);
+}
+
+/* Document header bar — breadcrumb + actions, inline in toolbar row */
+#mdview-header-bar {
+  -webkit-app-region: no-drag;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  user-select: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+#mdview-header-bar.hidden {
+  display: none;
+}
+
+.header-bar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--md-fg-muted);
+  font-size: 11px;
+}
+
+.header-bar-breadcrumb-segment {
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--md-fg-muted);
+  transition: color 150ms ease;
+}
+
+.header-bar-breadcrumb-segment:hover {
+  color: var(--md-link);
+}
+
+.header-bar-breadcrumb-segment:last-child {
+  color: var(--md-fg);
+  font-weight: 500;
+}
+
+.header-bar-breadcrumb-separator {
+  color: var(--md-fg-muted);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.header-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.header-bar-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--md-fg-muted);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.header-bar-action-btn:hover {
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+}
+
+.header-bar-action-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* Export button with label */
+.header-bar-export-btn {
+  width: auto;
+  padding: 0 8px;
+  gap: 4px;
+}
+
+/* Export dropdown */
+.header-bar-dropdown {
+  position: fixed;
+  z-index: 10000;
+  min-width: 160px;
+  background-color: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--md-shadow, rgba(0, 0, 0, 0.15));
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.header-bar-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  cursor: pointer;
+  color: var(--md-fg);
+  white-space: nowrap;
+}
+
+.header-bar-dropdown-item:hover {
+  background-color: var(--md-selection, rgba(0, 0, 0, 0.06));
+}
+
+/* Hidden states for panels */
+#mdview-tab-bar.hidden {
+  display: none;
+}
+
+#mdview-toolbar-row:has(#mdview-tab-bar.hidden):has(#mdview-header-bar.hidden) {
+  display: none;
+}
+
+#mdview-status-bar.hidden {
+  display: none;
 }
 
 /* File tree */
@@ -117,11 +586,16 @@
   overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
-  padding: 4px 0;
+  padding: 38px 0 4px;
+  scrollbar-width: none;
+}
+
+.file-tree::-webkit-scrollbar {
+  display: none;
 }
 
 .file-tree-item {
-  padding: 3px 8px 3px 12px;
+  padding: 2px 8px 2px 12px;
   font-size: 13px;
   line-height: 1.4;
   cursor: default;
@@ -129,12 +603,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--md-fg);
-  border-radius: 3px;
-  margin: 0 4px;
+  border-radius: 6px;
+  margin: 1px 4px;
 }
 
 .file-tree-item:hover {
-  background-color: var(--md-bg);
+  background-color: transparent;
+}
+
+/* Directory and file row layout */
+.file-tree-directory,
+.file-tree-file {
+  display: flex;
+  align-items: center;
 }
 
 .file-tree-directory {
@@ -142,14 +623,53 @@
   cursor: pointer;
 }
 
-.file-tree-directory::before {
-  content: '▸ ';
-  display: inline;
-  font-size: 10px;
+/* Disclosure triangle — real DOM element, replaces old ::before pseudo */
+.file-tree-disclosure {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 8px;
+  color: var(--md-fg-muted, var(--md-fg));
+  transition: transform 150ms ease;
+  flex-shrink: 0;
 }
 
-.file-tree-directory.expanded::before {
-  content: '▾ ';
+.file-tree-disclosure.expanded {
+  transform: rotate(90deg);
+}
+
+/* File tree icons */
+.file-tree-icon {
+  display: inline-flex;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.file-tree-icon svg {
+  width: 16px;
+  height: 16px;
+  /* Let each SVG's own attributes control fill/stroke via currentColor */
+}
+
+.file-tree-icon-folder svg {
+  color: var(--md-link);
+}
+
+/* File name label */
+.file-tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.file-tree-path-sep {
+  color: var(--md-fg-muted, var(--md-fg));
+  opacity: 0.6;
 }
 
 .file-tree-file {
@@ -157,12 +677,17 @@
 }
 
 .file-tree-file.active {
-  background-color: var(--md-selection);
-  color: var(--md-link);
+  font-weight: 600;
+}
+
+/* Non-markdown files — dimmed and not clickable */
+.file-tree-file-readonly {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .file-tree-children {
-  margin-left: 12px;
+  margin-left: 0;
 }
 
 /* Content area */
@@ -170,6 +695,44 @@
   flex: 1;
   overflow: hidden;
   position: relative;
+}
+
+/* Tab wrapper provides flex layout for TOC sidebar + content */
+.mdview-tab-content-wrapper {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mdview-tab-content-wrapper.toc-position-right {
+  flex-direction: row-reverse;
+}
+
+/* TOC sidebar within the wrapper — styled as part of the content, not the app chrome */
+.mdview-tab-content-wrapper > .mdview-toc-overlay {
+  width: 240px;
+  flex-shrink: 0;
+  background-color: var(--md-bg);
+  border-right: 1px solid var(--md-border);
+  position: static;
+  height: auto;
+  z-index: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mdview-tab-content-wrapper.toc-position-right > .mdview-toc-overlay {
+  border-right: none;
+  border-left: 1px solid var(--md-border);
+}
+
+/* TOC header matches content heading style */
+.mdview-tab-content-wrapper > .mdview-toc-overlay .mdview-toc-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--md-heading, var(--md-fg));
 }
 
 .mdview-tab-content {
@@ -181,6 +744,25 @@
   margin: 0 auto;
   padding: 45px;
   width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-border) transparent;
+}
+
+.mdview-tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mdview-tab-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mdview-tab-content::-webkit-scrollbar-thumb {
+  background-color: var(--md-border);
+  border-radius: 3px;
+}
+
+.mdview-tab-content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--md-fg-muted);
 }
 
 .mdview-tab-content *,
@@ -198,8 +780,8 @@
   padding: 2px 12px;
   border-top: 1px solid var(--md-border);
   background-color: var(--md-bg-secondary);
-  font-size: 11px;
-  color: var(--md-fg-muted);
+  font-size: 12px;
+  color: var(--md-fg);
   user-select: none;
   flex-shrink: 0;
 }
@@ -315,9 +897,11 @@
   z-index: 1000;
 }
 
-/* Sidebar resize handle */
+/* Sidebar resize handle — overlaps edges so it takes no visual space */
 .sidebar-resize-handle {
-  width: 4px;
+  width: 8px;
+  margin-left: -4px;
+  margin-right: -4px;
   cursor: col-resize;
   background: transparent;
   flex-shrink: 0;
@@ -363,7 +947,12 @@
   color: var(--md-fg-muted);
 }
 
-/* Preferences panel */
+/* Preferences panel — macOS System Settings layout */
+.preferences-panel,
+.preferences-panel * {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+
 .preferences-overlay {
   position: fixed;
   inset: 0;
@@ -375,56 +964,281 @@
 }
 
 .preferences-panel {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: 640px;
+  height: 480px;
   background-color: var(--md-bg);
   border: 1px solid var(--md-border);
   border-radius: 12px;
-  padding: 24px;
-  width: 420px;
-  max-height: 80vh;
-  overflow-y: auto;
   box-shadow: 0 8px 32px var(--md-shadow);
-}
-
-.preferences-panel h2 {
-  margin: 0 0 20px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--md-fg);
-}
-
-.preferences-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.preferences-form label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: var(--md-fg);
-}
-
-.preferences-form select,
-.preferences-form input[type="checkbox"] {
-  accent-color: var(--md-link);
-}
-
-.preferences-form select {
-  padding: 4px 8px;
-  border: 1px solid var(--md-border);
-  border-radius: 4px;
-  background-color: var(--md-bg);
-  color: var(--md-fg);
-  font-family: var(--md-font-family);
-  font-size: 13px;
+  overflow: hidden;
 }
 
 .preferences-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--md-fg-muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.preferences-close:hover {
+  background-color: var(--md-border);
+  color: var(--md-fg);
+}
+
+/* Sidebar */
+.preferences-sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--md-bg-secondary);
+  border-right: 1px solid var(--md-border);
+  padding: 12px 0;
+}
+
+.preferences-sidebar-item {
+  display: block;
+  width: calc(100% - 16px);
+  text-align: left;
+  font-size: 13px;
+  padding: 8px 16px;
+  margin: 2px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--md-fg);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.preferences-sidebar-item:hover {
+  background-color: var(--md-bg);
+}
+
+.preferences-sidebar-item.active {
+  background-color: var(--md-selection);
+  color: var(--md-fg);
+}
+
+/* Content area */
+.preferences-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  background-color: var(--md-bg-secondary);
+}
+
+/* Category header — centered at top of content area */
+.preferences-category-header {
+  text-align: center;
+  padding: 28px 24px 20px;
+}
+
+.preferences-category-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--md-fg);
+}
+
+.preferences-category-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--md-fg-muted);
+  line-height: 1.4;
+}
+
+/* Groups container */
+.preferences-groups {
+  padding: 0 24px 24px;
+}
+
+/* Grouped card */
+.preferences-group {
+  background-color: var(--md-bg);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+/* Row inside group */
+.preferences-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--md-border-light, var(--md-border));
+}
+
+.preferences-row:last-child {
+  border-bottom: none;
+}
+
+.preferences-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.preferences-row-label span:first-child {
+  font-size: 13px;
+  color: var(--md-fg);
+}
+
+.preferences-row-label span:last-child {
+  font-size: 11px;
+  color: var(--md-fg-muted);
+}
+
+/* Toggle switch — macOS style */
+.preferences-toggle {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.preferences-toggle input {
+  appearance: none;
+  display: none;
+}
+
+.preferences-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background-color: var(--md-border);
+  border-radius: 10px;
+  transition: background-color 200ms ease;
+}
+
+.preferences-toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: transform 200ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.preferences-toggle input:checked + .preferences-toggle-slider {
+  background-color: var(--md-link);
+}
+
+.preferences-toggle input:checked + .preferences-toggle-slider::before {
+  transform: translateX(14px);
+}
+
+/* Styled select */
+.preferences-select {
+  padding: 4px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Text input */
+.preferences-text-input {
+  padding: 4px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+  font-size: 13px;
+  width: 160px;
+}
+
+.preferences-text-input::placeholder {
+  color: var(--md-fg-muted);
+}
+
+/* Number input */
+.preferences-number-input {
+  padding: 4px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+  font-size: 13px;
+  width: 80px;
+}
+
+.preferences-number-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Conditional reveal (auto dark mode sub-controls) */
+.preferences-conditional {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease;
+}
+
+.preferences-conditional.expanded {
+  max-height: 120px;
+}
+
+/* Filename template preview */
+.preferences-filename-preview {
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--md-fg-muted);
+  padding: 4px 16px 10px;
+  font-style: italic;
+}
+
+/* Export modal */
+.export-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+}
+
+.export-modal-card {
+  position: relative;
+  background-color: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 12px;
+  padding: 28px 32px 24px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 32px var(--md-shadow, rgba(0, 0, 0, 0.15));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+
+.export-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   width: 28px;
   height: 28px;
   border: none;
@@ -438,7 +1252,43 @@
   justify-content: center;
 }
 
-.preferences-close:hover {
+.export-modal-close:hover {
   background-color: var(--md-border);
   color: var(--md-fg);
+}
+
+.export-modal-card h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--md-fg);
+}
+
+.export-modal-subtitle {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--md-fg-muted);
+}
+
+.export-modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-modal-format-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-family);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.export-modal-format-btn:hover {
+  background-color: var(--md-bg-secondary);
+  border-color: var(--md-link);
 }

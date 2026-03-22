@@ -20,6 +20,7 @@ export type ThemeName =
   | 'catppuccin-mocha'
   | 'monokai'
   | 'monokai-pro'
+  | 'one-dark-pro'
   | 'test-theme'; // For testing
 
 export type LogLevel = 'none' | 'error' | 'warn' | 'info' | 'debug';
@@ -48,7 +49,6 @@ export interface AppState {
     tocMaxDepth?: number; // Max heading depth (1-6)
     tocAutoCollapse?: boolean; // Auto-collapse nested sections
     tocPosition?: 'left' | 'right'; // Position of TOC
-    tocStyle?: 'floating' | 'fixed'; // Style of TOC (floating card or fixed sidebar)
     // Comments
     commentsEnabled?: boolean; // Enable/disable comments feature
     commentAuthor?: string; // Author name for new comments
@@ -59,6 +59,9 @@ export interface AppState {
     exportFilenameTemplate?: string; // e.g., "{title}-{date}"
     // Site blocklist - URLs/patterns where MDView should not render
     blockedSites?: string[]; // e.g., ["github.com", "*.gitlab.com/*/blob/*"]
+    // File tree
+    showAllFiles?: boolean; // Show non-markdown files in sidebar file tree
+    iconTheme?: 'lucide' | 'codicons' | 'symbols' | 'one-dark' | 'material' | 'catppuccin' | 'seti'; // File tree icon style
   };
   document: {
     path: string;

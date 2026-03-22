@@ -1,6 +1,6 @@
 import type { AppState, Preferences, CachedResult } from '@mdview/core';
 import type { FileChangeInfo, FileWriteResult } from '@mdview/core';
-import type { WorkspaceState, TabState, DirectoryEntry } from './workspace-types';
+import type { WorkspaceState, TabState, TabGroupState, TabGroupColor, DirectoryEntry } from './workspace-types';
 
 export interface MdviewPreloadAPI {
   // State
@@ -54,11 +54,21 @@ export interface MdviewPreloadAPI {
   updateTabScroll(tabId: string, position: number): Promise<void>;
   setSidebarVisible(visible: boolean): Promise<void>;
   setSidebarWidth(width: number): Promise<void>;
+  setTabBarVisible(visible: boolean): Promise<void>;
+  setHeaderBarVisible(visible: boolean): Promise<void>;
   setOpenFolder(path: string | null): Promise<void>;
   openExternal(url: string): Promise<void>;
 
+  // Tab groups
+  createTabGroup(name: string, color: TabGroupColor, tabIds: string[]): Promise<TabGroupState>;
+  updateTabGroup(
+    groupId: string,
+    updates: Partial<Pick<TabGroupState, 'name' | 'color' | 'collapsed' | 'tabIds'>>
+  ): Promise<void>;
+  deleteTabGroup(groupId: string): Promise<void>;
+
   // Directory
-  listDirectory(dirPath: string): Promise<DirectoryEntry[]>;
+  listDirectory(dirPath: string, options?: { showAllFiles?: boolean }): Promise<DirectoryEntry[]>;
   watchDirectory(dirPath: string): Promise<void>;
   unwatchDirectory(dirPath: string): Promise<void>;
 

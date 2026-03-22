@@ -163,4 +163,79 @@ describe('DirectoryService', () => {
     const entries = service.listDirectory(tmpDir);
     expect(entries).toHaveLength(extensions.length);
   });
+
+  describe('showAllFiles option', () => {
+    it('should include non-markdown files when showAllFiles is true', () => {
+      writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
+      writeFileSync(join(tmpDir, 'image.png'), 'binary');
+      writeFileSync(join(tmpDir, 'style.css'), 'body {}');
+      writeFileSync(join(tmpDir, 'data.json'), '{}');
+
+      const entries = service.listDirectory(tmpDir, { showAllFiles: true });
+
+      const names = entries.map((e) => e.name);
+      expect(names).toContain('readme.md');
+      expect(names).toContain('image.png');
+      expect(names).toContain('style.css');
+      expect(names).toContain('data.json');
+      expect(entries).toHaveLength(4);
+    });
+
+    it('should still exclude hidden files when showAllFiles is true', () => {
+      writeFileSync(join(tmpDir, '.hidden'), 'secret');
+      writeFileSync(join(tmpDir, 'visible.txt'), 'hello');
+
+      const entries = service.listDirectory(tmpDir, { showAllFiles: true });
+
+      const names = entries.map((e) => e.name);
+      expect(names).not.toContain('.hidden');
+      expect(names).toContain('visible.txt');
+    });
+
+    it('should exclude node_modules directory when showAllFiles is true', () => {
+      mkdirSync(join(tmpDir, 'node_modules'));
+      writeFileSync(join(tmpDir, 'node_modules', 'pkg.js'), 'module');
+      mkdirSync(join(tmpDir, 'src'));
+      writeFileSync(join(tmpDir, 'src', 'app.ts'), 'code');
+
+      const entries = service.listDirectory(tmpDir, { showAllFiles: true });
+
+      const names = entries.map((e) => e.name);
+      expect(names).not.toContain('node_modules');
+      expect(names).toContain('src');
+    });
+
+    it('should show directories that have non-markdown children when showAllFiles is true', () => {
+      mkdirSync(join(tmpDir, 'images'));
+      writeFileSync(join(tmpDir, 'images', 'photo.png'), 'binary');
+
+      // With default options, images dir is excluded
+      const defaultEntries = service.listDirectory(tmpDir);
+      expect(defaultEntries.map((e) => e.name)).not.toContain('images');
+
+      // With showAllFiles, images dir is included
+      const allEntries = service.listDirectory(tmpDir, { showAllFiles: true });
+      expect(allEntries.map((e) => e.name)).toContain('images');
+    });
+
+    it('should default to markdown-only when options not provided', () => {
+      writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
+      writeFileSync(join(tmpDir, 'image.png'), 'binary');
+
+      const entries = service.listDirectory(tmpDir);
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0].name).toBe('readme.md');
+    });
+
+    it('should default to markdown-only when showAllFiles is false', () => {
+      writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
+      writeFileSync(join(tmpDir, 'image.png'), 'binary');
+
+      const entries = service.listDirectory(tmpDir, { showAllFiles: false });
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0].name).toBe('readme.md');
+    });
+  });
 });

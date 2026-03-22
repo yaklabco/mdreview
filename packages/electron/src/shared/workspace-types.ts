@@ -1,3 +1,15 @@
+export type TabGroupColor =
+  | 'grey' | 'blue' | 'red' | 'yellow' | 'green'
+  | 'pink' | 'purple' | 'cyan' | 'orange';
+
+export interface TabGroupState {
+  id: string;
+  name: string;
+  color: TabGroupColor;
+  collapsed: boolean;
+  tabIds: string[];
+}
+
 export interface TabState {
   id: string;
   filePath: string;
@@ -8,6 +20,7 @@ export interface TabState {
   headingCount?: number;
   diagramCount?: number;
   codeBlockCount?: number;
+  groupId?: string;
 }
 
 export interface DirectoryEntry {
@@ -24,6 +37,9 @@ export interface WorkspaceState {
   sidebarWidth: number;
   openFolderPath: string | null;
   statusBarVisible: boolean;
+  tabBarVisible: boolean;
+  headerBarVisible: boolean;
+  tabGroups: TabGroupState[];
 }
 
 export const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
@@ -33,4 +49,7 @@ export const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
   sidebarWidth: 250,
   openFolderPath: null,
   statusBarVisible: true,
+  tabBarVisible: true,
+  headerBarVisible: true,
+  tabGroups: [],
 };

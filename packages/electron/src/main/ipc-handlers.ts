@@ -8,7 +8,7 @@ import type { ElectronExportAdapter } from './adapters/export-adapter';
 import type { RecentFilesManager } from './recent-files';
 import type { DirectoryService } from './directory-service';
 import type { CacheManager, CachedResult, Preferences } from '@mdview/core/node';
-import type { TabState } from '../shared/workspace-types';
+import type { TabState, TabGroupState, TabGroupColor } from '../shared/workspace-types';
 
 export interface IPCHandlerDeps {
   stateManager: StateManager;
@@ -22,7 +22,11 @@ export interface IPCHandlerDeps {
   getOpenFilePath: () => string | null;
 }
 
-export function registerIpcHandlers(deps: IPCHandlerDeps): void {
+/**
+ * Register all IPC handlers. Returns a dispose function that cleans up
+ * file/directory watchers. Must be called before the window is destroyed.
+ */
+export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
   const {
     stateManager,
     cacheManager,
@@ -42,8 +46,11 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
   ipcMain.handle(IPC_CHANNELS.UPDATE_PREFERENCES, async (_event, prefs: Partial<Preferences>) => {
     await stateManager.updatePreferences(prefs);
     const win = getWindow();
-    if (win) {
+    if (win && !win.isDestroyed()) {
       win.webContents.send(IPC_CHANNELS.PREFERENCES_UPDATED, prefs);
+      if (prefs.theme) {
+        win.webContents.send(IPC_CHANNELS.THEME_CHANGED, prefs.theme);
+      }
     }
   });
 
@@ -88,7 +95,7 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
 
     const unwatch = fileAdapter.watch(path, () => {
       const win = getWindow();
-      if (win) {
+      if (win && !win.isDestroyed()) {
         win.webContents.send(IPC_CHANNELS.FILE_CHANGED, path);
       }
     });
@@ -172,7 +179,7 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
   ipcMain.handle(IPC_CHANNELS.OPEN_TAB, (_event, filePath: string) => {
     const tab = stateManager.openTab(filePath);
     const win = getWindow();
-    if (win) {
+    if (win && !win.isDestroyed()) {
       win.webContents.send(IPC_CHANNELS.TAB_OPENED, tab);
       win.webContents.send(IPC_CHANNELS.ACTIVE_TAB_CHANGED, tab.id);
     }
@@ -182,7 +189,7 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
   ipcMain.handle(IPC_CHANNELS.CLOSE_TAB, (_event, tabId: string) => {
     stateManager.closeTab(tabId);
     const win = getWindow();
-    if (win) {
+    if (win && !win.isDestroyed()) {
       win.webContents.send(IPC_CHANNELS.TAB_CLOSED, tabId);
       const ws = stateManager.getWorkspaceState();
       if (ws.activeTabId) {
@@ -194,7 +201,7 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
   ipcMain.handle(IPC_CHANNELS.SET_ACTIVE_TAB, (_event, tabId: string) => {
     stateManager.setActiveTab(tabId);
     const win = getWindow();
-    if (win) {
+    if (win && !win.isDestroyed()) {
       win.webContents.send(IPC_CHANNELS.ACTIVE_TAB_CHANGED, tabId);
     }
   });
@@ -218,6 +225,14 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
     stateManager.setSidebarWidth(width);
   });
 
+  ipcMain.handle(IPC_CHANNELS.SET_TAB_BAR_VISIBLE, (_event, visible: boolean) => {
+    stateManager.setTabBarVisible(visible);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SET_HEADER_BAR_VISIBLE, (_event, visible: boolean) => {
+    stateManager.setHeaderBarVisible(visible);
+  });
+
   ipcMain.handle(IPC_CHANNELS.SET_OPEN_FOLDER, (_event, path: string | null) => {
     stateManager.setOpenFolder(path);
   });
@@ -226,15 +241,34 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
     await shell.openExternal(url);
   });
 
+  // Tab groups
+  ipcMain.handle(
+    IPC_CHANNELS.CREATE_TAB_GROUP,
+    (_event, name: string, color: TabGroupColor, tabIds: string[]) => {
+      return stateManager.createTabGroup(name, color, tabIds);
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.UPDATE_TAB_GROUP,
+    (_event, groupId: string, updates: Partial<Pick<TabGroupState, 'name' | 'color' | 'collapsed' | 'tabIds'>>) => {
+      stateManager.updateTabGroup(groupId, updates);
+    }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.DELETE_TAB_GROUP, (_event, groupId: string) => {
+    stateManager.deleteTabGroup(groupId);
+  });
+
   // Directory service
-  ipcMain.handle(IPC_CHANNELS.LIST_DIRECTORY, (_event, dirPath: string) => {
-    return directoryService?.listDirectory(dirPath) ?? [];
+  ipcMain.handle(IPC_CHANNELS.LIST_DIRECTORY, (_event, dirPath: string, options?: { showAllFiles?: boolean }) => {
+    return directoryService?.listDirectory(dirPath, options) ?? [];
   });
 
   ipcMain.handle(IPC_CHANNELS.WATCH_DIRECTORY, (_event, dirPath: string) => {
     directoryService?.watchDirectory(dirPath, () => {
       const win = getWindow();
-      if (win) {
+      if (win && !win.isDestroyed()) {
         win.webContents.send(IPC_CHANNELS.DIRECTORY_CHANGED, dirPath);
       }
     });
@@ -243,4 +277,12 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): void {
   ipcMain.handle(IPC_CHANNELS.UNWATCH_DIRECTORY, (_event, dirPath: string) => {
     directoryService?.unwatchDirectory(dirPath);
   });
+
+  // Return cleanup function to stop all file watchers before window destruction
+  return () => {
+    for (const unwatch of fileWatchers.values()) {
+      unwatch();
+    }
+    fileWatchers.clear();
+  };
 }

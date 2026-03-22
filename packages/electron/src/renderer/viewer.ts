@@ -3,26 +3,47 @@
 import { TabManager } from './tab-manager';
 import { DocumentContext } from './document-context';
 import { StatusBar } from './status-bar';
+import { DocumentHeaderBar } from './document-header-bar';
 import { registerKeyboardShortcuts } from './keyboard-shortcuts';
 import { setupDragAndDrop } from './drag-drop';
 import { FileTree } from './file-tree';
 import { SidebarResizeHandle } from './sidebar-resize';
 import { PreferencesPanel } from './preferences-panel';
+import { ExportModal } from './export-modal';
+import { ThemeEngine } from '@mdview/core';
+import { setIconTheme } from './file-icons';
+import type { IconThemeId } from './file-icons';
 
 export class MDViewElectronViewer {
   private tabManager: TabManager;
   private statusBar: StatusBar;
+  private headerBar: DocumentHeaderBar;
   private fileTree: FileTree;
   private sidebarResize: SidebarResizeHandle | null = null;
   private preferencesPanel: PreferencesPanel;
+  private exportModal: ExportModal;
+  private themeEngine: ThemeEngine;
   private documents = new Map<string, DocumentContext>();
   private cleanupListeners: (() => void)[] = [];
+  private openFolderPath: string | null = null;
 
   constructor() {
     this.tabManager = new TabManager();
     this.statusBar = new StatusBar();
+    this.headerBar = new DocumentHeaderBar();
     this.fileTree = new FileTree();
     this.preferencesPanel = new PreferencesPanel();
+    this.exportModal = new ExportModal();
+    this.themeEngine = new ThemeEngine();
+    this.exportModal.onExport((format) => {
+      const ctx = this.getActiveDocumentContext();
+      if (!ctx) return;
+      if (format === 'pdf') {
+        void ctx.exportPDF();
+      } else {
+        void ctx.exportDOCX();
+      }
+    });
   }
 
   async initialize(): Promise<void> {
@@ -46,12 +67,41 @@ export class MDViewElectronViewer {
       this.statusBar.render(statusBarEl);
     }
 
+    // Document header bar
+    const headerBarEl = document.getElementById('mdview-header-bar');
+    if (headerBarEl) {
+      this.headerBar.render(headerBarEl);
+      this.headerBar.onExport((format) => {
+        const ctx = this.getActiveDocumentContext();
+        if (!ctx) return;
+        if (format === 'pdf') {
+          void ctx.exportPDF();
+        } else {
+          void ctx.exportDOCX();
+        }
+      });
+      this.headerBar.onBreadcrumbClick((folderPath) => {
+        void this.loadFolder(folderPath);
+      });
+    }
+
     // File tree sidebar
     const sidebarEl = document.getElementById('mdview-sidebar');
     if (sidebarEl) {
       this.fileTree.render(sidebarEl);
       this.fileTree.onFileSelected((path) => {
         void this.openFile(path);
+      });
+      this.fileTree.onFileExport((path, format) => {
+        void this.openFile(path).then(() => {
+          const ctx = this.getActiveDocumentContext();
+          if (!ctx) return;
+          if (format === 'pdf') {
+            void ctx.exportPDF();
+          } else {
+            void ctx.exportDOCX();
+          }
+        });
       });
 
       // Sidebar resize handle
@@ -66,11 +116,26 @@ export class MDViewElectronViewer {
       }
     }
 
-    // Restore workspace state (sidebar width)
+    // Restore workspace state (sidebar width, visibility, tab groups)
     try {
       const workspaceState = await window.mdview.getWorkspaceState();
       if (sidebarEl && workspaceState.sidebarWidth) {
         this.sidebarResize?.setSidebarWidth(workspaceState.sidebarWidth);
+      }
+      if (workspaceState.tabGroups?.length > 0) {
+        this.tabManager.restoreGroups(workspaceState.tabGroups);
+      }
+      if (workspaceState.tabBarVisible === false) {
+        tabBar.classList.add('hidden');
+      }
+      if (workspaceState.headerBarVisible === false && headerBarEl) {
+        this.headerBar.setVisible(false);
+      }
+      if (workspaceState.statusBarVisible === false && statusBarEl) {
+        statusBarEl.classList.add('hidden');
+      }
+      if (workspaceState.openFolderPath) {
+        this.openFolderPath = workspaceState.openFolderPath;
       }
     } catch {
       // Workspace state restore is best-effort
@@ -85,12 +150,34 @@ export class MDViewElectronViewer {
       void this.closeFile(tabId);
     });
 
+    this.tabManager.onTabExport((tabId, format) => {
+      const ctx = this.documents.get(tabId);
+      if (!ctx) return;
+      if (format === 'pdf') {
+        void ctx.exportPDF();
+      } else {
+        void ctx.exportDOCX();
+      }
+    });
+
+    // Sync tab groups to main process on any group mutation
+    this.tabManager.onGroupChanged((groups) => {
+      void this.syncGroups(groups);
+    });
+
     // Keyboard shortcuts
     const cleanupShortcuts = registerKeyboardShortcuts({
       nextTab: () => this.cycleTab(1),
       prevTab: () => this.cycleTab(-1),
       switchToTab: (index) => this.switchToTabByIndex(index),
       openPreferences: () => void this.openPreferences(),
+      openExportModal: () => this.showExportModal(),
+      toggleTabBar: () => this.togglePanel('tab-bar'),
+      toggleHeaderBar: () => this.togglePanel('header-bar'),
+      toggleToc: () => {
+        const ctx = this.getActiveDocumentContext();
+        ctx?.toggleToc();
+      },
     });
     this.cleanupListeners.push(cleanupShortcuts);
 
@@ -108,6 +195,14 @@ export class MDViewElectronViewer {
 
     // Listen for IPC events from main process
     this.setupIPCListeners();
+
+    // Initialize icon theme from saved preferences
+    try {
+      const initState = await window.mdview.getState();
+      setIconTheme((initState.preferences.iconTheme ?? 'lucide') as IconThemeId);
+    } catch {
+      // Best-effort
+    }
 
     // Check for initial file from CLI args
     try {
@@ -136,6 +231,7 @@ export class MDViewElectronViewer {
 
     // Create tab UI
     this.tabManager.createTab(tabState.id, filePath, tabState.title);
+    this.headerBar.update(filePath, this.openFolderPath);
     const tabContainer = this.tabManager.getTabContainer(tabState.id);
 
     if (!tabContainer) {
@@ -183,6 +279,13 @@ export class MDViewElectronViewer {
     if (this.documents.size === 0) {
       this.showEmptyState();
       this.statusBar.clear();
+      this.headerBar.update(null, this.openFolderPath);
+    } else {
+      // Update header bar for the newly active tab
+      const activeCtx = this.getActiveDocumentContext();
+      if (activeCtx) {
+        this.headerBar.update(activeCtx.getFilePath(), this.openFolderPath);
+      }
     }
   }
 
@@ -207,9 +310,10 @@ export class MDViewElectronViewer {
       container.scrollTop = ctx.getScrollPosition();
     }
 
-    // Update status bar for new active tab
+    // Update status bar and header bar for new active tab
     if (ctx) {
       this.updateStatusBar(ctx);
+      this.headerBar.update(ctx.getFilePath(), this.openFolderPath);
     }
   }
 
@@ -223,6 +327,33 @@ export class MDViewElectronViewer {
 
   getDocument(tabId: string): DocumentContext | undefined {
     return this.documents.get(tabId);
+  }
+
+  private togglePanel(panel: 'tab-bar' | 'header-bar' | 'status-bar'): void {
+    const elId =
+      panel === 'tab-bar'
+        ? 'mdview-tab-bar'
+        : panel === 'header-bar'
+          ? 'mdview-header-bar'
+          : 'mdview-status-bar';
+
+    const el = document.getElementById(elId);
+    if (!el) return;
+
+    const isHidden = el.classList.contains('hidden');
+    if (isHidden) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+
+    const visible = isHidden; // toggled
+    if (panel === 'tab-bar') {
+      void window.mdview.setTabBarVisible(visible);
+    } else if (panel === 'header-bar') {
+      void window.mdview.setHeaderBarVisible(visible);
+    }
+    // Status bar visibility isn't persisted separately yet
   }
 
   private cycleTab(direction: number): void {
@@ -280,6 +411,14 @@ export class MDViewElectronViewer {
     } else if (command === 'toggle-toc') {
       const ctx = this.getActiveDocumentContext();
       ctx?.toggleToc();
+    } else if (command === 'toggle-tab-bar') {
+      this.togglePanel('tab-bar');
+    } else if (command === 'toggle-header-bar') {
+      this.togglePanel('header-bar');
+    } else if (command === 'toggle-status-bar') {
+      this.togglePanel('status-bar');
+    } else if (command === 'export:modal') {
+      this.showExportModal();
     } else if (command === 'export:pdf') {
       const ctx = this.getActiveDocumentContext();
       if (ctx) {
@@ -299,21 +438,60 @@ export class MDViewElectronViewer {
     }
   }
 
+  private static readonly AVAILABLE_THEMES: Array<{
+    name: string;
+    displayName: string;
+    variant: 'light' | 'dark';
+  }> = [
+    { name: 'github-light', displayName: 'GitHub Light', variant: 'light' },
+    { name: 'github-dark', displayName: 'GitHub Dark', variant: 'dark' },
+    { name: 'catppuccin-latte', displayName: 'Catppuccin Latte', variant: 'light' },
+    { name: 'catppuccin-frappe', displayName: 'Catppuccin Frappé', variant: 'light' },
+    { name: 'catppuccin-macchiato', displayName: 'Catppuccin Macchiato', variant: 'dark' },
+    { name: 'catppuccin-mocha', displayName: 'Catppuccin Mocha', variant: 'dark' },
+    { name: 'monokai', displayName: 'Monokai', variant: 'dark' },
+    { name: 'monokai-pro', displayName: 'Monokai Pro', variant: 'dark' },
+    { name: 'one-dark-pro', displayName: 'One Dark Pro', variant: 'dark' },
+  ];
+
+  private showExportModal(): void {
+    const ctx = this.getActiveDocumentContext();
+    if (!ctx) return;
+    const filePath = ctx.getFilePath();
+    const name = filePath.split('/').pop() ?? filePath;
+    this.exportModal.show(name);
+  }
+
   private async openPreferences(): Promise<void> {
     const state = await window.mdview.getState();
-    const ctx = this.getActiveDocumentContext();
-    const themeEngine = ctx?.getThemeEngine();
-    const themes = themeEngine?.getAvailableThemes() ?? [];
+    const p = state.preferences;
 
     this.preferencesPanel.show(
       {
-        theme: state.preferences.theme || 'github-light',
-        autoReload: state.preferences.autoReload ?? true,
-        showToc: state.preferences.showToc ?? false,
-        commentsEnabled: state.preferences.commentsEnabled !== false,
-        autoDarkMode: state.preferences.autoDarkMode ?? false,
+        theme: p.theme || 'github-light',
+        autoTheme: p.autoTheme ?? true,
+        lightTheme: p.lightTheme || 'github-light',
+        darkTheme: p.darkTheme || 'github-dark',
+        autoReload: p.autoReload ?? true,
+        showAllFiles: p.showAllFiles ?? false,
+        iconTheme: p.iconTheme ?? 'lucide',
+        lineNumbers: p.lineNumbers ?? false,
+        enableHtml: p.enableHtml ?? false,
+        fontFamily: p.fontFamily,
+        codeFontFamily: p.codeFontFamily,
+        lineHeight: p.lineHeight,
+        useMaxWidth: p.useMaxWidth,
+        maxWidth: p.maxWidth,
+        showToc: p.showToc ?? false,
+        tocPosition: p.tocPosition ?? 'left',
+        tocMaxDepth: p.tocMaxDepth ?? 6,
+        tocAutoCollapse: p.tocAutoCollapse ?? false,
+        exportDefaultFormat: p.exportDefaultFormat,
+        exportDefaultPageSize: p.exportDefaultPageSize,
+        exportIncludeToc: p.exportIncludeToc,
+        exportFilenameTemplate: p.exportFilenameTemplate,
       },
-      themes.map((t) => ({ name: t.name, displayName: t.displayName, variant: t.variant }))
+      MDViewElectronViewer.AVAILABLE_THEMES
     );
   }
 
@@ -372,10 +550,21 @@ export class MDViewElectronViewer {
           this.updateStatusBar(activeCtx);
         }
       }
+      // Update icon theme and rerender file tree
+      if ('iconTheme' in prefs) {
+        setIconTheme((prefs.iconTheme as IconThemeId) ?? 'lucide');
+        this.fileTree.rerender();
+      }
+      // Re-scan folder when showAllFiles preference changes
+      if ('showAllFiles' in prefs && this.openFolderPath) {
+        void this.loadFolder(this.openFolderPath);
+      }
     });
     this.cleanupListeners.push(unsubPrefs);
 
     const unsubTheme = window.mdview.onThemeChanged((theme: string) => {
+      // Always apply theme to app chrome (CSS variables on :root)
+      void this.themeEngine.applyTheme(theme);
       for (const ctx of this.documents.values()) {
         void ctx.applyTheme(theme);
       }
@@ -451,11 +640,55 @@ export class MDViewElectronViewer {
     }
   }
 
+  private async syncGroups(
+    groups: import('../shared/workspace-types').TabGroupState[]
+  ): Promise<void> {
+    try {
+      // Get current persisted groups
+      const ws = await window.mdview.getWorkspaceState();
+      const existingIds = new Set(ws.tabGroups.map((g) => g.id));
+      const newIds = new Set(groups.map((g) => g.id));
+
+      // Delete removed groups
+      for (const id of existingIds) {
+        if (!newIds.has(id)) {
+          await window.mdview.deleteTabGroup(id);
+        }
+      }
+
+      // Create or update groups
+      for (const group of groups) {
+        if (existingIds.has(group.id)) {
+          await window.mdview.updateTabGroup(group.id, {
+            name: group.name,
+            color: group.color,
+            collapsed: group.collapsed,
+            tabIds: group.tabIds,
+          });
+        } else {
+          await window.mdview.createTabGroup(group.name, group.color, group.tabIds);
+        }
+      }
+    } catch (error) {
+      console.error('[mdview] Error syncing groups:', error);
+    }
+  }
+
   private async loadFolder(folderPath: string): Promise<void> {
+    this.openFolderPath = folderPath;
     await window.mdview.setOpenFolder(folderPath);
-    const entries = await window.mdview.listDirectory(folderPath);
+    const state = await window.mdview.getState();
+    const showAllFiles = state.preferences.showAllFiles ?? false;
+    const entries = await window.mdview.listDirectory(folderPath, { showAllFiles });
+    this.fileTree.setRootPath(folderPath);
     this.fileTree.loadDirectory(entries);
     this.fileTree.setVisible(true);
+
+    // Update header bar breadcrumb with new folder context
+    const activeCtx = this.getActiveDocumentContext();
+    if (activeCtx) {
+      this.headerBar.update(activeCtx.getFilePath(), this.openFolderPath);
+    }
   }
 
   private dispose(): void {
@@ -468,7 +701,9 @@ export class MDViewElectronViewer {
     }
     this.cleanupListeners = [];
     this.tabManager.dispose();
+    this.headerBar.dispose();
     this.fileTree.dispose();
     this.preferencesPanel.dispose();
+    this.exportModal.dispose();
   }
 }

@@ -14,15 +14,18 @@ describe('Workspace CSS class structure', () => {
           </div>
         </div>
         <div id="mdview-main">
-          <div id="mdview-tab-bar">
-            <button class="tab-button active">
-              <span class="tab-title">readme.md</span>
-              <span class="tab-close">&times;</span>
-            </button>
-            <button class="tab-button">
-              <span class="tab-title">notes.md</span>
-              <span class="tab-close">&times;</span>
-            </button>
+          <div id="mdview-toolbar-row">
+            <div id="mdview-tab-bar">
+              <button class="tab-button active">
+                <span class="tab-title">readme.md</span>
+                <span class="tab-close">&times;</span>
+              </button>
+              <button class="tab-button">
+                <span class="tab-title">notes.md</span>
+                <span class="tab-close">&times;</span>
+              </button>
+            </div>
+            <div id="mdview-header-bar"></div>
           </div>
           <div id="mdview-content-area">
             <div class="mdview-tab-content"></div>

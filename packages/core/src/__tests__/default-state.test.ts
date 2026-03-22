@@ -18,10 +18,11 @@ describe('DEFAULT_PREFERENCES', () => {
     expect(DEFAULT_PREFERENCES.tocMaxDepth).toBe(6);
     expect(DEFAULT_PREFERENCES.tocAutoCollapse).toBe(false);
     expect(DEFAULT_PREFERENCES.tocPosition).toBe('left');
-    expect(DEFAULT_PREFERENCES.tocStyle).toBe('floating');
     expect(DEFAULT_PREFERENCES.commentsEnabled).toBe(true);
     expect(DEFAULT_PREFERENCES.commentAuthor).toBe('');
     expect(DEFAULT_PREFERENCES.blockedSites).toEqual([]);
+    expect(DEFAULT_PREFERENCES.showAllFiles).toBe(false);
+    expect(DEFAULT_PREFERENCES.iconTheme).toBe('lucide');
   });
 });
 

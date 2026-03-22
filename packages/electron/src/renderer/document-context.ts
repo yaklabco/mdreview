@@ -4,7 +4,6 @@ import {
   RenderPipeline,
   ThemeEngine,
   TocRenderer,
-  ExportUI,
   CommentManager,
   FileScanner,
   ContentCollector,
@@ -39,7 +38,6 @@ export class DocumentContext {
   private fileAdapter: ElectronRendererFileAdapter;
   private identityAdapter: ElectronRendererIdentityAdapter;
   private tocRenderer: TocRenderer | null = null;
-  private exportUI: ExportUI | null = null;
   private commentManager: CommentManager | null = null;
   private autoReloadCleanup: (() => void) | null = null;
   private onProgressCallback: ((progress: { stage: string; percent: number }) => void) | null = null;
@@ -83,9 +81,29 @@ export class DocumentContext {
       }
     });
 
+    // Build TOC the instant HTML lands in the DOM, before syntax highlighting
+    // and mermaid rendering block the main thread. MutationObserver fires as a
+    // microtask — ahead of the throttled progress callbacks and dynamic imports.
+    let tocObserver: MutationObserver | null = null;
+    if (state.preferences.showToc) {
+      tocObserver = new MutationObserver(() => {
+        if (!this.tocRenderer && container.querySelector('h1, h2, h3, h4, h5, h6')) {
+          this.setupToc(container, state.preferences);
+          tocObserver?.disconnect();
+          tocObserver = null;
+        }
+      });
+      tocObserver.observe(container, { childList: true });
+    }
+
+    // Rewrite relative URLs in the markdown source to local-asset:// absolute paths.
+    // This ensures images and links resolve correctly from the start, rather than
+    // relying solely on post-render DOM rewriting.
+    const resolvedContent = DocumentContext.resolveContentUrls(content, filePath);
+
     await this.renderPipeline.render({
       container,
-      markdown: content,
+      markdown: resolvedContent,
       progressive: fileSize > 500000,
       filePath,
       theme,
@@ -95,24 +113,14 @@ export class DocumentContext {
     });
 
     cleanupProgress();
+    tocObserver?.disconnect();
 
-    // Post-render: TOC
-    if (state.preferences.showToc) {
-      const headings = this.extractHeadings(container);
-      if (headings.length > 0) {
-        this.tocRenderer = new TocRenderer(headings, {
-          maxDepth: state.preferences.tocMaxDepth ?? 6,
-          autoCollapse: state.preferences.tocAutoCollapse ?? false,
-          position: state.preferences.tocPosition ?? 'left',
-          style: state.preferences.tocStyle ?? 'floating',
-        });
-        this.tocRenderer.render(container);
-      }
+    // Fallback: if MutationObserver didn't fire (cached render or test environment)
+    if (state.preferences.showToc && !this.tocRenderer) {
+      this.setupToc(container, state.preferences);
     }
 
-    // Post-render: Export UI
-    this.exportUI = new ExportUI({ messaging: new ElectronMessagingAdapter() });
-    container.appendChild(this.exportUI.createExportButton());
+    // Export UI is handled by the header bar — no in-content export button needed
 
     // Post-render: Comments
     if (state.preferences.commentsEnabled !== false) {
@@ -128,6 +136,9 @@ export class DocumentContext {
       this.setupAutoReload(filePath, container, content, state.preferences);
     }
 
+    // Resolve relative URLs to local-asset:// protocol
+    this.resolveRelativeUrls(container, filePath);
+
     // Compute metadata
     this.updateMetadata(container, content);
     this.metadata.renderState = 'complete';
@@ -141,9 +152,11 @@ export class DocumentContext {
     const state = await window.mdview.getState();
     const content = await window.mdview.readFile(this.filePath);
 
+    const resolvedContent = DocumentContext.resolveContentUrls(content, this.filePath);
+
     await this.renderPipeline.render({
       container: this.container,
-      markdown: content,
+      markdown: resolvedContent,
       progressive: false,
       filePath: this.filePath,
       theme: state.preferences.theme || 'github-light',
@@ -152,6 +165,7 @@ export class DocumentContext {
       useWorkers: false,
     });
 
+    this.resolveRelativeUrls(this.container, this.filePath);
     this.updateMetadata(this.container, content);
     return { ...this.metadata };
   }
@@ -186,18 +200,33 @@ export class DocumentContext {
     if (this.tocRenderer) {
       this.tocRenderer.toggle();
     } else {
-      const headings = this.extractHeadings(this.container);
-      if (headings.length > 0) {
-        this.tocRenderer = new TocRenderer(headings, {
-          maxDepth: 6,
-          autoCollapse: false,
-          position: 'left',
-          style: 'floating',
-        });
-        this.tocRenderer.render(this.container);
-        this.tocRenderer.show();
+      this.setupToc(this.container, { tocPosition: 'left', tocMaxDepth: 6, tocAutoCollapse: false });
+    }
+  }
+
+  private setupToc(
+    container: HTMLElement,
+    prefs: { tocPosition?: string; tocMaxDepth?: number; tocAutoCollapse?: boolean }
+  ): void {
+    const headings = this.extractHeadings(container);
+    if (headings.length === 0) return;
+
+    const position = (prefs.tocPosition as 'left' | 'right') ?? 'left';
+    this.tocRenderer = new TocRenderer({
+      maxDepth: prefs.tocMaxDepth ?? 6,
+      autoCollapse: prefs.tocAutoCollapse ?? false,
+      position,
+      scrollContainer: container,
+    });
+    const tocEl = this.tocRenderer.render(headings);
+    const wrapper = container.parentElement;
+    if (wrapper) {
+      wrapper.insertBefore(tocEl, container);
+      if (position === 'right') {
+        wrapper.classList.add('toc-position-right');
       }
     }
+    this.tocRenderer.show();
   }
 
   async exportPDF(): Promise<void> {
@@ -256,6 +285,73 @@ export class DocumentContext {
     if (this.filePath) {
       void window.mdview.unwatchFile(this.filePath);
     }
+  }
+
+  /**
+   * Preprocess markdown/HTML content to rewrite relative URLs to local-asset:// absolute paths.
+   * This runs BEFORE the render pipeline so DOMPurify sees the correct protocol and the
+   * browser never attempts to load relative paths against the wrong base URL.
+   */
+  static resolveContentUrls(content: string, filePath: string): string {
+    const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+    const isAbsolute = (url: string) =>
+      /^(https?:|data:|mailto:|#|file:|local-asset:|\/\/)/.test(url.trim());
+    const resolve = (url: string) => {
+      const trimmed = url.trim();
+      if (!trimmed || isAbsolute(trimmed)) return url;
+      const absPath = trimmed.startsWith('/') ? trimmed : `${dirPath}/${trimmed}`;
+      return `local-asset://${absPath}`;
+    };
+
+    let result = content;
+
+    // Rewrite markdown images: ![alt](url) or ![alt](url "title")
+    result = result.replace(
+      /(!\[[^\]]*\]\()(\s*)([^)"'\s]+)(\s*(?:"[^"]*"|'[^']*')?\s*\))/g,
+      (_, prefix: string, space: string, url: string, suffix: string) =>
+        `${prefix}${space}${resolve(url)}${suffix}`
+    );
+
+    // Rewrite markdown links: [text](url) — exclude images (preceded by !)
+    result = result.replace(
+      /(?<!!)\[([^\]]*)\]\((\s*)([^)"'\s]+)(\s*(?:"[^"]*"|'[^']*')?\s*)\)/g,
+      (_, text: string, space: string, url: string, suffix: string) =>
+        `[${text}](${space}${resolve(url)}${suffix})`
+    );
+
+    // Rewrite HTML src attributes: src="url" or src='url'
+    result = result.replace(
+      /(\bsrc=)(["'])([^"']*)\2/gi,
+      (_, attr: string, quote: string, url: string) => `${attr}${quote}${resolve(url)}${quote}`
+    );
+
+    // Rewrite HTML href attributes: href="url" or href='url'
+    result = result.replace(
+      /(\bhref=)(["'])([^"']*)\2/gi,
+      (_, attr: string, quote: string, url: string) => `${attr}${quote}${resolve(url)}${quote}`
+    );
+
+    return result;
+  }
+
+  private resolveRelativeUrls(container: HTMLElement, filePath: string): void {
+    const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+
+    container.querySelectorAll('img').forEach((img) => {
+      const src = img.getAttribute('src');
+      if (src && !src.match(/^(https?:|data:|file:|local-asset:|\/\/)/)) {
+        const absolutePath = src.startsWith('/') ? src : `${dirPath}/${src}`;
+        img.src = `local-asset://${absolutePath}`;
+      }
+    });
+
+    container.querySelectorAll('a').forEach((a) => {
+      const href = a.getAttribute('href');
+      if (href && !href.match(/^(https?:|mailto:|#|file:|local-asset:|\/\/)/)) {
+        const absolutePath = href.startsWith('/') ? href : `${dirPath}/${href}`;
+        a.href = `local-asset://${absolutePath}`;
+      }
+    });
   }
 
   private updateMetadata(container: HTMLElement, content: string): void {
