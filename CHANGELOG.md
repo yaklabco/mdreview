@@ -44,6 +44,12 @@ Renamed from mdview to mdreview. Added Electron desktop app as the primary distr
 - CI test failures on Linux runners
 - ESLint and TypeScript build errors
 
+---
+
+**⚠️ Deprecated:** Releases below are from the mdview era (pre-rebrand). These are archived for reference only.
+
+---
+
 ## [0.3.4](https://github.com/jamesainslie/mdview/compare/mdview-v0.3.3...mdview-v0.3.4) (2025-12-06)
 
 
