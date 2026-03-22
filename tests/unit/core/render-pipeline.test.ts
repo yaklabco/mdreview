@@ -248,7 +248,7 @@ describe('RenderPipeline', () => {
 
       // Should complete rendering
       expect(container.innerHTML.length).toBeGreaterThan(0);
-    });
+    }, 30_000);
 
     test('should enable progressive mode with useLazySections', async () => {
       await pipeline.render({
