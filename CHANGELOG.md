@@ -5,6 +5,13 @@
 
 * **changelog:** remove duplicate 0.2.0 section ([2e2cfd5](https://github.com/jamesainslie/mdview/commit/2e2cfd5b698b77d8c88244a3a0ed86ba6751de88))
 
+## [0.4.2](https://github.com/yaklabco/mdreview/compare/mdview-v0.4.1...mdview-v0.4.2) (2026-03-22)
+
+
+### Documentation
+
+* update logo in README ([5e4e0e4](https://github.com/yaklabco/mdreview/commit/5e4e0e4c2dbe86bc0edb8ac311c1827a6f0796f5))
+
 ## [0.4.1](https://github.com/yaklabco/mdreview/compare/mdview-v0.4.0...mdview-v0.4.1) (2026-03-22)
 
 
