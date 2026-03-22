@@ -1,9 +1,8 @@
 name: Release Electron
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types: [published]
 
 permissions:
   contents: write
