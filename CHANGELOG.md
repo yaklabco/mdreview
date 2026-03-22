@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/yaklabco/mdreview/compare/v0.3.2...v0.3.3) (2026-03-22)
+
+
+### Documentation
+
+* mark pre-rebrand releases as deprecated ([588c6cb](https://github.com/yaklabco/mdreview/commit/588c6cb5389dd55878da61c911d9dcbbef3f49b1))
+* remove breaking change notice from changelog header ([9d5af48](https://github.com/yaklabco/mdreview/commit/9d5af4881ae4547ef397397894783933f1ce5b67))
+
 ## [0.3.2](https://github.com/yaklabco/mdreview/compare/v0.3.1...v0.3.2) (2026-03-22)
 
 
