@@ -1,11 +1,5 @@
 # Changelog
 
----
-
-**Breaking change:** All releases below this point are included only for historical purposes. At v0.3.0 we changed the name from mdview to mdreview. We will no longer be publishing the Chrome extension on the Chrome Web Store and while it will continue to be supported, it is included only as a convenience. The Electron app is the primary artifact of this project.
-
----
-
 ## [0.3.2](https://github.com/yaklabco/mdreview/compare/v0.3.1...v0.3.2) (2026-03-22)
 
 
