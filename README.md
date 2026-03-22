@@ -1,381 +1,170 @@
-<h1 align="center" class="mdview-hero-title">MDView - Markdown Viewer</h1>
+<p align="center">
+  <img src="pics/logo.png" alt="Design Review Logo" width="400" />
+</p>
 
-<p align="center" class="mdview-badges">
-  <a href="https://github.com/jamesainslie/mdview/actions/workflows/ci.yml">
-    <img src="https://github.com/jamesainslie/mdview/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
+<h1 align="center">Design Review</h1>
+
+<p align="center">A viewer and review tool for architectural and design documentation in software projects.</p>
+
+<p align="center">
+  <a href="https://github.com/yaklabco/mdreview/actions/workflows/ci.yml">
+    <img src="https://github.com/yaklabco/mdreview/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
   </a>
-  <a href="https://github.com/jamesainslie/mdview/actions/workflows/release-please.yml">
-    <img src="https://github.com/jamesainslie/mdview/actions/workflows/release-please.yml/badge.svg?branch=main" alt="Release Please" />
-  </a>
-  <img src="https://img.shields.io/github/package-json/v/jamesainslie/mdview?branch=main" alt="Version" />
+  <img src="https://img.shields.io/github/package-json/v/yaklabco/mdreview?branch=main" alt="Version" />
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
 </p>
 
-<p align="center" class="mdview-logo-wrapper">
-  <img src="pics/logog.png" alt="MDView Logo" width="400" class="mdview-logo" />
-</p>
+## What is this?
 
-<p align="center" class="mdview-tagline">
-  A modern Chrome extension for viewing Markdown files with beautiful themes, syntax highlighting, and interactive Mermaid diagrams.
-</p>
+Design Review renders markdown files — RFCs, ADRs, design docs, runbooks — the way they're meant to be read: with full Mermaid diagram support, syntax-highlighted code blocks, and a table of contents for navigating long documents. It exports to PDF and Word so your architecture diagrams survive the trip into a slide deck or a review meeting.
 
-## Features
+This is not a general-purpose markdown previewer. It's built for the specific workflow of writing and reviewing technical design documents in a software project.
 
-### Core Functionality
-- **Markdown Rendering**: Full CommonMark + GitHub Flavored Markdown support
-- **8 Beautiful Themes**: GitHub (Light/Dark), Catppuccin (Latte/Frappé/Macchiato/Mocha), Monokai, Monokai Pro
-- **Syntax Highlighting**: Support for 195+ programming languages with Highlight.js
-- **Interactive Mermaid Diagrams**: All diagram types with zoom, pan, maximize, and export
-- **Table of Contents**: Floating overlay for quick navigation and document structure visualization
-- **Auto Dark Mode**: Automatically switch themes based on system preference
-- **File Change Detection**: Auto-reload when markdown files are modified
+## Why a desktop app?
 
-### Advanced Features
-- **Progressive Hydration**: Instant rendering for large files (instant skeleton + background hydration)
-- **Worker-Based Processing**: Heavy tasks (parsing, highlighting) run in web workers to keep UI responsive
-- **Lazy Loading**: Images, code highlighting, and Mermaid diagrams load on-demand
-- **Copy Code Blocks**: One-click copy button for all code blocks
-- **Export Diagrams**: Export Mermaid diagrams as SVG files
-- **Document Export**: Export to Word (.docx) and PDF formats with Mermaid diagrams as embedded graphics
-- **Keyboard Shortcuts**: Navigate and interact without mouse
-- **Multi-Tab Sync**: Sync theme and settings across all markdown tabs
-- **Responsive Design**: Works on all screen sizes
+Design Review started as a Chrome extension. That worked well for rendering local `.md` files, but the extension model became a poor fit as the tool grew:
 
-## Installation
+**Permissions creep.** Rendering local files requires `file:///*` access. Adding features like persistent comments required `nativeMessaging` for a host process that could write back to disk. Each new capability meant another permission, and Chrome Web Store review gets increasingly difficult when an extension asks for broad host permissions across `file://`, `http://`, and `https://`.
 
-### From Chrome Web Store
-Coming soon! MDView will be available on the Chrome Web Store.
+**Single-document limitation.** A Chrome extension operates on one tab at a time. There's no concept of a workspace — you can't open a folder of design docs, browse between them, or see how they relate to each other. Every document is isolated.
 
-### From Source
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/jamesainslie/mdview.git
-   cd mdview
-   ```
+**No native integration.** Features like file watching, folder browsing, drag-and-drop, and direct PDF export all require workarounds or native messaging bridges in an extension. In an Electron app, they're straightforward.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+The Chrome extension still works and is still maintained, but the desktop app is where new features land. If you're reviewing a set of design documents for a project, the desktop app is the better experience.
 
-3. Build the extension:
-   ```bash
-   npm run build
-   # or using Makefile
-   make build
-   ```
+## Desktop App
 
-4. Load in Chrome:
-   - Open `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `dist` folder
+The Electron app provides a full workspace for reading and reviewing design documents.
 
-### ⚠️ **REQUIRED:** Enable File Access
+### Features
 
-**MDView will not work without this step!**
-
-To view local markdown files:
-1. Go to `chrome://extensions/`
-2. Find **MDView - Markdown Viewer**
-3. Click **"Details"**
-4. Scroll down and **enable "Allow access to file URLs"**
-
-## Usage
-
-### Opening Markdown Files
-1. Open any `.md` or `.markdown` file in Chrome using `file://` protocol
-2. The file will automatically be rendered with your selected theme
-
-### Changing Themes
-- **Popup**: Click the extension icon and select a theme
-- **Options Page**: Right-click icon → Options → Appearance
-- **Auto Mode**: Enable "Auto Dark Mode" to switch based on system preference
-
-### Using Table of Contents
-- **Enable**: Click extension icon → Toggle "Table of Contents"
-- **Navigate**: Click any heading to jump to that section
-- **Auto-highlight**: Current section is automatically highlighted as you scroll
-- **Collapse**: Enable auto-collapse in Options for cleaner nested structure
-- **Depth Control**: Configure max heading depth (H1-H2, H1-H3, etc.) in Options
-- **Close**: Click X button or press `Esc`
-- **Responsive**: Automatically hidden on screens narrower than 768px
-
-### Interacting with Mermaid Diagrams
-- **Zoom**: Mouse wheel (+ Ctrl/Cmd) or `+`/`-` keys
-- **Pan**: Click and drag, or Shift + arrow keys
-- **Reset**: Click reset button or press `0`
-- **Fit to View**: Click fit button or press `f`
-- **Maximize**: Click maximize button or press `m`
-- **Export SVG**: Click export button or press `e`
-- **Close Maximize**: Click X or press `Esc`
-
-### Exporting Documents
-MDView allows you to export rendered markdown documents to Word (DOCX) and PDF formats.
-
-#### Export Options
-- **Word Document (.docx)**: Creates a properly formatted Word document with embedded diagrams
-- **PDF / Print**: Opens the browser print dialog for saving as PDF
-
-#### How to Export
-1. Click the export button (download icon) next to the TOC toggle
-2. Select your desired format from the dropdown menu
-3. Optionally adjust page size and table of contents options
-4. Click the format button to start export
-
-#### Export Features
-- **Mermaid Diagrams**: Embedded as scalable vector graphics (SVG) for crisp rendering at any zoom level
-- **Code Blocks**: Preserved with monospace formatting
-- **Tables**: Exported with proper borders and headers
-- **Links**: External URLs shown in printed/PDF output
-- **Word Compatibility**: SVG diagrams include automatic style inlining for reliable rendering in Word 2016+
-
-#### Customizing Export Settings
-Access export preferences via Options page (right-click icon → Options → Export):
-- Default export format
-- Default page size (A4 or Letter)
-- Include table of contents
-- Filename template with variables ({title}, {date}, etc.)
-
-#### Known Limitations
-- Syntax highlighting colors are not preserved in DOCX (uses monospace font)
-- Complex nested lists may have simplified formatting
-- Very large documents (>5MB) may take longer to export
-- SVG diagrams require Microsoft Word 2016 or later (older versions may show placeholder images)
+- **Workspace browsing** — open a project folder and navigate its documents in a sidebar file tree with disclosure triangles, file-type icons, and compact folder chains
+- **Tabbed interface** — open multiple documents with Chrome-style tabs, tab groups (9 colors), and keyboard navigation (`Cmd+1`–`9`, `Cmd+Tab`)
+- **9 themes** — GitHub Light/Dark, Catppuccin (Latte, Frappe, Macchiato, Mocha), Monokai, Monokai Pro, One Dark Pro, with auto dark mode
+- **Mermaid diagrams** — all diagram types rendered inline with zoom, pan, maximize, and SVG export
+- **Table of contents** — configurable depth and position, auto-collapse, current-section highlighting
+- **Document export** — PDF (native Chromium print) and Word (.docx) with Mermaid diagrams embedded as SVG
+- **File watching** — documents auto-reload when the source file changes on disk
+- **Preferences panel** — macOS System Settings-style panel with live preview across General, Display, Table of Contents, and Export categories
+- **Status bar** — word count, heading count, code blocks, diagrams, render state
+- **Hideable panels** — toggle sidebar, tab bar, header bar, TOC, and status bar independently
 
 ### Keyboard Shortcuts
-- `+`/`=`: Zoom in
-- `-`: Zoom out
-- `0`: Reset zoom
-- `f`: Fit diagram to view
-- `m`: Maximize diagram
-- `e`: Export diagram as SVG
-- `Esc`: Close maximized diagram
-- `Shift + Arrows`: Pan diagram
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+O` | Open file |
+| `Cmd+Shift+O` | Open folder |
+| `Cmd+W` | Close tab |
+| `Cmd+B` | Toggle sidebar |
+| `Cmd+Shift+T` | Toggle table of contents |
+| `Cmd+E` | Export |
+| `Cmd+,` | Preferences |
+| `Cmd+Tab` | Next tab |
+| `Cmd+1`–`9` | Jump to tab |
+
+### Install
+
+```bash
+git clone https://github.com/yaklabco/mdreview.git
+cd mdreview
+bun install
+bun run dev:electron
+```
+
+To package a distributable:
+
+```bash
+bun run build:electron
+cd packages/electron
+bun run dist:mac      # macOS .dmg
+bun run dist:linux    # Linux .AppImage / .deb
+bun run dist:win      # Windows .exe
+```
+
+## Chrome Extension
+
+The extension renders `.md` and `.markdown` files opened in Chrome via `file://` URLs. It shares the same core rendering engine as the desktop app.
+
+### Features
+
+- Markdown rendering with the same 9 themes, Mermaid diagrams, syntax highlighting, and TOC
+- Popup with quick toggles for theme, TOC, auto-reload, line numbers, and comments
+- Full options page for detailed configuration
+- Document export to PDF and Word
+- Site blocklist to disable rendering on specific domains
+- Settings sync across tabs
+
+### Install
+
+```bash
+git clone https://github.com/yaklabco/mdreview.git
+cd mdreview
+bun install
+bun run build:ext
+```
+
+Then load in Chrome:
+1. Open `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked" and select `packages/chrome-ext/dist`
+4. Go to the extension's Details page and **enable "Allow access to file URLs"**
+
+## Project Structure
+
+```
+mdreview/
+├── packages/
+│   ├── core/           # Shared rendering engine, themes, comments, export
+│   ├── chrome-ext/     # Chrome extension (content script, popup, options, service worker)
+│   └── electron/       # Desktop app (main process, renderer, file tree, tabs, preferences)
+├── tests/              # Integration and unit tests
+└── turbo.json          # Turborepo task configuration
+```
+
+The `core` package contains everything platform-independent: the 6-stage render pipeline, markdown-it configuration, theme engine, Mermaid renderer, comment system, and export generators. The `chrome-ext` and `electron` packages provide platform adapters and UI shells.
 
 ## Development
 
-### Build System
+**Prerequisites:** [Bun](https://bun.sh) 1.3+
 
-MDView includes both NPM scripts and a Makefile for building and development tasks. The Makefile provides a convenient, standardized interface for common operations with helpful shortcuts and clean output.
-
-### Project Structure
-```
-mdview/
-├── src/
-│   ├── background/        # Service worker
-│   ├── content/           # Content script
-│   ├── core/              # Core rendering logic (pipeline, converter)
-│   ├── renderers/         # Syntax & Mermaid renderers
-│   ├── workers/           # Web workers for heavy processing
-│   ├── ui/                # UI components
-│   ├── utils/             # Utilities
-│   ├── themes/            # Theme definitions
-│   ├── popup/             # Extension popup
-│   └── options/           # Options page
-├── public/                # Static assets
-├── tests/                 # Test files
-└── docs/                  # Documentation
-```
-
-### Development Commands
-
-#### Using NPM
 ```bash
-# Development mode (auto-reload)
-npm run dev
-
-# Build for production
-npm run build
-
-# Run unit tests
-npm test
-
-# Run E2E tests
-npm run test:e2e
-
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-```
-
-#### Using Makefile
-```bash
-# Show all available targets
-make help
-
-# Build for production
-make build
-
-# Development mode (auto-reload)
-make dev
-
-# Run unit tests (watch mode)
-make test
-
-# Run tests once (CI mode)
-make test-ci
-
-# Lint code
-make lint
-
-# Format code
-make format
-
-# Install dependencies
-make install
-
-# Generate icons from SVG
-make icons
-
-# Create distribution zip
-make dist-zip
-
-# Clean build artifacts
-make clean
-
-# Rebuild from scratch
-make rebuild
-
-# Run all checks (lint + test)
-make check
+bun install                # Install dependencies
+bun run dev                # Dev server — Chrome extension
+bun run dev:electron       # Dev server — Electron app
+bun run build              # Build all packages (Turborepo)
+bun run build:ext          # Build Chrome extension only
+bun run build:electron     # Build Electron app only
+bun run test               # Run tests (watch mode)
+bun run test:ci            # Run tests once
+bun run lint               # ESLint
+bun run format             # Prettier
+bun run check              # Lint + test
+bun run clean              # Remove build artifacts
 ```
 
 ### Tech Stack
-- **Build**: Vite 5.x + TypeScript 5.3+
-- **Markdown**: markdown-it v14.x + plugins
-- **Syntax Highlighting**: Highlight.js v11.x
-- **Diagrams**: Mermaid.js v11.x + Panzoom v9.x
-- **Document Export**: @jamesainslie/docx (fork with SVG support)
-- **Security**: DOMPurify v3.x
-- **Testing**: Vitest + Playwright
 
-## Configuration
-
-### Settings
-Access full settings via Options page (right-click icon → Options):
-
-**Appearance**
-- Theme selection
-- Auto dark mode
-- Light/dark theme pairs
-
-**Editor**
-- Font family and size
-- Line height
-- Maximum width
-
-**Code Blocks**
-- Syntax highlighting theme
-- Line numbers toggle
-- Code font family
-
-**Table of Contents**
-- Show/hide toggle
-- Max heading depth (H1-H2, H1-H3, H1-H4, H1-H5, or all levels)
-- Auto-collapse nested sections
-
-**Diagrams**
-- Default zoom level
-- Animations toggle
-- Render timeout
-
-**Export**
-- Default format (DOCX/PDF)
-- Page size (A4/Letter)
-- Include table of contents
-- Filename template
-
-**Performance**
-- Auto-reload on file change
-- Reload debounce time
-- Lazy loading threshold
-
-**Advanced**
-- Tab synchronization
-- Cache management
-- Settings import/export
-
-### Theme Customization
-Themes are defined in `src/themes/` directory. Each theme includes:
-- 25+ color variables
-- Typography settings
-- Spacing configuration
-- Syntax highlighting theme
-- Mermaid theme variables
-
-## Performance
-
-### Benchmarks
-- **Initial Render**: < 200ms for files < 100KB
-- **Theme Switching**: < 100ms
-- **Scrolling**: 60fps maintained
-- **Memory Usage**: < 200MB typical
-- **Bundle Size**: < 2MB gzipped
-
-### Optimization Techniques
-- **Progressive Hydration**: Instant skeleton rendering for perceived performance
-- **Web Workers**: Off-main-thread parsing and syntax highlighting
-- **Intersection Observer**: Lazy loading for images and heavy components
-- **Three-tier caching**: Memory → IndexedDB → Service Worker
-- **Code splitting**: Dynamic imports for large dependencies (Mermaid, Highlight.js)
-- **Debounced file change detection**: Efficient file watching
-
-## Browser Support
-- Chrome 110+
-- Edge 110+
-- Other Chromium-based browsers
-
-## Security
-- Strict Content Security Policy
-- DOMPurify sanitization for all content
-- No external network calls
-- Minimal permissions (storage, scripting, file://)
-- Safe Mermaid rendering (securityLevel: 'strict')
-
-## Accessibility
-- WCAG 2.1 Level AA compliant
-- Full keyboard navigation
-- Screen reader support
-- Semantic HTML elements
-- ARIA labels where appropriate
-- Focus indicators
-- High contrast mode support
+| Layer | Tool |
+|-------|------|
+| Package manager | Bun |
+| Task orchestration | Turborepo |
+| Bundler | Vite (extension), electron-vite (desktop) |
+| Language | TypeScript 5.3+ |
+| Markdown | markdown-it 14.x + plugins |
+| Syntax highlighting | Highlight.js 11.x |
+| Diagrams | Mermaid.js 11.x + Panzoom |
+| Document export | @jamesainslie/docx (fork with SVG support) |
+| Sanitization | DOMPurify 3.x |
+| Testing | Vitest (1,647 tests) |
 
 ## Contributing
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
-
-### Code Standards
-- TypeScript strict mode
-- ESLint + Prettier
-- Conventional commits
-- 80% test coverage minimum
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code standards, and PR process.
 
 ## License
-MIT License - see [LICENSE](LICENSE) for details.
 
-## Acknowledgments
-- [markdown-it](https://github.com/markdown-it/markdown-it)
-- [Highlight.js](https://highlightjs.org/)
-- [Mermaid.js](https://mermaid.js.org/)
-- [DOMPurify](https://github.com/cure53/DOMPurify)
-- [Catppuccin](https://github.com/catppuccin/catppuccin)
-- [docx](https://github.com/dolanmiu/docx) (upstream library for DOCX generation)
-
-## Support
-- **Issues**: [GitHub Issues](https://github.com/jamesainslie/mdview/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/jamesainslie/mdview/discussions)
-
-## Changelog
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+MIT — see [LICENSE](LICENSE).
 
 ## Screenshots
 
@@ -387,4 +176,4 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 
-Made with ❤️ by [James Ainslie](https://github.com/jamesainslie)
+Made with care by [James Ainslie](https://github.com/jamesainslie)

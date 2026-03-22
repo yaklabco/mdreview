@@ -1,6 +1,6 @@
-# Contributing to MDView
+# Contributing to Design Review
 
-Thank you for your interest in contributing to MDView! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Design Review! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -9,8 +9,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm 9+
+- [Bun](https://bun.sh) 1.3+
 - Chrome 110+
 - Git
 
@@ -24,7 +23,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 3. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 
 4. Create a feature branch:
@@ -34,7 +33,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 5. Start development server:
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 6. Load extension in Chrome:
@@ -91,7 +90,7 @@ docs(readme): update installation instructions
 
 #### Unit Tests
 ```bash
-npm test
+bun run test
 ```
 
 Write unit tests for:
@@ -102,7 +101,7 @@ Write unit tests for:
 
 #### E2E Tests
 ```bash
-npm run test:e2e
+bun run test:e2e
 ```
 
 Test complete user workflows using Playwright.
@@ -113,15 +112,18 @@ Maintain > 80% code coverage for unit tests.
 ### Linting and Formatting
 ```bash
 # Lint code
-npm run lint
+bun run lint
 
 # Format code
-npm run format
+bun run format
+
+# Run all checks (lint + test)
+bun run check
 
 # Check TypeScript types (via build command)
-npm run build
+bun run build
 # OR
-npx tsc --noEmit
+bunx tsc --noEmit
 ```
 
 ### Git Hooks
@@ -138,7 +140,7 @@ This is fast and ensures all committed code follows project standards.
 
 #### Pre-push Hook
 Runs automatically when you push:
-- **Full Test Suite**: Runs all unit tests (`npm run test:ci`)
+- **Full Test Suite**: Runs all unit tests (`bun run test:ci`)
 - **Exit Code**: Push is aborted if any tests fail
 
 This prevents pushing broken code to CI and catches issues early.
@@ -152,7 +154,7 @@ git push --no-verify
 If hooks aren't running:
 ```bash
 # Reinstall husky hooks
-npm run prepare
+bun run prepare
 ```
 
 ## Pull Request Process
@@ -166,10 +168,10 @@ npm run prepare
 
 2. Run all checks (or rely on git hooks):
    ```bash
-   npm run lint           # Auto-runs on commit via pre-commit hook
-   npx tsc --noEmit      # Type checking
-   npm run test:ci       # Auto-runs on push via pre-push hook
-   npm run test:e2e      # E2E tests (run manually if UI changes)
+   bun run lint           # Auto-runs on commit via pre-commit hook
+   bunx tsc --noEmit      # Type checking
+   bun run test:ci        # Auto-runs on push via pre-push hook
+   bun run test:e2e       # E2E tests (run manually if UI changes)
    ```
    
    **Note**: If you commit and push normally, the hooks will automatically run linting, formatting, and tests.
@@ -249,7 +251,7 @@ What should happen
 If applicable
 
 **Environment**
-- MDView version:
+- Design Review version:
 - Chrome version:
 - OS:
 
@@ -301,12 +303,12 @@ Maintainers follow this process:
 
 ## Getting Help
 
-- **Questions**: [GitHub Discussions](https://github.com/jamesainslie/mdview/discussions)
-- **Bugs**: [GitHub Issues](https://github.com/jamesainslie/mdview/issues)
+- **Questions**: [GitHub Discussions](https://github.com/yaklabco/mdreview/discussions)
+- **Bugs**: [GitHub Issues](https://github.com/yaklabco/mdreview/issues)
 
 ## Recognition
 
 Contributors are recognized in:
 - CHANGELOG.md
 
-Thank you for contributing to MDView!
+Thank you for contributing to Design Review!
