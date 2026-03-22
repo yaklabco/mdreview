@@ -53,15 +53,27 @@ jobs:
           files: |
             extension.zip
           body: |
-            ## Design Review Chrome Extension v${{ steps.version.outputs.version }}
+            ## Design Review v${{ steps.version.outputs.version }}
 
-            ### Installation
+            ### Chrome Extension
 
-            1. Download the `extension.zip` file from the assets below
+            1. Download `extension.zip` from the assets below
             2. Extract the zip file to a folder
-            3. Open Chrome and navigate to `chrome://extensions/`
-            4. Enable "Developer mode" in the top right
-            5. Click "Load unpacked" and select the extracted folder
+            3. Open Chrome → `chrome://extensions/` → Enable "Developer mode"
+            4. Click "Load unpacked" and select the extracted folder
+
+            ### Desktop App
+
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `.dmg` (arm64) |
+            | macOS (Intel) | `.dmg` (x64) |
+            | Linux | `.AppImage` |
+            | Windows | `.exe` installer |
+
+            **macOS:** Open the DMG and drag to Applications.
+            **Linux:** `chmod +x *.AppImage && ./*.AppImage`
+            **Windows:** Run the installer and follow the prompts.
 
             ### Changes
 
