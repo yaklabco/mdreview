@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.6](https://github.com/yaklabco/mdreview/compare/v0.3.5...v0.3.6) (2026-03-23)
+
+
+### Bug Fixes
+
+* **ci:** remove body overwrite and replace dead macos-13 runner ([2a81c96](https://github.com/yaklabco/mdreview/commit/2a81c96be16478a339e8285460eaf7cf4f9dda38))
+* unwrap code-block and table wrapper divs in content collector ([6665cdd](https://github.com/yaklabco/mdreview/commit/6665cdd7fc7c08c04a5091117b808edfa51ae8fa))
+* use loose security level for mermaid and await render queue drain ([d3ad8cd](https://github.com/yaklabco/mdreview/commit/d3ad8cd7d3ff6607efdb6010d3417f50b9f816c0))
+
 ## [0.3.5](https://github.com/yaklabco/mdreview/compare/v0.3.4...v0.3.5) (2026-03-22)
 
 
