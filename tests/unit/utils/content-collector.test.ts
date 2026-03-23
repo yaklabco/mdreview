@@ -498,6 +498,92 @@ line 3</code></pre>
     });
   });
 
+  describe('Render Pipeline Wrapper Divs', () => {
+    it('should extract code blocks wrapped in code-block-wrapper divs', () => {
+      const html = `
+        <h2>Example</h2>
+        <div class="code-block-wrapper" data-language="typescript">
+          <div class="code-block-header">
+            <span class="code-language-badge">typescript</span>
+          </div>
+          <div class="code-block-content">
+            <pre><code class="language-typescript">const x = 42;</code></pre>
+          </div>
+        </div>
+        <p>After code</p>
+      `;
+      const container = createTestContainer(html);
+      const result = collector.collect(container);
+
+      const types = result.nodes.map((n) => n.type);
+      expect(types).toContain('code');
+      const codeNode = result.nodes.find((n) => n.type === 'code');
+      expect(codeNode).toBeDefined();
+      expect(codeNode!.content).toContain('const x = 42;');
+      expect(codeNode!.attributes.language).toBe('typescript');
+    });
+
+    it('should extract code blocks with line numbers', () => {
+      const html = `
+        <div class="code-block-wrapper has-line-numbers" data-language="python">
+          <div class="code-block-header">
+            <span class="code-language-badge">python</span>
+          </div>
+          <div class="code-block-content">
+            <div class="line-numbers-rows"><span>1</span><span>2</span></div>
+            <pre><code class="language-python">def hello():
+    print("world")</code></pre>
+          </div>
+        </div>
+      `;
+      const container = createTestContainer(html);
+      const result = collector.collect(container);
+
+      expect(result.nodes).toHaveLength(1);
+      expect(result.nodes[0].type).toBe('code');
+      expect(result.nodes[0].content).toContain('def hello()');
+      expect(result.nodes[0].attributes.language).toBe('python');
+    });
+
+    it('should extract tables wrapped in table-wrapper divs', () => {
+      const html = `
+        <h2>Data</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Value</th></tr></thead>
+            <tbody><tr><td>A</td><td>1</td></tr></tbody>
+          </table>
+        </div>
+        <p>After table</p>
+      `;
+      const container = createTestContainer(html);
+      const result = collector.collect(container);
+
+      const types = result.nodes.map((n) => n.type);
+      expect(types).toContain('table');
+      const tableNode = result.nodes.find((n) => n.type === 'table');
+      expect(tableNode).toBeDefined();
+      expect(tableNode!.attributes.rows).toBe(2);
+    });
+
+    it('should not drop content from generic wrapper divs', () => {
+      const html = `
+        <h1>Title</h1>
+        <div>
+          <p>First paragraph</p>
+          <p>Second paragraph</p>
+        </div>
+        <p>Third paragraph</p>
+      `;
+      const container = createTestContainer(html);
+      const result = collector.collect(container);
+
+      expect(result.nodes.length).toBeGreaterThanOrEqual(4);
+      const paragraphs = result.nodes.filter((n) => n.type === 'paragraph');
+      expect(paragraphs).toHaveLength(3);
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle deeply nested structures', () => {
       const html = `
