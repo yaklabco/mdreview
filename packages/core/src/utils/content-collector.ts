@@ -20,9 +20,11 @@ export class ContentCollector {
     const children = Array.from(container.children);
 
     for (const child of children) {
-      const node = this.processElement(child as HTMLElement);
-      if (node) {
-        nodes.push(node);
+      const result = this.processElement(child as HTMLElement);
+      if (Array.isArray(result)) {
+        nodes.push(...result);
+      } else if (result) {
+        nodes.push(result);
       }
     }
 
@@ -39,9 +41,11 @@ export class ContentCollector {
   }
 
   /**
-   * Process a single HTML element into a ContentNode
+   * Process a single HTML element into a ContentNode or multiple nodes.
+   * Wrapper divs (code-block-wrapper, table-wrapper) are unwrapped to their
+   * semantic content. Generic divs flatten their children into the parent.
    */
-  private processElement(element: HTMLElement): ContentNode | null {
+  private processElement(element: HTMLElement): ContentNode | ContentNode[] | null {
     const tagName = element.tagName.toLowerCase();
 
     switch (tagName) {
@@ -70,7 +74,17 @@ export class ContentCollector {
         if (element.classList.contains('mermaid-container')) {
           return this.processMermaid(element);
         }
-        // Recurse into generic divs
+        // Unwrap code-block-wrapper to the inner pre>code
+        if (element.classList.contains('code-block-wrapper')) {
+          const pre = element.querySelector('pre');
+          if (pre) return this.processCodeBlock(pre);
+        }
+        // Unwrap table-wrapper to the inner table
+        if (element.classList.contains('table-wrapper')) {
+          const table = element.querySelector('table');
+          if (table) return this.processTable(table);
+        }
+        // Flatten generic div children into the parent
         return this.processContainer(element);
       default:
         debug.debug('ContentCollector', `Skipping unsupported element: ${tagName}`);
@@ -252,9 +266,11 @@ export class ContentCollector {
     const children: ContentNode[] = [];
 
     for (const child of Array.from(element.children)) {
-      const node = this.processElement(child as HTMLElement);
-      if (node) {
-        children.push(node);
+      const result = this.processElement(child as HTMLElement);
+      if (Array.isArray(result)) {
+        children.push(...result);
+      } else if (result) {
+        children.push(result);
       }
     }
 
@@ -285,25 +301,24 @@ export class ContentCollector {
   }
 
   /**
-   * Process a container element (recurse into children)
+   * Process a container element by flattening its children into the parent.
+   * Returns an array so callers can spread the results.
    */
-  private processContainer(element: HTMLElement): ContentNode | null {
+  private processContainer(element: HTMLElement): ContentNode | ContentNode[] | null {
     const children: ContentNode[] = [];
 
     for (const child of Array.from(element.children)) {
-      const node = this.processElement(child as HTMLElement);
-      if (node) {
-        children.push(node);
+      const result = this.processElement(child as HTMLElement);
+      if (Array.isArray(result)) {
+        children.push(...result);
+      } else if (result) {
+        children.push(result);
       }
     }
 
-    // If only one child, return it directly
-    if (children.length === 1) {
-      return children[0];
-    }
-
-    // If multiple children or none, return null (skip the container)
-    return null;
+    if (children.length === 0) return null;
+    if (children.length === 1) return children[0];
+    return children;
   }
 
   /**
@@ -361,7 +376,9 @@ export class ContentCollector {
    * Extract title from nodes (first H1 or use "Untitled")
    */
   private extractTitle(nodes: ContentNode[]): string {
-    const firstHeading = nodes.find((node) => node.type === 'heading' && node.attributes.level === 1);
+    const firstHeading = nodes.find(
+      (node) => node.type === 'heading' && node.attributes.level === 1
+    );
     if (firstHeading && typeof firstHeading.content === 'string') {
       return firstHeading.content;
     }

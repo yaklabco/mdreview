@@ -44,7 +44,7 @@ export class MermaidRenderer {
   private initializeMermaid(): void {
     mermaid.initialize({
       startOnLoad: false,
-      securityLevel: 'strict',
+      securityLevel: 'loose',
       maxTextSize: 50000,
       maxEdges: 500,
       theme: 'base',
@@ -56,7 +56,7 @@ export class MermaidRenderer {
         lineColor: '#24292f',
       },
       flowchart: {
-        htmlLabels: false,
+        htmlLabels: true,
         useMaxWidth: true,
       },
       sequence: {
@@ -202,6 +202,9 @@ export class MermaidRenderer {
    * Force-render all Mermaid diagrams in a container, bypassing lazy loading.
    * Used by export/print flows where we must have every diagram rendered,
    * regardless of scroll position.
+   *
+   * Waits for the render queue to drain between each diagram so that all
+   * SVGs are present in the DOM before the caller proceeds.
    */
   async renderAllImmediate(container: HTMLElement): Promise<void> {
     const diagrams = container.querySelectorAll('.mermaid-container');
@@ -209,9 +212,34 @@ export class MermaidRenderer {
     for (const diagram of Array.from(diagrams)) {
       const id = diagram.id;
       if (id) {
+        // Wait for any in-flight render + queue to finish before starting the next
+        await this.waitForIdle();
         await this.renderDiagram(id);
       }
     }
+
+    // Wait for the final render (and any queued items it triggered) to complete
+    await this.waitForIdle();
+  }
+
+  /**
+   * Returns a promise that resolves once the renderer is idle
+   * (no active render and no queued items).
+   */
+  private waitForIdle(): Promise<void> {
+    if (!this.isRendering && this.renderQueue.length === 0) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const check = () => {
+        if (!this.isRendering && this.renderQueue.length === 0) {
+          resolve();
+        } else {
+          setTimeout(check, 10);
+        }
+      };
+      setTimeout(check, 10);
+    });
   }
 
   /**
