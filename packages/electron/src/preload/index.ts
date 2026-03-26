@@ -55,6 +55,10 @@ const api: MdreviewPreloadAPI = {
   setOpenFolder: (path) => ipcRenderer.invoke(IPC_CHANNELS.SET_OPEN_FOLDER, path),
   openExternal: (url) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
 
+  // Context menu
+  showContextMenu: (context) => ipcRenderer.invoke(IPC_CHANNELS.SHOW_CONTEXT_MENU, context),
+  revealInFinder: (path) => ipcRenderer.invoke(IPC_CHANNELS.REVEAL_IN_FINDER, path),
+
   // Tab groups
   createTabGroup: (name, color, tabIds) =>
     ipcRenderer.invoke(IPC_CHANNELS.CREATE_TAB_GROUP, name, color, tabIds),

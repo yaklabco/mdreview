@@ -6,6 +6,7 @@ export class FileTree {
   private visible = true;
   private fileSelectCallback: ((path: string) => void) | null = null;
   private fileExportCallback: ((path: string, format: 'pdf' | 'docx') => void) | null = null;
+  private directoryExpandCallback: ((dirPath: string) => Promise<DirectoryEntry[]>) | null = null;
   private activeFilePath: string | null = null;
   private activeContextMenu: HTMLElement | null = null;
   private contextMenuDismissHandler: ((e: MouseEvent) => void) | null = null;
@@ -59,6 +60,10 @@ export class FileTree {
     this.fileExportCallback = callback;
   }
 
+  onDirectoryExpand(callback: (dirPath: string) => Promise<DirectoryEntry[]>): void {
+    this.directoryExpandCallback = callback;
+  }
+
   setActiveFile(filePath: string): void {
     this.activeFilePath = filePath;
 
@@ -94,6 +99,7 @@ export class FileTree {
     }
     this.fileSelectCallback = null;
     this.fileExportCallback = null;
+    this.directoryExpandCallback = null;
     this.activeFilePath = null;
     this.rootPath = null;
     this.lastEntries = null;
@@ -106,9 +112,14 @@ export class FileTree {
       item.style.paddingLeft = `${8 + depth * 8}px`;
 
       if (entry.type === 'directory') {
-        // Compact single-child directory chains (VSCode-style)
-        const { segments, finalEntry } = this.compactFolderChain(entry);
-        this.buildDirectoryItem(item, finalEntry, depth, segments);
+        if (entry.children !== undefined) {
+          // Children already loaded — compact and render synchronously
+          const { segments, finalEntry } = this.compactFolderChain(entry);
+          this.buildDirectoryItem(item, finalEntry, depth, segments, true);
+        } else {
+          // Children not loaded — render collapsed, load on expand
+          this.buildDirectoryItem(item, entry, depth, [entry.name], false);
+        }
       } else {
         this.buildFileItem(item, entry);
       }
@@ -121,7 +132,10 @@ export class FileTree {
    * Walk a chain of single-child directories and collect their names.
    * Returns the segments and the deepest entry whose children should be rendered.
    */
-  private compactFolderChain(entry: DirectoryEntry): { segments: string[]; finalEntry: DirectoryEntry } {
+  private compactFolderChain(entry: DirectoryEntry): {
+    segments: string[];
+    finalEntry: DirectoryEntry;
+  } {
     const segments = [entry.name];
     let current = entry;
 
@@ -141,7 +155,8 @@ export class FileTree {
     item: HTMLElement,
     entry: DirectoryEntry,
     depth: number,
-    segments: string[] = [entry.name],
+    segments: string[],
+    startExpanded: boolean
   ): void {
     const label = document.createElement('div');
     label.className = 'file-tree-directory';
@@ -149,30 +164,18 @@ export class FileTree {
 
     // Disclosure triangle
     const disclosure = document.createElement('span');
-    disclosure.className = 'file-tree-disclosure expanded';
+    disclosure.className = startExpanded ? 'file-tree-disclosure expanded' : 'file-tree-disclosure';
     disclosure.textContent = '\u25B6';
 
     // Folder icon
     const icon = document.createElement('span');
     icon.className = 'file-tree-icon file-tree-icon-folder';
-    icon.innerHTML = getFileIconSVG(entry.name, true, true);
+    icon.innerHTML = getFileIconSVG(entry.name, true, startExpanded);
 
     // Name — render compound segments with separators
     const nameSpan = document.createElement('span');
     nameSpan.className = 'file-tree-name';
-    if (segments.length === 1) {
-      nameSpan.textContent = segments[0];
-    } else {
-      for (let i = 0; i < segments.length; i++) {
-        if (i > 0) {
-          const sep = document.createElement('span');
-          sep.className = 'file-tree-path-sep';
-          sep.textContent = ' / ';
-          nameSpan.appendChild(sep);
-        }
-        nameSpan.appendChild(document.createTextNode(segments[i]));
-      }
-    }
+    this.renderSegments(nameSpan, segments);
 
     label.appendChild(disclosure);
     label.appendChild(icon);
@@ -181,9 +184,50 @@ export class FileTree {
     const childContainer = document.createElement('div');
     childContainer.className = 'file-tree-children';
 
-    let expanded = true;
+    let expanded = startExpanded;
+    let loaded = entry.children !== undefined;
+
+    if (!expanded) {
+      childContainer.style.display = 'none';
+    }
 
     label.addEventListener('click', () => {
+      if (!loaded && !expanded && this.directoryExpandCallback) {
+        // Lazy load children
+        void this.directoryExpandCallback(entry.path).then((children) => {
+          loaded = true;
+          expanded = true;
+
+          // Check for compact chain: single directory child
+          if (
+            children.length === 1 &&
+            children[0].type === 'directory' &&
+            children[0].children === undefined
+          ) {
+            this.lazyCompactChain(
+              item,
+              entry,
+              children[0],
+              depth,
+              segments,
+              label,
+              disclosure,
+              icon,
+              nameSpan,
+              childContainer
+            );
+            return;
+          }
+
+          entry.children = children;
+          childContainer.style.display = '';
+          disclosure.classList.add('expanded');
+          icon.innerHTML = getFileIconSVG(entry.name, true, true);
+          this.buildTree(childContainer, children, depth + 1);
+        });
+        return;
+      }
+
       expanded = !expanded;
       childContainer.style.display = expanded ? '' : 'none';
       disclosure.classList.toggle('expanded', expanded);
@@ -203,6 +247,80 @@ export class FileTree {
     }
 
     item.appendChild(childContainer);
+  }
+
+  /**
+   * Handle lazy compact chain: when expanding a directory reveals a single
+   * directory child, auto-expand it and merge into a compacted display.
+   */
+  private lazyCompactChain(
+    item: HTMLElement,
+    parentEntry: DirectoryEntry,
+    childDirEntry: DirectoryEntry,
+    depth: number,
+    segments: string[],
+    label: HTMLElement,
+    disclosure: HTMLElement,
+    icon: HTMLElement,
+    nameSpan: HTMLElement,
+    childContainer: HTMLElement
+  ): void {
+    if (!this.directoryExpandCallback) return;
+
+    const newSegments = [...segments, childDirEntry.name];
+
+    void this.directoryExpandCallback(childDirEntry.path).then((grandchildren) => {
+      // Check if we should keep compacting
+      if (
+        grandchildren.length === 1 &&
+        grandchildren[0].type === 'directory' &&
+        grandchildren[0].children === undefined
+      ) {
+        this.lazyCompactChain(
+          item,
+          childDirEntry,
+          grandchildren[0],
+          depth,
+          newSegments,
+          label,
+          disclosure,
+          icon,
+          nameSpan,
+          childContainer
+        );
+        return;
+      }
+
+      // Terminal case: render the compacted result
+      childDirEntry.children = grandchildren;
+      parentEntry.children = [childDirEntry];
+
+      // Update label to show compacted path
+      label.dataset.path = childDirEntry.path;
+      this.renderSegments(nameSpan, newSegments);
+
+      childContainer.style.display = '';
+      disclosure.classList.add('expanded');
+      icon.innerHTML = getFileIconSVG(childDirEntry.name, true, true);
+      this.buildTree(childContainer, grandchildren, depth + 1);
+    });
+  }
+
+  private renderSegments(nameSpan: HTMLElement, segments: string[]): void {
+    nameSpan.innerHTML = '';
+    if (segments.length === 1) {
+      nameSpan.textContent = segments[0];
+    } else {
+      for (let i = 0; i < segments.length; i++) {
+        if (i > 0) {
+          const sep = document.createElement('span');
+          sep.className = 'file-tree-path-sep';
+          sep.textContent = ' / ';
+          nameSpan.appendChild(sep);
+        }
+        nameSpan.appendChild(document.createTextNode(segments[i]));
+      }
+    }
   }
 
   private buildFileItem(item: HTMLElement, entry: DirectoryEntry): void {
@@ -258,22 +376,28 @@ export class FileTree {
     menu.style.top = `${y}px`;
 
     // Open File
-    menu.appendChild(this.createMenuItem('Open File', () => {
-      this.fileSelectCallback?.(filePath);
-    }));
+    menu.appendChild(
+      this.createMenuItem('Open File', () => {
+        this.fileSelectCallback?.(filePath);
+      })
+    );
 
     // Separator
     menu.appendChild(this.createSeparator());
 
     // Export as PDF
-    menu.appendChild(this.createMenuItem('Export as PDF', () => {
-      this.fileExportCallback?.(filePath, 'pdf');
-    }));
+    menu.appendChild(
+      this.createMenuItem('Export as PDF', () => {
+        this.fileExportCallback?.(filePath, 'pdf');
+      })
+    );
 
     // Export as DOCX
-    menu.appendChild(this.createMenuItem('Export as DOCX', () => {
-      this.fileExportCallback?.(filePath, 'docx');
-    }));
+    menu.appendChild(
+      this.createMenuItem('Export as DOCX', () => {
+        this.fileExportCallback?.(filePath, 'docx');
+      })
+    );
 
     // Separator before path items
     menu.appendChild(this.createSeparator());
@@ -298,13 +422,17 @@ export class FileTree {
   }
 
   private appendCopyPathItems(menu: HTMLElement, path: string): void {
-    menu.appendChild(this.createMenuItem('Copy Path', () => {
-      void navigator.clipboard.writeText(path);
-    }));
+    menu.appendChild(
+      this.createMenuItem('Copy Path', () => {
+        void navigator.clipboard.writeText(path);
+      })
+    );
 
-    menu.appendChild(this.createMenuItem('Copy Relative Path', () => {
-      void navigator.clipboard.writeText(this.getRelativePath(path));
-    }));
+    menu.appendChild(
+      this.createMenuItem('Copy Relative Path', () => {
+        void navigator.clipboard.writeText(this.getRelativePath(path));
+      })
+    );
   }
 
   private showMenu(menu: HTMLElement): void {

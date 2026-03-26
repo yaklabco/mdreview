@@ -16,6 +16,12 @@ vi.mock('electron', () => ({
   },
   shell: {
     openExternal: vi.fn().mockResolvedValue(undefined),
+    showItemInFolder: vi.fn(),
+  },
+  Menu: {
+    buildFromTemplate: vi.fn().mockReturnValue({
+      popup: vi.fn(),
+    }),
   },
 }));
 
@@ -119,6 +125,8 @@ describe('IPC Handlers', () => {
       IPC_CHANNELS.SET_SIDEBAR_WIDTH,
       IPC_CHANNELS.SET_OPEN_FOLDER,
       IPC_CHANNELS.OPEN_EXTERNAL,
+      IPC_CHANNELS.SHOW_CONTEXT_MENU,
+      IPC_CHANNELS.REVEAL_IN_FINDER,
       IPC_CHANNELS.LIST_DIRECTORY,
       IPC_CHANNELS.WATCH_DIRECTORY,
       IPC_CHANNELS.UNWATCH_DIRECTORY,
@@ -256,7 +264,7 @@ describe('IPC Handlers', () => {
 
   it('LIST_DIRECTORY should pass options to directoryService', async () => {
     const mockDirectoryService = {
-      listDirectory: vi.fn().mockReturnValue([]),
+      listDirectory: vi.fn().mockResolvedValue([]),
       watchDirectory: vi.fn(),
       unwatchDirectory: vi.fn(),
       dispose: vi.fn(),
@@ -266,7 +274,9 @@ describe('IPC Handlers', () => {
 
     const handler = handlers.get(IPC_CHANNELS.LIST_DIRECTORY);
     await handler?.({}, '/tmp/folder', { showAllFiles: true });
-    expect(mockDirectoryService.listDirectory).toHaveBeenCalledWith('/tmp/folder', { showAllFiles: true });
+    expect(mockDirectoryService.listDirectory).toHaveBeenCalledWith('/tmp/folder', {
+      showAllFiles: true,
+    });
   });
 
   it('UNWATCH_FILE should clean up watcher', async () => {
@@ -283,5 +293,153 @@ describe('IPC Handlers', () => {
     await unwatchHandler?.({}, '/tmp/test.md');
 
     expect(unwatchFn).toHaveBeenCalled();
+  });
+
+  describe('SHOW_CONTEXT_MENU', () => {
+    it('should build menu with selection items when text is selected', async () => {
+      const electron = await import('electron');
+      const handler = handlers.get(IPC_CHANNELS.SHOW_CONTEXT_MENU);
+      await handler?.(
+        {},
+        {
+          hasSelection: true,
+          selectionText: 'hello world',
+          filePath: '/tmp/test.md',
+        }
+      );
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(vi.mocked(electron.Menu.buildFromTemplate)).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ label: 'Copy', accelerator: 'CmdOrCtrl+C' }),
+          expect.objectContaining({ label: 'Leave a Comment' }),
+          expect.objectContaining({
+            label: expect.stringContaining('Look Up') as string,
+          }),
+          expect.objectContaining({ label: 'Search with Google' }),
+          expect.objectContaining({ label: 'Select All', accelerator: 'CmdOrCtrl+A' }),
+        ])
+      );
+    });
+
+    it('should build menu without selection items when no text is selected', async () => {
+      const electron = await import('electron');
+      const handler = handlers.get(IPC_CHANNELS.SHOW_CONTEXT_MENU);
+      await handler?.(
+        {},
+        {
+          hasSelection: false,
+          selectionText: '',
+          filePath: '/tmp/test.md',
+        }
+      );
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const template = vi.mocked(electron.Menu.buildFromTemplate).mock.calls[0][0] as Array<{
+        label?: string;
+      }>;
+      const labels = template.filter((item) => item.label).map((item) => item.label);
+      expect(labels).toContain('Select All');
+      expect(labels).toContain('Copy File Path');
+      expect(labels).toContain('Reveal in Finder');
+      expect(labels).toContain('Reload');
+      expect(labels).not.toContain('Copy');
+      expect(labels).not.toContain('Leave a Comment');
+    });
+
+    it('should send context:copy command when Copy is clicked', async () => {
+      const electron = await import('electron');
+      const handler = handlers.get(IPC_CHANNELS.SHOW_CONTEXT_MENU);
+      await handler?.(
+        {},
+        {
+          hasSelection: true,
+          selectionText: 'test',
+          filePath: '/tmp/test.md',
+        }
+      );
+
+      const template = (electron.Menu.buildFromTemplate as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as Array<{ label?: string; click?: () => void }>;
+      const copyItem = template.find((item) => item.label === 'Copy');
+      copyItem?.click?.();
+
+      const mockWin = deps.getWindow() as { webContents: { send: ReturnType<typeof vi.fn> } };
+      expect(mockWin.webContents.send).toHaveBeenCalledWith(
+        IPC_CHANNELS.MENU_COMMAND,
+        'context:copy'
+      );
+    });
+
+    it('should send context:comment command when Leave a Comment is clicked', async () => {
+      const electron = await import('electron');
+      const handler = handlers.get(IPC_CHANNELS.SHOW_CONTEXT_MENU);
+      await handler?.(
+        {},
+        {
+          hasSelection: true,
+          selectionText: 'test',
+          filePath: '/tmp/test.md',
+        }
+      );
+
+      const template = (electron.Menu.buildFromTemplate as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as Array<{ label?: string; click?: () => void }>;
+      const commentItem = template.find((item) => item.label === 'Leave a Comment');
+      commentItem?.click?.();
+
+      const mockWin = deps.getWindow() as { webContents: { send: ReturnType<typeof vi.fn> } };
+      expect(mockWin.webContents.send).toHaveBeenCalledWith(
+        IPC_CHANNELS.MENU_COMMAND,
+        'context:comment'
+      );
+    });
+
+    it('should truncate long selection text in Look Up label', async () => {
+      const electron = await import('electron');
+      const handler = handlers.get(IPC_CHANNELS.SHOW_CONTEXT_MENU);
+      await handler?.(
+        {},
+        {
+          hasSelection: true,
+          selectionText: 'a very long selection text that should be truncated',
+          filePath: '/tmp/test.md',
+        }
+      );
+
+      const template = (electron.Menu.buildFromTemplate as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as Array<{ label?: string }>;
+      const lookupItem = template.find((item) => item.label?.startsWith('Look Up'));
+      expect(lookupItem?.label).toMatch(/\.\.\."/);
+    });
+
+    it('should call menu.popup()', async () => {
+      const electron = await import('electron');
+      const mockMenu = { popup: vi.fn() };
+      (electron.Menu.buildFromTemplate as ReturnType<typeof vi.fn>).mockReturnValue(mockMenu);
+
+      const handler = handlers.get(IPC_CHANNELS.SHOW_CONTEXT_MENU);
+      await handler?.(
+        {},
+        {
+          hasSelection: false,
+          selectionText: '',
+          filePath: '/tmp/test.md',
+        }
+      );
+
+      expect(mockMenu.popup).toHaveBeenCalled();
+    });
+  });
+
+  describe('REVEAL_IN_FINDER', () => {
+    it('should call shell.showItemInFolder with the file path', async () => {
+      const electron = await import('electron');
+      const handler = handlers.get(IPC_CHANNELS.REVEAL_IN_FINDER);
+      await handler?.({}, '/tmp/test.md');
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(vi.mocked(electron.shell.showItemInFolder)).toHaveBeenCalledWith('/tmp/test.md');
+    });
   });
 });

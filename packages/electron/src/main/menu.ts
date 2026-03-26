@@ -166,10 +166,6 @@ export function buildApplicationMenu(deps: MenuDeps): void {
       label: 'Help',
       submenu: [
         {
-          label: 'About Design Review',
-          click: () => onMenuCommand('help:about'),
-        },
-        {
           label: 'View on GitHub',
           click: () => onMenuCommand('help:github'),
         },

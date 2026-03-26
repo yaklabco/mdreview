@@ -1,4 +1,4 @@
-import { ipcMain, dialog, shell, type BrowserWindow } from 'electron';
+import { ipcMain, dialog, shell, Menu, type BrowserWindow } from 'electron';
 import { createHash } from 'crypto';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { StateManager } from './state-manager';
@@ -262,6 +262,73 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
 
   ipcMain.handle(IPC_CHANNELS.DELETE_TAB_GROUP, (_event, groupId: string) => {
     stateManager.deleteTabGroup(groupId);
+  });
+
+  // Context menu
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_CONTEXT_MENU,
+    (_event, context: { hasSelection: boolean; selectionText: string; filePath: string }) => {
+      const win = getWindow();
+      if (!win || win.isDestroyed()) return;
+
+      const sendCommand = (command: string) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(IPC_CHANNELS.MENU_COMMAND, command);
+        }
+      };
+
+      const template: Electron.MenuItemConstructorOptions[] = [];
+
+      if (context.hasSelection) {
+        const text = context.selectionText;
+        const truncated = text.length > 20 ? text.slice(0, 20) + '...' : text;
+
+        template.push(
+          { label: 'Copy', accelerator: 'CmdOrCtrl+C', click: () => sendCommand('context:copy') },
+          { type: 'separator' },
+          { label: 'Leave a Comment', click: () => sendCommand('context:comment') },
+          { type: 'separator' },
+          {
+            label: `Look Up "${truncated}"`,
+            click: () => sendCommand('context:lookup'),
+          },
+          {
+            label: 'Search with Google',
+            click: () => sendCommand('context:search'),
+          },
+          { type: 'separator' },
+          {
+            label: 'Select All',
+            accelerator: 'CmdOrCtrl+A',
+            click: () => sendCommand('context:select-all'),
+          }
+        );
+      } else {
+        template.push(
+          {
+            label: 'Select All',
+            accelerator: 'CmdOrCtrl+A',
+            click: () => sendCommand('context:select-all'),
+          },
+          { type: 'separator' },
+          { label: 'Copy File Path', click: () => sendCommand('context:copy-path') },
+          { label: 'Reveal in Finder', click: () => sendCommand('context:reveal') },
+          { type: 'separator' },
+          {
+            label: 'Reload',
+            accelerator: 'CmdOrCtrl+R',
+            click: () => sendCommand('context:reload'),
+          }
+        );
+      }
+
+      const menu = Menu.buildFromTemplate(template);
+      menu.popup();
+    }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.REVEAL_IN_FINDER, (_event, filePath: string) => {
+    shell.showItemInFolder(filePath);
   });
 
   // Directory service

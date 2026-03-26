@@ -30,7 +30,8 @@
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",
-    "@types/markdown-it": "^13.0.9"
+    "@types/markdown-it": "^13.0.9",
+    "jszip": "^3.10.1"
   },
   "author": "James Ainslie",
   "license": "MIT"
