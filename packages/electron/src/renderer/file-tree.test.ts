@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FileTree } from './file-tree';
 import type { DirectoryEntry } from '../shared/workspace-types';
 
-function createEntries(): DirectoryEntry[] {
+/** Entries with children already loaded (pre-expanded) */
+function createLoadedEntries(): DirectoryEntry[] {
   return [
     {
       name: 'docs',
@@ -17,20 +18,16 @@ function createEntries(): DirectoryEntry[] {
   ];
 }
 
-function createMixedEntries(): DirectoryEntry[] {
+/** Shallow entries — directories have children: undefined (not loaded yet) */
+function createShallowEntries(): DirectoryEntry[] {
   return [
     {
-      name: 'src',
-      path: '/project/src',
+      name: 'docs',
+      path: '/project/docs',
       type: 'directory',
-      children: [
-        { name: 'app.ts', path: '/project/src/app.ts', type: 'file' },
-        { name: 'index.md', path: '/project/src/index.md', type: 'file' },
-      ],
+      // children: undefined — not loaded yet
     },
     { name: 'readme.md', path: '/project/readme.md', type: 'file' },
-    { name: 'package.json', path: '/project/package.json', type: 'file' },
-    { name: 'logo.png', path: '/project/logo.png', type: 'file' },
   ];
 }
 
@@ -53,24 +50,52 @@ describe('FileTree', () => {
 
   it('should display directory entries as tree', () => {
     fileTree.render(parent);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createShallowEntries());
 
     const items = parent.querySelectorAll('.file-tree-item');
-    // docs dir + 2 children + readme.md = 4 items
-    expect(items.length).toBe(4);
+    // docs dir + readme.md = 2 items (docs children not loaded)
+    expect(items.length).toBe(2);
   });
 
-  it('should expand and collapse directories on click', () => {
+  it('should start directories collapsed when children are undefined', () => {
     fileTree.render(parent);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createShallowEntries());
 
     const dirItem = parent.querySelector('.file-tree-directory') as HTMLElement;
     expect(dirItem).not.toBeNull();
 
-    // Initially expanded
     const childContainer = dirItem
       .closest('.file-tree-item')!
       .querySelector('.file-tree-children') as HTMLElement;
+    expect(childContainer.style.display).toBe('none');
+
+    const disclosure = parent.querySelector('.file-tree-disclosure') as HTMLElement;
+    expect(disclosure.classList.contains('expanded')).toBe(false);
+  });
+
+  it('should start directories expanded when children are loaded', () => {
+    fileTree.render(parent);
+    fileTree.loadDirectory(createLoadedEntries());
+
+    const dirItem = parent.querySelector('.file-tree-directory') as HTMLElement;
+    expect(dirItem).not.toBeNull();
+
+    const childContainer = dirItem
+      .closest('.file-tree-item')!
+      .querySelector('.file-tree-children') as HTMLElement;
+    expect(childContainer.style.display).not.toBe('none');
+  });
+
+  it('should expand and collapse directories on click', () => {
+    fileTree.render(parent);
+    fileTree.loadDirectory(createLoadedEntries());
+
+    const dirItem = parent.querySelector('.file-tree-directory') as HTMLElement;
+    const childContainer = dirItem
+      .closest('.file-tree-item')!
+      .querySelector('.file-tree-children') as HTMLElement;
+
+    // Initially expanded (children are loaded)
     expect(childContainer.style.display).not.toBe('none');
 
     // Click to collapse
@@ -86,7 +111,7 @@ describe('FileTree', () => {
     const callback = vi.fn();
     fileTree.render(parent);
     fileTree.onFileSelected(callback);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createLoadedEntries());
 
     const fileItems = parent.querySelectorAll('.file-tree-file');
     expect(fileItems.length).toBeGreaterThan(0);
@@ -110,7 +135,7 @@ describe('FileTree', () => {
 
   it('should refresh with new entries', () => {
     fileTree.render(parent);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createShallowEntries());
 
     const newEntries: DirectoryEntry[] = [
       { name: 'changelog.md', path: '/project/changelog.md', type: 'file' },
@@ -132,9 +157,8 @@ describe('FileTree', () => {
 
   it('should show directories before files', () => {
     fileTree.render(parent);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createShallowEntries());
 
-    // Get top-level items only (depth 0)
     const topLevel = parent.querySelector('.file-tree-list')!.children;
     const topLevelItems = Array.from(topLevel);
 
@@ -145,7 +169,7 @@ describe('FileTree', () => {
 
   it('should mark active file', () => {
     fileTree.render(parent);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createLoadedEntries());
 
     fileTree.setActiveFile('/project/docs/api.md');
 
@@ -156,7 +180,7 @@ describe('FileTree', () => {
 
   it('should dispose cleanly', () => {
     fileTree.render(parent);
-    fileTree.loadDirectory(createEntries());
+    fileTree.loadDirectory(createShallowEntries());
 
     fileTree.dispose();
 
@@ -167,7 +191,7 @@ describe('FileTree', () => {
   describe('rerender', () => {
     it('should rebuild DOM from stored entries', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const itemsBefore = parent.querySelectorAll('.file-tree-item');
       expect(itemsBefore.length).toBe(4);
@@ -180,7 +204,7 @@ describe('FileTree', () => {
 
     it('should preserve active file across rerender', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
       fileTree.setActiveFile('/project/docs/api.md');
 
       fileTree.rerender();
@@ -202,12 +226,11 @@ describe('FileTree', () => {
   describe('file icons', () => {
     it('should render file-type icons in file items', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const icons = parent.querySelectorAll('.file-tree-icon');
       expect(icons.length).toBeGreaterThan(0);
 
-      // Every icon should contain an SVG element
       for (const icon of icons) {
         expect(icon.querySelector('svg')).not.toBeNull();
       }
@@ -215,15 +238,15 @@ describe('FileTree', () => {
 
     it('should render folder icons with file-tree-icon-folder class', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createShallowEntries());
 
       const folderIcons = parent.querySelectorAll('.file-tree-icon-folder');
-      expect(folderIcons.length).toBe(1); // one directory entry
+      expect(folderIcons.length).toBe(1);
     });
 
     it('should render disclosure triangles on directories', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createShallowEntries());
 
       const disclosures = parent.querySelectorAll('.file-tree-disclosure');
       expect(disclosures.length).toBe(1);
@@ -231,12 +254,12 @@ describe('FileTree', () => {
 
     it('should rotate disclosure triangle on expand/collapse', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const dirLabel = parent.querySelector('.file-tree-directory') as HTMLElement;
       const disclosure = parent.querySelector('.file-tree-disclosure') as HTMLElement;
 
-      // Initially expanded
+      // Initially expanded (children loaded)
       expect(disclosure.classList.contains('expanded')).toBe(true);
 
       // Click to collapse
@@ -250,7 +273,7 @@ describe('FileTree', () => {
 
     it('should render file names in a dedicated span', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const names = parent.querySelectorAll('.file-tree-name');
       expect(names.length).toBeGreaterThan(0);
@@ -328,7 +351,6 @@ describe('FileTree', () => {
       expect(dirName.textContent).toContain('src');
       expect(dirName.textContent).toContain('components');
 
-      // Should have a separator
       const sep = dirName.querySelector('.file-tree-path-sep');
       expect(sep).not.toBeNull();
     });
@@ -348,9 +370,8 @@ describe('FileTree', () => {
 
     it('should not compact when directory has multiple children', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
-      // docs has 2 file children — should NOT be compacted
       const dirs = parent.querySelectorAll('.file-tree-directory');
       expect(dirs.length).toBe(1);
 
@@ -379,7 +400,6 @@ describe('FileTree', () => {
       fileTree.loadDirectory(createCompactableEntries());
 
       const dir = parent.querySelector('.file-tree-directory') as HTMLElement;
-      // The path should be the deepest compacted folder
       expect(dir.dataset.path).toBe('/project/src/components');
     });
 
@@ -392,7 +412,7 @@ describe('FileTree', () => {
         .closest('.file-tree-item')!
         .querySelector('.file-tree-children') as HTMLElement;
 
-      // Initially expanded
+      // Initially expanded (children are loaded)
       expect(childContainer.style.display).not.toBe('none');
 
       // Collapse
@@ -405,10 +425,157 @@ describe('FileTree', () => {
     });
   });
 
+  describe('lazy expand', () => {
+    it('should invoke onDirectoryExpand callback when expanding unloaded directory', async () => {
+      const expandCallback = vi
+        .fn()
+        .mockResolvedValue([{ name: 'guide.md', path: '/project/docs/guide.md', type: 'file' }]);
+
+      fileTree.render(parent);
+      fileTree.onDirectoryExpand(expandCallback);
+      fileTree.loadDirectory(createShallowEntries());
+
+      const dirLabel = parent.querySelector('.file-tree-directory') as HTMLElement;
+      dirLabel.click();
+
+      // Wait for async callback
+      await vi.waitFor(() => {
+        expect(expandCallback).toHaveBeenCalledWith('/project/docs');
+      });
+    });
+
+    it('should render children after lazy load completes', async () => {
+      const expandCallback = vi.fn().mockResolvedValue([
+        { name: 'guide.md', path: '/project/docs/guide.md', type: 'file' },
+        { name: 'api.md', path: '/project/docs/api.md', type: 'file' },
+      ]);
+
+      fileTree.render(parent);
+      fileTree.onDirectoryExpand(expandCallback);
+      fileTree.loadDirectory(createShallowEntries());
+
+      // Before expand: only 2 top-level items
+      expect(parent.querySelectorAll('.file-tree-item').length).toBe(2);
+
+      const dirLabel = parent.querySelector('.file-tree-directory') as HTMLElement;
+      dirLabel.click();
+
+      await vi.waitFor(() => {
+        // After expand: 2 top-level + 2 children = 4
+        expect(parent.querySelectorAll('.file-tree-item').length).toBe(4);
+      });
+
+      // Children container should be visible
+      const childContainer = dirLabel
+        .closest('.file-tree-item')!
+        .querySelector('.file-tree-children') as HTMLElement;
+      expect(childContainer.style.display).not.toBe('none');
+    });
+
+    it('should not invoke callback on second expand (uses cached children)', async () => {
+      const expandCallback = vi
+        .fn()
+        .mockResolvedValue([{ name: 'guide.md', path: '/project/docs/guide.md', type: 'file' }]);
+
+      fileTree.render(parent);
+      fileTree.onDirectoryExpand(expandCallback);
+      fileTree.loadDirectory(createShallowEntries());
+
+      const dirLabel = parent.querySelector('.file-tree-directory') as HTMLElement;
+
+      // First click: expands and loads
+      dirLabel.click();
+      await vi.waitFor(() => {
+        expect(expandCallback).toHaveBeenCalledTimes(1);
+      });
+
+      // Second click: collapse
+      dirLabel.click();
+
+      // Third click: expand again — should NOT call callback again
+      dirLabel.click();
+      expect(expandCallback).toHaveBeenCalledTimes(1);
+    });
+
+    it('should auto-expand compact chain on lazy load', async () => {
+      // When loading returns a single directory child, auto-expand it
+      const expandCallback = vi
+        .fn()
+        .mockResolvedValueOnce([
+          { name: 'components', path: '/project/src/components', type: 'directory' },
+        ])
+        .mockResolvedValueOnce([
+          { name: 'Button.tsx', path: '/project/src/components/Button.tsx', type: 'file' },
+          { name: 'Input.tsx', path: '/project/src/components/Input.tsx', type: 'file' },
+        ]);
+
+      const entries: DirectoryEntry[] = [{ name: 'src', path: '/project/src', type: 'directory' }];
+
+      fileTree.render(parent);
+      fileTree.onDirectoryExpand(expandCallback);
+      fileTree.loadDirectory(entries);
+
+      const dirLabel = parent.querySelector('.file-tree-directory') as HTMLElement;
+      dirLabel.click();
+
+      await vi.waitFor(() => {
+        // Should have auto-expanded the chain: src/components shown compacted
+        // with 2 file children
+        expect(expandCallback).toHaveBeenCalledTimes(2);
+        expect(expandCallback).toHaveBeenCalledWith('/project/src');
+        expect(expandCallback).toHaveBeenCalledWith('/project/src/components');
+      });
+
+      await vi.waitFor(() => {
+        // The directory label should show compacted name
+        const dirName = parent.querySelector('.file-tree-directory .file-tree-name') as HTMLElement;
+        expect(dirName.textContent).toContain('src');
+        expect(dirName.textContent).toContain('components');
+      });
+    });
+
+    it('should show disclosure as expanded after lazy load', async () => {
+      const expandCallback = vi
+        .fn()
+        .mockResolvedValue([{ name: 'guide.md', path: '/project/docs/guide.md', type: 'file' }]);
+
+      fileTree.render(parent);
+      fileTree.onDirectoryExpand(expandCallback);
+      fileTree.loadDirectory(createShallowEntries());
+
+      const disclosure = parent.querySelector('.file-tree-disclosure') as HTMLElement;
+      expect(disclosure.classList.contains('expanded')).toBe(false);
+
+      const dirLabel = parent.querySelector('.file-tree-directory') as HTMLElement;
+      dirLabel.click();
+
+      await vi.waitFor(() => {
+        expect(disclosure.classList.contains('expanded')).toBe(true);
+      });
+    });
+  });
+
   describe('non-markdown files', () => {
+    function createMixedLoadedEntries(): DirectoryEntry[] {
+      return [
+        {
+          name: 'src',
+          path: '/project/src',
+          type: 'directory',
+          children: [
+            { name: 'app.ts', path: '/project/src/app.ts', type: 'file' },
+            { name: 'index.md', path: '/project/src/index.md', type: 'file' },
+          ],
+        },
+        { name: 'readme.md', path: '/project/readme.md', type: 'file' },
+        { name: 'package.json', path: '/project/package.json', type: 'file' },
+        { name: 'logo.png', path: '/project/logo.png', type: 'file' },
+      ];
+    }
+
     it('should add file-tree-file-readonly class to non-markdown files', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createMixedEntries());
+      fileTree.loadDirectory(createMixedLoadedEntries());
 
       const readonlyFiles = parent.querySelectorAll('.file-tree-file-readonly');
       // package.json, logo.png, app.ts are non-markdown
@@ -419,7 +586,7 @@ describe('FileTree', () => {
       const callback = vi.fn();
       fileTree.render(parent);
       fileTree.onFileSelected(callback);
-      fileTree.loadDirectory(createMixedEntries());
+      fileTree.loadDirectory(createMixedLoadedEntries());
 
       const readonlyFile = parent.querySelector('.file-tree-file-readonly') as HTMLElement;
       readonlyFile.click();
@@ -431,9 +598,8 @@ describe('FileTree', () => {
       const callback = vi.fn();
       fileTree.render(parent);
       fileTree.onFileSelected(callback);
-      fileTree.loadDirectory(createMixedEntries());
+      fileTree.loadDirectory(createMixedLoadedEntries());
 
-      // Find the readme.md file (not readonly)
       const mdFiles = parent.querySelectorAll('.file-tree-file:not(.file-tree-file-readonly)');
       expect(mdFiles.length).toBeGreaterThan(0);
 
@@ -443,7 +609,7 @@ describe('FileTree', () => {
 
     it('should show context menu with only path items for non-markdown files', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createMixedEntries());
+      fileTree.loadDirectory(createMixedLoadedEntries());
 
       const readonlyFile = parent.querySelector('.file-tree-file-readonly') as HTMLElement;
       readonlyFile.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -455,7 +621,6 @@ describe('FileTree', () => {
       const labels = Array.from(items).map((i) => i.textContent);
       expect(labels).toContain('Copy Path');
       expect(labels).toContain('Copy Relative Path');
-      // Should NOT have Open/Export items
       expect(labels).not.toContain('Open File');
       expect(labels).not.toContain('Export as PDF');
     });
@@ -464,7 +629,7 @@ describe('FileTree', () => {
   describe('context menu', () => {
     it('should show context menu on right-click of a file', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -475,7 +640,7 @@ describe('FileTree', () => {
 
     it('should have Open, Export PDF, and Export DOCX items', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -491,7 +656,7 @@ describe('FileTree', () => {
       const callback = vi.fn();
       fileTree.render(parent);
       fileTree.onFileSelected(callback);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -507,7 +672,7 @@ describe('FileTree', () => {
       const exportCallback = vi.fn();
       fileTree.render(parent);
       fileTree.onFileExport(exportCallback);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -525,7 +690,7 @@ describe('FileTree', () => {
       const exportCallback = vi.fn();
       fileTree.render(parent);
       fileTree.onFileExport(exportCallback);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -541,7 +706,7 @@ describe('FileTree', () => {
 
     it('should show context menu with path items on right-click of a directory', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const dirItem = parent.querySelector('.file-tree-directory') as HTMLElement;
       dirItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -553,21 +718,19 @@ describe('FileTree', () => {
       const labels = Array.from(items).map((i) => i.textContent);
       expect(labels).toContain('Copy Path');
       expect(labels).toContain('Copy Relative Path');
-      // Should NOT have Open/Export items
       expect(labels).not.toContain('Open File');
       expect(labels).not.toContain('Export as PDF');
     });
 
     it('should dismiss context menu on outside click', async () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
       expect(document.querySelector('.tab-context-menu')).not.toBeNull();
 
-      // Wait for setTimeout(0) dismiss handler registration
       await new Promise((r) => setTimeout(r, 0));
       document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
@@ -576,7 +739,7 @@ describe('FileTree', () => {
 
     it('markdown file context menu includes Copy Path and Copy Relative Path', () => {
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -592,7 +755,7 @@ describe('FileTree', () => {
       Object.assign(navigator, { clipboard: { writeText } });
 
       fileTree.render(parent);
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -610,7 +773,7 @@ describe('FileTree', () => {
 
       fileTree.render(parent);
       fileTree.setRootPath('/project');
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
@@ -629,8 +792,7 @@ describe('FileTree', () => {
       Object.assign(navigator, { clipboard: { writeText } });
 
       fileTree.render(parent);
-      // Don't call setRootPath
-      fileTree.loadDirectory(createEntries());
+      fileTree.loadDirectory(createLoadedEntries());
 
       const fileItem = parent.querySelector('.file-tree-file') as HTMLElement;
       fileItem.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));

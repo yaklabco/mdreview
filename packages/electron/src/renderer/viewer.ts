@@ -103,6 +103,11 @@ export class MDReviewElectronViewer {
           }
         });
       });
+      this.fileTree.onDirectoryExpand(async (dirPath) => {
+        const state = await window.mdreview.getState();
+        const showAllFiles = state.preferences.showAllFiles ?? false;
+        return window.mdreview.listDirectory(dirPath, { showAllFiles });
+      });
 
       // Sidebar resize handle
       const workspaceEl = document.getElementById('mdreview-workspace');
