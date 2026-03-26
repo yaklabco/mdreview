@@ -42,6 +42,9 @@ vi.mock('@mdreview/core', async () => {
     FileScanner: {
       getFileSize: vi.fn().mockReturnValue(100),
     },
+    mermaidRenderer: {
+      renderAllImmediate: vi.fn().mockResolvedValue(undefined),
+    },
   };
 });
 
@@ -316,6 +319,58 @@ describe('DocumentContext', () => {
       const ctx = new DocumentContext('tab-1');
       await ctx.exportDOCX();
       expect(mockMdview.saveFile).not.toHaveBeenCalled();
+    });
+
+    it('should force-render mermaid diagrams before collecting content', async () => {
+      mockMdview.saveFile = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const { mermaidRenderer } = await import('@mdreview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      // Add a mermaid container to the DOM
+      container.innerHTML = `
+        <div class="mermaid-container mermaid-pending" id="mermaid-test1">
+          <div class="mermaid-loading">Loading...</div>
+        </div>
+      `;
+
+      await ctx.exportDOCX();
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mermaidRenderer.renderAllImmediate).toHaveBeenCalledWith(container);
+    });
+
+    it('should only query mermaid SVGs, not all SVGs', async () => {
+      mockMdview.saveFile = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const { SVGConverter } = await import('@mdreview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      // Add both a mermaid SVG and a non-mermaid SVG
+      container.innerHTML = `
+        <div class="mermaid-container mermaid-ready" id="mermaid-test1">
+          <div class="mermaid-rendered">
+            <svg width="200" height="100" id="mermaid-svg"></svg>
+          </div>
+        </div>
+        <svg width="16" height="16" id="icon-svg"><circle r="8"/></svg>
+      `;
+
+      await ctx.exportDOCX();
+
+      const converterInstance = (SVGConverter as unknown as ReturnType<typeof vi.fn>).mock
+        .results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      const svgsPassedToConverter = converterInstance.convertAll.mock.calls[0][0] as SVGElement[];
+
+      // Should only include the mermaid SVG, not the icon SVG
+      expect(svgsPassedToConverter).toHaveLength(1);
+      expect(svgsPassedToConverter[0].id).toBe('mermaid-svg');
     });
   });
 

@@ -9,6 +9,7 @@ import {
   ContentCollector,
   SVGConverter,
   DOCXGenerator,
+  mermaidRenderer,
   type Preferences,
   type RenderProgress,
 } from '@mdreview/core';
@@ -251,9 +252,13 @@ export class DocumentContext {
 
   async exportDOCX(): Promise<void> {
     if (!this.filePath || !this.container) return;
+    // Force-render any lazy-loaded mermaid diagrams before collecting
+    await mermaidRenderer.renderAllImmediate(this.container);
     const collector = new ContentCollector();
     const content = collector.collect(this.container);
-    const svgElements = Array.from(this.container.querySelectorAll('svg')) as SVGElement[];
+    const svgElements = Array.from(
+      this.container.querySelectorAll<SVGElement>('.mermaid-container svg')
+    );
     const converter = new SVGConverter();
     const images = converter.convertAll(svgElements);
     const generator = new DOCXGenerator();
