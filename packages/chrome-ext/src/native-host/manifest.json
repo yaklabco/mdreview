@@ -1,5 +1,5 @@
 {
-  "name": "com.mdview.filewriter",
+  "name": "com.mdreview.filewriter",
   "description": "MDView native messaging host for writing markdown files",
   "path": "HOST_PATH_PLACEHOLDER",
   "type": "stdio",

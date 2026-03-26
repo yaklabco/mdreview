@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "build:host": "esbuild src/native-host/host.ts --bundle --platform=node --format=cjs --outfile=src/native-host/host.cjs"
   },
   "dependencies": {
     "@mdreview/core": "workspace:*"
