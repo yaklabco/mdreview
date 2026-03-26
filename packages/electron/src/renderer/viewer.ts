@@ -429,8 +429,6 @@ export class MDReviewElectronViewer {
       if (ctx) {
         void ctx.exportDOCX();
       }
-    } else if (command === 'help:about') {
-      this.showAboutModal();
     } else if (command === 'help:github') {
       void window.mdreview.openExternal('https://github.com/yaklabco/mdreview');
     } else if (command === 'preferences') {
@@ -493,34 +491,6 @@ export class MDReviewElectronViewer {
       },
       MDReviewElectronViewer.AVAILABLE_THEMES
     );
-  }
-
-  private showAboutModal(): void {
-    // Don't create duplicate modals
-    if (document.querySelector('.mdreview-about-modal')) return;
-
-    const modal = document.createElement('div');
-    modal.className = 'mdreview-about-modal';
-    modal.innerHTML = `
-      <div class="mdreview-about-card">
-        <h2>Design Review</h2>
-        <p>An app for design review of software projects</p>
-        <p>Version 0.3.4</p>
-      </div>
-    `;
-
-    const dismiss = () => modal.remove();
-    modal.addEventListener('click', dismiss);
-
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        dismiss();
-        document.removeEventListener('keydown', onEscape);
-      }
-    };
-    document.addEventListener('keydown', onEscape);
-
-    document.body.appendChild(modal);
   }
 
   private setupIPCListeners(): void {

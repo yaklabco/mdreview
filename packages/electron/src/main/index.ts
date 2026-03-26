@@ -33,6 +33,12 @@ const THEME_BACKGROUNDS: Record<string, string> = {
 // Set the app name for the Dock and menu bar (dev mode uses package.json name otherwise)
 app.setName('Design Review');
 
+app.setAboutPanelOptions({
+  applicationName: 'Design Review',
+  applicationVersion: app.getVersion(),
+  credits: 'built with ❤️ by James Ainslie',
+});
+
 // Register custom protocol for serving local assets (images, etc.)
 // Must be called before app.whenReady()
 protocol.registerSchemesAsPrivileged([
