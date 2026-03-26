@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { StateManager } from './state-manager';
 import { NoopStorageAdapter } from '@mdreview/core/node';
 
@@ -278,12 +278,63 @@ describe('StateManager', () => {
     });
 
     describe('workspace persistence', () => {
-      it('should persist workspace settings on change', async () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should debounce workspace persistence', () => {
+        const spy = vi.spyOn(storage, 'setLocal');
+
         manager.setSidebarVisible(false);
-        // Allow async persistence to complete
-        await new Promise((r) => setTimeout(r, 10));
+        manager.setSidebarWidth(300);
+        manager.setTabBarVisible(false);
+
+        // No persistence yet — debounce timer hasn't fired
+        expect(spy).not.toHaveBeenCalled();
+
+        // Advance past the 500ms debounce
+        vi.advanceTimersByTime(500);
+
+        // Now it should have persisted exactly once
+        expect(spy).toHaveBeenCalledTimes(1);
+      });
+
+      it('should persist workspace after debounce delay', async () => {
+        manager.setSidebarVisible(false);
+        vi.advanceTimersByTime(500);
         const stored = await storage.getLocal(['workspace']);
         expect(stored.workspace).toBeDefined();
+      });
+
+      it('should flush pending persistence immediately', () => {
+        const spy = vi.spyOn(storage, 'setLocal');
+
+        manager.setSidebarVisible(false);
+        expect(spy).not.toHaveBeenCalled();
+
+        manager.flushPersist();
+        expect(spy).toHaveBeenCalledTimes(1);
+      });
+
+      it('should not double-persist after flush then timer', () => {
+        const spy = vi.spyOn(storage, 'setLocal');
+
+        manager.setSidebarVisible(false);
+        manager.flushPersist();
+        vi.advanceTimersByTime(500);
+
+        // Only the flush call, no extra from timer
+        expect(spy).toHaveBeenCalledTimes(1);
+      });
+
+      it('should be a no-op flush when nothing is pending', () => {
+        const spy = vi.spyOn(storage, 'setLocal');
+        manager.flushPersist();
+        expect(spy).not.toHaveBeenCalled();
       });
     });
 
@@ -364,10 +415,12 @@ describe('StateManager', () => {
       });
 
       it('should persist tab groups', async () => {
+        vi.useFakeTimers();
         const tab = manager.openTab('/tmp/a.md');
         manager.createTabGroup('Research', 'blue', [tab.id]);
 
-        await new Promise((r) => setTimeout(r, 10));
+        vi.advanceTimersByTime(500);
+        vi.useRealTimers();
         const stored = await storage.getLocal(['workspace']);
         const ws = stored.workspace as Record<string, unknown>;
         expect(ws.tabGroups).toBeDefined();

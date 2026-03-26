@@ -28,11 +28,11 @@ describe('DirectoryService', () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('should list markdown files in a directory', () => {
+  it('should list markdown files in a directory', async () => {
     writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
     writeFileSync(join(tmpDir, 'notes.markdown'), '# Notes');
 
-    const entries = service.listDirectory(tmpDir);
+    const entries = await service.listDirectory(tmpDir);
     const names = entries.map((e) => e.name);
 
     expect(names).toContain('readme.md');
@@ -40,41 +40,39 @@ describe('DirectoryService', () => {
     expect(entries.every((e) => e.type === 'file')).toBe(true);
   });
 
-  it('should sort directories first, then alphabetically', () => {
+  it('should sort directories first, then alphabetically', async () => {
     mkdirSync(join(tmpDir, 'zebra'));
-    writeFileSync(join(tmpDir, 'zebra', 'file.md'), '# Z');
     mkdirSync(join(tmpDir, 'alpha'));
-    writeFileSync(join(tmpDir, 'alpha', 'file.md'), '# A');
     writeFileSync(join(tmpDir, 'beta.md'), '# B');
     writeFileSync(join(tmpDir, 'aaa.md'), '# A');
 
-    const entries = service.listDirectory(tmpDir);
+    const entries = await service.listDirectory(tmpDir);
     const names = entries.map((e) => e.name);
 
     // Directories first (alphabetically), then files (alphabetically)
     expect(names).toEqual(['alpha', 'zebra', 'aaa.md', 'beta.md']);
   });
 
-  it('should filter out non-markdown files', () => {
+  it('should filter out non-markdown files', async () => {
     writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
     writeFileSync(join(tmpDir, 'image.png'), 'binary');
     writeFileSync(join(tmpDir, 'style.css'), 'body {}');
     writeFileSync(join(tmpDir, 'data.json'), '{}');
 
-    const entries = service.listDirectory(tmpDir);
+    const entries = await service.listDirectory(tmpDir);
 
     expect(entries).toHaveLength(1);
     expect(entries[0].name).toBe('readme.md');
   });
 
-  it('should build recursive tree structure', () => {
+  it('should list immediate children only', async () => {
     mkdirSync(join(tmpDir, 'docs'));
     writeFileSync(join(tmpDir, 'docs', 'guide.md'), '# Guide');
     mkdirSync(join(tmpDir, 'docs', 'api'));
     writeFileSync(join(tmpDir, 'docs', 'api', 'reference.md'), '# Ref');
     writeFileSync(join(tmpDir, 'readme.md'), '# Root');
 
-    const entries = service.listDirectory(tmpDir);
+    const entries = await service.listDirectory(tmpDir);
 
     // Should have docs/ directory and readme.md
     expect(entries).toHaveLength(2);
@@ -82,37 +80,83 @@ describe('DirectoryService', () => {
     const docsDir = entries.find((e) => e.name === 'docs');
     expect(docsDir).toBeDefined();
     expect(docsDir!.type).toBe('directory');
-    expect(docsDir!.children).toBeDefined();
-    expect(docsDir!.children).toHaveLength(2); // api/ and guide.md
+    // Shallow: children are undefined (not loaded yet)
+    expect(docsDir!.children).toBeUndefined();
+  });
 
-    const apiDir = docsDir!.children!.find((e) => e.name === 'api');
+  it('should support incremental loading via successive calls', async () => {
+    mkdirSync(join(tmpDir, 'docs'));
+    writeFileSync(join(tmpDir, 'docs', 'guide.md'), '# Guide');
+    mkdirSync(join(tmpDir, 'docs', 'api'));
+    writeFileSync(join(tmpDir, 'docs', 'api', 'reference.md'), '# Ref');
+    writeFileSync(join(tmpDir, 'readme.md'), '# Root');
+
+    // First call: root level
+    const rootEntries = await service.listDirectory(tmpDir);
+    expect(rootEntries).toHaveLength(2);
+    const docsDir = rootEntries.find((e) => e.name === 'docs');
+    expect(docsDir!.children).toBeUndefined();
+
+    // Second call: expand docs/
+    const docsEntries = await service.listDirectory(join(tmpDir, 'docs'));
+    expect(docsEntries).toHaveLength(2); // api/ and guide.md
+    const apiDir = docsEntries.find((e) => e.name === 'api');
     expect(apiDir).toBeDefined();
     expect(apiDir!.type).toBe('directory');
-    expect(apiDir!.children).toHaveLength(1);
-    expect(apiDir!.children![0].name).toBe('reference.md');
+    expect(apiDir!.children).toBeUndefined();
+    const guideFile = docsEntries.find((e) => e.name === 'guide.md');
+    expect(guideFile).toBeDefined();
+    expect(guideFile!.type).toBe('file');
   });
 
-  it('should handle empty directory', () => {
-    const entries = service.listDirectory(tmpDir);
+  it('should handle empty directory', async () => {
+    const entries = await service.listDirectory(tmpDir);
     expect(entries).toEqual([]);
   });
 
-  it('should handle nonexistent directory gracefully', () => {
-    const entries = service.listDirectory(join(tmpDir, 'nonexistent'));
+  it('should handle nonexistent directory gracefully', async () => {
+    const entries = await service.listDirectory(join(tmpDir, 'nonexistent'));
     expect(entries).toEqual([]);
   });
 
-  it('should exclude directories that contain no markdown files', () => {
+  it('should include all non-hidden, non-excluded directories', async () => {
     mkdirSync(join(tmpDir, 'images'));
     writeFileSync(join(tmpDir, 'images', 'photo.png'), 'binary');
     mkdirSync(join(tmpDir, 'docs'));
     writeFileSync(join(tmpDir, 'docs', 'guide.md'), '# Guide');
 
-    const entries = service.listDirectory(tmpDir);
+    const entries = await service.listDirectory(tmpDir);
 
     const names = entries.map((e) => e.name);
-    expect(names).not.toContain('images');
+    // With shallow loading, all dirs appear (we don't know contents yet)
+    expect(names).toContain('images');
     expect(names).toContain('docs');
+  });
+
+  it('should exclude hidden files and directories', async () => {
+    mkdirSync(join(tmpDir, '.git'));
+    writeFileSync(join(tmpDir, '.hidden'), 'secret');
+    writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
+
+    const entries = await service.listDirectory(tmpDir);
+    const names = entries.map((e) => e.name);
+
+    expect(names).not.toContain('.git');
+    expect(names).not.toContain('.hidden');
+    expect(names).toContain('readme.md');
+  });
+
+  it('should exclude node_modules directory', async () => {
+    mkdirSync(join(tmpDir, 'node_modules'));
+    writeFileSync(join(tmpDir, 'node_modules', 'pkg.js'), 'module');
+    mkdirSync(join(tmpDir, 'src'));
+    writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
+
+    const entries = await service.listDirectory(tmpDir);
+    const names = entries.map((e) => e.name);
+
+    expect(names).not.toContain('node_modules');
+    expect(names).toContain('src');
   });
 
   it('should watch and call back on changes', () => {
@@ -154,24 +198,24 @@ describe('DirectoryService', () => {
     expect(mockWatcher.close).toHaveBeenCalledTimes(1);
   });
 
-  it('should recognize all markdown extensions', () => {
+  it('should recognize all markdown extensions', async () => {
     const extensions = ['.md', '.markdown', '.mdown', '.mkd', '.mkdn', '.mdx'];
     for (const ext of extensions) {
       writeFileSync(join(tmpDir, `file${ext}`), '# Test');
     }
 
-    const entries = service.listDirectory(tmpDir);
+    const entries = await service.listDirectory(tmpDir);
     expect(entries).toHaveLength(extensions.length);
   });
 
   describe('showAllFiles option', () => {
-    it('should include non-markdown files when showAllFiles is true', () => {
+    it('should include non-markdown files when showAllFiles is true', async () => {
       writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
       writeFileSync(join(tmpDir, 'image.png'), 'binary');
       writeFileSync(join(tmpDir, 'style.css'), 'body {}');
       writeFileSync(join(tmpDir, 'data.json'), '{}');
 
-      const entries = service.listDirectory(tmpDir, { showAllFiles: true });
+      const entries = await service.listDirectory(tmpDir, { showAllFiles: true });
 
       const names = entries.map((e) => e.name);
       expect(names).toContain('readme.md');
@@ -181,58 +225,53 @@ describe('DirectoryService', () => {
       expect(entries).toHaveLength(4);
     });
 
-    it('should still exclude hidden files when showAllFiles is true', () => {
+    it('should still exclude hidden files when showAllFiles is true', async () => {
       writeFileSync(join(tmpDir, '.hidden'), 'secret');
       writeFileSync(join(tmpDir, 'visible.txt'), 'hello');
 
-      const entries = service.listDirectory(tmpDir, { showAllFiles: true });
+      const entries = await service.listDirectory(tmpDir, { showAllFiles: true });
 
       const names = entries.map((e) => e.name);
       expect(names).not.toContain('.hidden');
       expect(names).toContain('visible.txt');
     });
 
-    it('should exclude node_modules directory when showAllFiles is true', () => {
+    it('should exclude node_modules directory when showAllFiles is true', async () => {
       mkdirSync(join(tmpDir, 'node_modules'));
       writeFileSync(join(tmpDir, 'node_modules', 'pkg.js'), 'module');
       mkdirSync(join(tmpDir, 'src'));
       writeFileSync(join(tmpDir, 'src', 'app.ts'), 'code');
 
-      const entries = service.listDirectory(tmpDir, { showAllFiles: true });
+      const entries = await service.listDirectory(tmpDir, { showAllFiles: true });
 
       const names = entries.map((e) => e.name);
       expect(names).not.toContain('node_modules');
       expect(names).toContain('src');
     });
 
-    it('should show directories that have non-markdown children when showAllFiles is true', () => {
+    it('should show all directories regardless of contents when showAllFiles is true', async () => {
       mkdirSync(join(tmpDir, 'images'));
       writeFileSync(join(tmpDir, 'images', 'photo.png'), 'binary');
 
-      // With default options, images dir is excluded
-      const defaultEntries = service.listDirectory(tmpDir);
-      expect(defaultEntries.map((e) => e.name)).not.toContain('images');
-
-      // With showAllFiles, images dir is included
-      const allEntries = service.listDirectory(tmpDir, { showAllFiles: true });
+      const allEntries = await service.listDirectory(tmpDir, { showAllFiles: true });
       expect(allEntries.map((e) => e.name)).toContain('images');
     });
 
-    it('should default to markdown-only when options not provided', () => {
+    it('should default to markdown-only when options not provided', async () => {
       writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
       writeFileSync(join(tmpDir, 'image.png'), 'binary');
 
-      const entries = service.listDirectory(tmpDir);
+      const entries = await service.listDirectory(tmpDir);
 
       expect(entries).toHaveLength(1);
       expect(entries[0].name).toBe('readme.md');
     });
 
-    it('should default to markdown-only when showAllFiles is false', () => {
+    it('should default to markdown-only when showAllFiles is false', async () => {
       writeFileSync(join(tmpDir, 'readme.md'), '# Hello');
       writeFileSync(join(tmpDir, 'image.png'), 'binary');
 
-      const entries = service.listDirectory(tmpDir, { showAllFiles: false });
+      const entries = await service.listDirectory(tmpDir, { showAllFiles: false });
 
       expect(entries).toHaveLength(1);
       expect(entries[0].name).toBe('readme.md');

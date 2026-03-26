@@ -65,6 +65,14 @@ export interface MdreviewPreloadAPI {
   setOpenFolder(path: string | null): Promise<void>;
   openExternal(url: string): Promise<void>;
 
+  // Context menu
+  showContextMenu(context: {
+    hasSelection: boolean;
+    selectionText: string;
+    filePath: string;
+  }): Promise<void>;
+  revealInFinder(path: string): Promise<void>;
+
   // Tab groups
   createTabGroup(name: string, color: TabGroupColor, tabIds: string[]): Promise<TabGroupState>;
   updateTabGroup(

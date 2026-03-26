@@ -8,7 +8,7 @@ import { MDReviewElectronViewer } from './viewer';
 // rewritten from relative paths during content preprocessing.
 DOMPurifierUtil.configure({
   ALLOWED_URI_REGEXP:
-    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|local-asset):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
+    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|local-asset|app):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
 });
 
 // Apply theme immediately — before viewer construction — so all workspace
