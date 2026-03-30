@@ -27,6 +27,7 @@ import type { MessagingAdapter } from './adapters';
 const debug = {
   info: (..._args: unknown[]) => {},
   debug: (..._args: unknown[]) => {},
+  warn: (..._args: unknown[]) => {},
   error: (..._args: unknown[]) => {},
   log: (..._args: unknown[]) => {},
 };
@@ -128,24 +129,32 @@ export class RenderPipeline {
     try {
       // Check cache if enabled and adapter is available
       if (useCache && filePath && this.messaging) {
-        const cacheKey = await this.getCacheKey(
-          filePath,
-          markdown,
-          theme as ThemeName,
-          preferences
-        );
+        try {
+          const cacheKey = await this.getCacheKey(
+            filePath,
+            markdown,
+            theme as ThemeName,
+            preferences
+          );
 
-        const cached = await this.getCachedResult(cacheKey);
-        if (cached) {
-          debug.info('RenderPipeline', 'Using cached result from service worker');
-          this.notifyProgressThrottled({
-            stage: 'cached',
-            progress: 100,
-            message: 'Loading from cache...',
-          });
+          const cached = await this.getCachedResult(cacheKey);
+          if (cached) {
+            debug.info('RenderPipeline', 'Using cached result from service worker');
+            this.notifyProgressThrottled({
+              stage: 'cached',
+              progress: 100,
+              message: 'Loading from cache...',
+            });
 
-          await this.renderFromCache(container, cached);
-          return;
+            await this.renderFromCache(container, cached);
+            return;
+          }
+        } catch (cacheError: unknown) {
+          debug.warn(
+            'RenderPipeline',
+            'Cache lookup failed, rendering without cache:',
+            String(cacheError)
+          );
         }
       }
 

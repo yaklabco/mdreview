@@ -3,8 +3,8 @@
  * Handles state management, message passing, coordination, and cache management
  */
 
-import type { AppState, ThemeName, CachedResult } from '@mdreview/core';
-import { CacheManager, DEFAULT_STATE } from '@mdreview/core';
+import type { AppState, ThemeName, CachedResult } from '@mdreview/core/sw';
+import { CacheManager, DEFAULT_STATE } from '@mdreview/core/sw';
 import { debug } from '../utils/debug-logger';
 
 // Cache management (persists across page reloads)

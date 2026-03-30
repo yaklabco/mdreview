@@ -68,10 +68,8 @@ class MDReviewContentScript {
 
     try {
       // Get initial state from background FIRST (sets debug mode)
-      await this.loadState();
 
-      // Now we can log with proper debug mode
-      debug.info('MDView', '=== INITIALIZATION STARTED ===');
+      await this.loadState();
       debug.debug('MDView', `URL: ${window.location.href}`);
       debug.debug('MDView', `Document ready state: ${document.readyState}`);
       debug.debug('MDView', `Debug mode enabled: ${this.state?.preferences.debug}`);
@@ -96,7 +94,6 @@ class MDReviewContentScript {
       debug.info('MDView', 'Markdown file detected:', FileScanner.getFilePath());
 
       // Read file content
-      debug.debug('MDView', 'Reading file content...');
       const content = FileScanner.readFileContent();
       const fileSize = FileScanner.getFileSize(content);
       const initialHash = await FileScanner.generateHash(content);
@@ -167,9 +164,7 @@ class MDReviewContentScript {
       this.setupMessageListener();
 
       // Import render pipeline dynamically
-      debug.debug('MDView', 'Importing render pipeline...');
       const { renderPipeline } = await import('../core/render-pipeline');
-      debug.info('MDView', 'Render pipeline imported successfully');
 
       // Set up progress callback
       debug.debug('MDView', 'Setting up progress callback...');
@@ -209,26 +204,13 @@ class MDReviewContentScript {
 
       // Apply initial theme BEFORE starting render to avoid flash
       debug.debug('MDView', 'Applying initial theme...');
-      const startTime = Date.now();
       await this.applyInitialTheme();
-      debug.info('MDView', `Initial theme applied in ${Date.now() - startTime}ms`);
 
       // Render the markdown with cache and worker support
       const isProgressive = fileSize > 500000;
       const filePath = FileScanner.getFilePath();
       const theme = this.state?.preferences.theme || 'github-light';
       const preferences = this.state?.preferences || {};
-
-      debug.info(
-        'MDView',
-        `Starting render with theme: ${theme} and preferences:`,
-        JSON.stringify(preferences)
-      );
-      debug.info(
-        'MDView',
-        `Starting render - file size: ${fileSize} bytes, progressive: ${isProgressive}`
-      );
-      debug.info('MDView', `Using cache and workers for file: ${filePath}`);
 
       await renderPipeline.render({
         container,
@@ -240,9 +222,6 @@ class MDReviewContentScript {
         useCache: true,
         useWorkers: true,
       });
-
-      const renderTime = Date.now() - loadingStartTime;
-      debug.info('MDView', `Rendering completed in ${renderTime}ms`);
 
       // Clean up progress callback and remove loading indicator
       debug.debug('MDView', 'Cleaning up progress callback and removing loading indicator...');
@@ -392,7 +371,12 @@ class MDReviewContentScript {
 
   private async loadState(): Promise<void> {
     try {
-      const response: unknown = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
+      const response: unknown = await Promise.race([
+        chrome.runtime.sendMessage({ type: 'GET_STATE' }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('GET_STATE timed out after 1s')), 1000)
+        ),
+      ]);
       const typedResponse = response as { state: AppState };
       this.state = typedResponse.state;
       debug.debug('MDView', 'State loaded:', this.state);

@@ -91,10 +91,12 @@ export class FileScanner extends CoreFileScanner {
   }
 
   /**
-   * Get the current file path
+   * Get the current file path.
+   * Decodes URL-encoded characters (e.g. %20 → space) so the native
+   * messaging host receives an actual filesystem path.
    */
   static getFilePath(): string {
-    return window.location.pathname;
+    return decodeURIComponent(window.location.pathname);
   }
 
   /**

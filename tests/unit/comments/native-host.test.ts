@@ -308,6 +308,52 @@ describe('Native Host Message Handling', () => {
       expect(result).toEqual({ success: true });
     });
 
+    it('should accept comment writes when file has CRLF line endings but content uses LF', () => {
+      const existingCRLF = '# Doc\r\n\r\nSome text here.\r\n';
+      const newContentLF =
+        '# Doc\n\nSome text[@1] here.\n\n<!-- mdreview:annotations\n[{"id":"comment-1"}]\n-->';
+      vi.mocked(fs.readFileSync).mockReturnValue(existingCRLF);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: newContentLF,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should accept comment writes when both use CRLF line endings', () => {
+      const existingCRLF = '# Doc\r\n\r\nSome text here.\r\n';
+      const newContentCRLF =
+        '# Doc\r\n\r\nSome text[@1] here.\r\n\r\n<!-- mdreview:annotations\r\n[{"id":"comment-1"}]\r\n-->';
+      vi.mocked(fs.readFileSync).mockReturnValue(existingCRLF);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: newContentCRLF,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should still reject body changes even with mixed line endings', () => {
+      const existingCRLF = '# Doc\r\n\r\nOriginal text.\r\n';
+      const modifiedLF = '# Doc\n\nModified text.\n';
+      vi.mocked(fs.readFileSync).mockReturnValue(existingCRLF);
+
+      const result = handleMessage({
+        action: 'write',
+        path: '/path/to/file.md',
+        content: modifiedLF,
+      });
+
+      expect((result as { error: string }).error).toContain('Refused');
+    });
+
     it('should return system username for get_username action', () => {
       vi.mocked(os.userInfo).mockReturnValue({
         username: 'testuser',

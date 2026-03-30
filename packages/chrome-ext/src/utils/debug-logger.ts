@@ -7,8 +7,10 @@
  * `debug` and `debugLogger` without any changes.
  */
 
+// Import type from barrel (type-only imports are tree-shaken, no runtime cost).
+// Import value from subpath to avoid pulling heavy deps into the SW bundle.
 import type { LogLevel } from '@mdreview/core';
-import { DebugLogger as CoreDebugLogger } from '@mdreview/core';
+import { DebugLogger as CoreDebugLogger } from '@mdreview/core/utils/debug-logger';
 import { ChromeStorageAdapter } from '../adapters';
 
 // ---------------------------------------------------------------------------

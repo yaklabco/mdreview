@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./node": "./src/node.ts",
+    "./sw": "./src/sw.ts",
     "./utils/debug-logger": "./src/utils/debug-logger.ts",
     "./adapters": "./src/adapters.ts",
     "./styles/content.css": "./styles/content.css"
