@@ -276,46 +276,6 @@ describe('MDReviewElectronViewer', () => {
       expect(mockMdview.saveFile).toHaveBeenCalled();
     });
 
-    it('should show about modal on help:about', async () => {
-      const { MDReviewElectronViewer } = await import('./viewer');
-      const viewer = new MDReviewElectronViewer();
-      await viewer.initialize();
-
-      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
-      menuCallback('help:about');
-
-      const modal = document.querySelector('.mdreview-about-modal');
-      expect(modal).not.toBeNull();
-      expect(modal?.textContent).toContain('Design Review');
-    });
-
-    it('should dismiss about modal on click', async () => {
-      const { MDReviewElectronViewer } = await import('./viewer');
-      const viewer = new MDReviewElectronViewer();
-      await viewer.initialize();
-
-      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
-      menuCallback('help:about');
-
-      const modal = document.querySelector('.mdreview-about-modal') as HTMLElement;
-      modal.click();
-
-      expect(document.querySelector('.mdreview-about-modal')).toBeNull();
-    });
-
-    it('should dismiss about modal on Escape', async () => {
-      const { MDReviewElectronViewer } = await import('./viewer');
-      const viewer = new MDReviewElectronViewer();
-      await viewer.initialize();
-
-      const menuCallback = mockMdview.onMenuCommand.mock.calls[0][0] as (cmd: string) => void;
-      menuCallback('help:about');
-
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-
-      expect(document.querySelector('.mdreview-about-modal')).toBeNull();
-    });
-
     it('should call openExternal on help:github', async () => {
       const { MDReviewElectronViewer } = await import('./viewer');
       const viewer = new MDReviewElectronViewer();

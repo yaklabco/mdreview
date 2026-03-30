@@ -26,6 +26,7 @@ vi.mock('@mdreview/core', async () => {
     }),
     CommentManager: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.initialize = vi.fn().mockResolvedValue(undefined);
+      this.handleAddCommentRequest = vi.fn();
     }),
     ContentCollector: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
       this.collect = vi.fn().mockReturnValue({ title: 'Test', nodes: [], metadata: {} });
@@ -40,6 +41,9 @@ vi.mock('@mdreview/core', async () => {
     }),
     FileScanner: {
       getFileSize: vi.fn().mockReturnValue(100),
+    },
+    mermaidRenderer: {
+      renderAllImmediate: vi.fn().mockResolvedValue(undefined),
     },
   };
 });
@@ -87,6 +91,8 @@ function createMockMdviewAPI() {
     setSidebarWidth: vi.fn(),
     setOpenFolder: vi.fn(),
     openExternal: vi.fn(),
+    showContextMenu: vi.fn().mockResolvedValue(undefined),
+    revealInFinder: vi.fn().mockResolvedValue(undefined),
     listDirectory: vi.fn(),
     watchDirectory: vi.fn(),
     unwatchDirectory: vi.fn(),
@@ -314,6 +320,58 @@ describe('DocumentContext', () => {
       await ctx.exportDOCX();
       expect(mockMdview.saveFile).not.toHaveBeenCalled();
     });
+
+    it('should force-render mermaid diagrams before collecting content', async () => {
+      mockMdview.saveFile = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const { mermaidRenderer } = await import('@mdreview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      // Add a mermaid container to the DOM
+      container.innerHTML = `
+        <div class="mermaid-container mermaid-pending" id="mermaid-test1">
+          <div class="mermaid-loading">Loading...</div>
+        </div>
+      `;
+
+      await ctx.exportDOCX();
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mermaidRenderer.renderAllImmediate).toHaveBeenCalledWith(container);
+    });
+
+    it('should only query mermaid SVGs, not all SVGs', async () => {
+      mockMdview.saveFile = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const { SVGConverter } = await import('@mdreview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-1');
+      await ctx.load('/tmp/test.md', container);
+
+      // Add both a mermaid SVG and a non-mermaid SVG
+      container.innerHTML = `
+        <div class="mermaid-container mermaid-ready" id="mermaid-test1">
+          <div class="mermaid-rendered">
+            <svg width="200" height="100" id="mermaid-svg"></svg>
+          </div>
+        </div>
+        <svg width="16" height="16" id="icon-svg"><circle r="8"/></svg>
+      `;
+
+      await ctx.exportDOCX();
+
+      const converterInstance = (SVGConverter as unknown as ReturnType<typeof vi.fn>).mock
+        .results[0]?.value as Record<string, ReturnType<typeof vi.fn>>;
+      const svgsPassedToConverter = converterInstance.convertAll.mock.calls[0][0] as SVGElement[];
+
+      // Should only include the mermaid SVG, not the icon SVG
+      expect(svgsPassedToConverter).toHaveLength(1);
+      expect(svgsPassedToConverter[0].id).toBe('mermaid-svg');
+    });
   });
 
   describe('applyTheme', () => {
@@ -372,6 +430,205 @@ describe('DocumentContext', () => {
       const mockInstance = (TocRenderer as unknown as ReturnType<typeof vi.fn>).mock.results[0]
         ?.value as Record<string, ReturnType<typeof vi.fn>>;
       expect(mockInstance.hide).toHaveBeenCalled();
+    });
+  });
+
+  describe('native context menu', () => {
+    it('should call showContextMenu with selection context on right-click', async () => {
+      mockMdview.getState.mockResolvedValue({
+        preferences: {
+          theme: 'github-light',
+          autoReload: false,
+          showToc: false,
+          commentsEnabled: true,
+        },
+        document: { path: '', content: '', scrollPosition: 0, renderState: 'pending' },
+        ui: { theme: null, maximizedDiagram: null, visibleDiagrams: new Set() },
+      });
+      mockMdview.showContextMenu = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      container.innerHTML = '<p>Some text to select</p>';
+      const ctx = new DocumentContext('tab-cm-1');
+      await ctx.load('/tmp/test.md', container);
+
+      const origGetSelection = window.getSelection;
+      window.getSelection = vi.fn().mockReturnValue({
+        toString: () => 'selected text',
+        isCollapsed: false,
+        rangeCount: 1,
+      }) as unknown as typeof window.getSelection;
+
+      container.dispatchEvent(
+        new MouseEvent('contextmenu', { clientX: 100, clientY: 200, bubbles: true })
+      );
+
+      expect(mockMdview.showContextMenu).toHaveBeenCalledWith({
+        hasSelection: true,
+        selectionText: 'selected text',
+        filePath: '/tmp/test.md',
+      });
+
+      window.getSelection = origGetSelection;
+    });
+
+    it('should call showContextMenu without selection when no text selected', async () => {
+      mockMdview.getState.mockResolvedValue({
+        preferences: {
+          theme: 'github-light',
+          autoReload: false,
+          showToc: false,
+          commentsEnabled: true,
+        },
+        document: { path: '', content: '', scrollPosition: 0, renderState: 'pending' },
+        ui: { theme: null, maximizedDiagram: null, visibleDiagrams: new Set() },
+      });
+      mockMdview.showContextMenu = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-cm-2');
+      await ctx.load('/tmp/test.md', container);
+
+      const origGetSelection = window.getSelection;
+      window.getSelection = vi.fn().mockReturnValue({
+        toString: () => '',
+        isCollapsed: true,
+        rangeCount: 0,
+      }) as unknown as typeof window.getSelection;
+
+      container.dispatchEvent(
+        new MouseEvent('contextmenu', { clientX: 100, clientY: 200, bubbles: true })
+      );
+
+      expect(mockMdview.showContextMenu).toHaveBeenCalledWith({
+        hasSelection: false,
+        selectionText: '',
+        filePath: '/tmp/test.md',
+      });
+
+      window.getSelection = origGetSelection;
+    });
+
+    it('should handle context:comment by calling commentManager with cached text', async () => {
+      mockMdview.getState.mockResolvedValue({
+        preferences: {
+          theme: 'github-light',
+          autoReload: false,
+          showToc: false,
+          commentsEnabled: true,
+        },
+        document: { path: '', content: '', scrollPosition: 0, renderState: 'pending' },
+        ui: { theme: null, maximizedDiagram: null, visibleDiagrams: new Set() },
+      });
+      mockMdview.showContextMenu = vi.fn().mockResolvedValue(undefined);
+
+      // Capture the onMenuCommand callback
+      let menuCommandCallback: ((command: string) => void) | null = null;
+      mockMdview.onMenuCommand = vi.fn().mockImplementation((cb: (cmd: string) => void) => {
+        menuCommandCallback = cb;
+        return vi.fn();
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const { CommentManager } = await import('@mdreview/core');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-cm-3');
+      await ctx.load('/tmp/test.md', container);
+
+      // Simulate right-click with selection to cache the text
+      const origGetSelection = window.getSelection;
+      window.getSelection = vi.fn().mockReturnValue({
+        toString: () => 'my selection',
+        isCollapsed: false,
+        rangeCount: 1,
+      }) as unknown as typeof window.getSelection;
+
+      container.dispatchEvent(
+        new MouseEvent('contextmenu', { clientX: 100, clientY: 200, bubbles: true })
+      );
+
+      // Simulate the menu command coming back from main process
+      menuCommandCallback?.('context:comment');
+
+      const mockInstance = (CommentManager as unknown as ReturnType<typeof vi.fn>).mock.results[0]
+        ?.value as Record<string, ReturnType<typeof vi.fn>>;
+      expect(mockInstance.handleAddCommentRequest).toHaveBeenCalledWith('my selection');
+
+      window.getSelection = origGetSelection;
+    });
+
+    it('should always set up context menu regardless of comments setting', async () => {
+      // commentsEnabled is false by default
+      mockMdview.showContextMenu = vi.fn().mockResolvedValue(undefined);
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-cm-4');
+      await ctx.load('/tmp/test.md', container);
+
+      const origGetSelection = window.getSelection;
+      window.getSelection = vi.fn().mockReturnValue({
+        toString: () => '',
+        isCollapsed: true,
+        rangeCount: 0,
+      }) as unknown as typeof window.getSelection;
+
+      container.dispatchEvent(
+        new MouseEvent('contextmenu', { clientX: 100, clientY: 200, bubbles: true })
+      );
+
+      // Native context menu should still appear (with non-comment items)
+      expect(mockMdview.showContextMenu).toHaveBeenCalledWith({
+        hasSelection: false,
+        selectionText: '',
+        filePath: '/tmp/test.md',
+      });
+
+      window.getSelection = origGetSelection;
+    });
+
+    it('should handle context:copy-path by writing file path to clipboard', async () => {
+      mockMdview.showContextMenu = vi.fn().mockResolvedValue(undefined);
+
+      let menuCommandCallback: ((command: string) => void) | null = null;
+      mockMdview.onMenuCommand = vi.fn().mockImplementation((cb: (cmd: string) => void) => {
+        menuCommandCallback = cb;
+        return vi.fn();
+      });
+
+      const writeTextSpy = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(writeTextSpy);
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-cm-5');
+      await ctx.load('/tmp/test.md', container);
+
+      menuCommandCallback?.('context:copy-path');
+
+      expect(writeTextSpy).toHaveBeenCalledWith('/tmp/test.md');
+    });
+
+    it('should handle context:reveal by calling revealInFinder', async () => {
+      mockMdview.showContextMenu = vi.fn().mockResolvedValue(undefined);
+      mockMdview.revealInFinder = vi.fn().mockResolvedValue(undefined);
+
+      let menuCommandCallback: ((command: string) => void) | null = null;
+      mockMdview.onMenuCommand = vi.fn().mockImplementation((cb: (cmd: string) => void) => {
+        menuCommandCallback = cb;
+        return vi.fn();
+      });
+
+      const { DocumentContext } = await import('./document-context');
+      const container = document.getElementById('test-container')!;
+      const ctx = new DocumentContext('tab-cm-6');
+      await ctx.load('/tmp/test.md', container);
+
+      menuCommandCallback?.('context:reveal');
+
+      expect(mockMdview.revealInFinder).toHaveBeenCalledWith('/tmp/test.md');
     });
   });
 

@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from 'fs';
+import { readdir } from 'fs/promises';
 import { join, extname } from 'path';
 import { watch } from 'chokidar';
 import type { DirectoryEntry } from '../shared/workspace-types';
@@ -17,9 +17,9 @@ interface WatcherHandle {
 export class DirectoryService {
   private watchers = new Map<string, WatcherHandle>();
 
-  listDirectory(dirPath: string, options?: ListDirectoryOptions): DirectoryEntry[] {
+  async listDirectory(dirPath: string, options?: ListDirectoryOptions): Promise<DirectoryEntry[]> {
     try {
-      return this.readDirectoryRecursive(dirPath, options?.showAllFiles ?? false);
+      return await this.readDirectoryShallow(dirPath, options?.showAllFiles ?? false);
     } catch {
       return [];
     }
@@ -62,41 +62,32 @@ export class DirectoryService {
     this.watchers.clear();
   }
 
-  private readDirectoryRecursive(dirPath: string, showAllFiles: boolean): DirectoryEntry[] {
-    const rawEntries = readdirSync(dirPath);
+  private async readDirectoryShallow(
+    dirPath: string,
+    showAllFiles: boolean
+  ): Promise<DirectoryEntry[]> {
+    const dirents = await readdir(dirPath, { withFileTypes: true });
     const directories: DirectoryEntry[] = [];
     const files: DirectoryEntry[] = [];
 
-    for (const name of rawEntries) {
+    for (const dirent of dirents) {
       // Skip hidden files/directories
-      if (name.startsWith('.')) continue;
+      if (dirent.name.startsWith('.')) continue;
 
-      const fullPath = join(dirPath, name);
-      let stat;
-      try {
-        stat = statSync(fullPath);
-      } catch {
-        continue;
-      }
+      const fullPath = join(dirPath, dirent.name);
 
-      if (stat.isDirectory()) {
-        // Skip excluded directories
-        if (EXCLUDED_DIRS.has(name)) continue;
+      if (dirent.isDirectory()) {
+        if (EXCLUDED_DIRS.has(dirent.name)) continue;
 
-        const children = this.readDirectoryRecursive(fullPath, showAllFiles);
-        // Only include directories that have children (MD-only or all files depending on mode)
-        if (children.length > 0) {
-          directories.push({
-            name,
-            path: fullPath,
-            type: 'directory',
-            children,
-          });
-        }
-      } else if (stat.isFile()) {
-        if (showAllFiles || MD_EXTENSIONS.has(extname(name).toLowerCase())) {
+        directories.push({
+          name: dirent.name,
+          path: fullPath,
+          type: 'directory',
+        });
+      } else if (dirent.isFile()) {
+        if (showAllFiles || MD_EXTENSIONS.has(extname(dirent.name).toLowerCase())) {
           files.push({
-            name,
+            name: dirent.name,
             path: fullPath,
             type: 'file',
           });

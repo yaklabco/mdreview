@@ -9,6 +9,7 @@ import {
   ContentCollector,
   SVGConverter,
   DOCXGenerator,
+  mermaidRenderer,
   type Preferences,
   type RenderProgress,
 } from '@mdreview/core';
@@ -40,6 +41,9 @@ export class DocumentContext {
   private tocRenderer: TocRenderer | null = null;
   private commentManager: CommentManager | null = null;
   private autoReloadCleanup: (() => void) | null = null;
+  private contextMenuCleanup: (() => void) | null = null;
+  private contextMenuActionsCleanup: (() => void) | null = null;
+  private cachedSelectionText = '';
   private onProgressCallback: ((progress: { stage: string; percent: number }) => void) | null =
     null;
   private metadata: DocumentMetadata = {
@@ -110,7 +114,7 @@ export class DocumentContext {
       theme,
       preferences: state.preferences,
       useCache: true,
-      useWorkers: false,
+      useWorkers: true,
     });
 
     cleanupProgress();
@@ -129,8 +133,12 @@ export class DocumentContext {
         file: this.fileAdapter,
         identity: this.identityAdapter,
       });
-      await this.commentManager.initialize(content, filePath, container);
+      await this.commentManager.initialize(content, filePath, state.preferences);
     }
+
+    // Native context menu (always available, with or without comments)
+    this.setupContextMenu(container);
+    this.setupContextMenuActions();
 
     // Auto-reload
     if (state.preferences.autoReload) {
@@ -163,7 +171,7 @@ export class DocumentContext {
       theme: state.preferences.theme || 'github-light',
       preferences: state.preferences,
       useCache: true,
-      useWorkers: false,
+      useWorkers: true,
     });
 
     this.resolveRelativeUrls(this.container, this.filePath);
@@ -244,9 +252,13 @@ export class DocumentContext {
 
   async exportDOCX(): Promise<void> {
     if (!this.filePath || !this.container) return;
+    // Force-render any lazy-loaded mermaid diagrams before collecting
+    await mermaidRenderer.renderAllImmediate(this.container);
     const collector = new ContentCollector();
     const content = collector.collect(this.container);
-    const svgElements = Array.from(this.container.querySelectorAll('svg')) as SVGElement[];
+    const svgElements = Array.from(
+      this.container.querySelectorAll<SVGElement>('.mermaid-container svg')
+    );
     const converter = new SVGConverter();
     const images = converter.convertAll(svgElements);
     const generator = new DOCXGenerator();
@@ -285,6 +297,14 @@ export class DocumentContext {
   }
 
   dispose(): void {
+    if (this.contextMenuCleanup) {
+      this.contextMenuCleanup();
+      this.contextMenuCleanup = null;
+    }
+    if (this.contextMenuActionsCleanup) {
+      this.contextMenuActionsCleanup();
+      this.contextMenuActionsCleanup = null;
+    }
     if (this.autoReloadCleanup) {
       this.autoReloadCleanup();
       this.autoReloadCleanup = null;
@@ -341,6 +361,74 @@ export class DocumentContext {
     return result;
   }
 
+  private setupContextMenu(container: HTMLElement): void {
+    const handler = (e: MouseEvent) => {
+      e.preventDefault();
+
+      const selection = window.getSelection();
+      const text = selection?.toString().trim() ?? '';
+      this.cachedSelectionText = text;
+
+      void window.mdreview.showContextMenu({
+        hasSelection: text.length > 0,
+        selectionText: text,
+        filePath: this.filePath!,
+      });
+    };
+
+    container.addEventListener('contextmenu', handler);
+    this.contextMenuCleanup = () => container.removeEventListener('contextmenu', handler);
+  }
+
+  private setupContextMenuActions(): void {
+    const cleanup = window.mdreview.onMenuCommand((command: string) => {
+      if (!command.startsWith('context:')) return;
+
+      switch (command) {
+        case 'context:copy':
+          document.execCommand('copy');
+          break;
+        case 'context:select-all':
+          document.execCommand('selectAll');
+          break;
+        case 'context:comment':
+          if (this.commentManager && this.cachedSelectionText) {
+            this.commentManager.handleAddCommentRequest(this.cachedSelectionText);
+          }
+          break;
+        case 'context:copy-path':
+          if (this.filePath) {
+            void navigator.clipboard.writeText(this.filePath);
+          }
+          break;
+        case 'context:reveal':
+          if (this.filePath) {
+            void window.mdreview.revealInFinder(this.filePath);
+          }
+          break;
+        case 'context:reload':
+          void this.reload();
+          break;
+        case 'context:lookup':
+          if (this.cachedSelectionText) {
+            void window.mdreview.openExternal(
+              `dict://${encodeURIComponent(this.cachedSelectionText)}`
+            );
+          }
+          break;
+        case 'context:search':
+          if (this.cachedSelectionText) {
+            void window.mdreview.openExternal(
+              `https://www.google.com/search?q=${encodeURIComponent(this.cachedSelectionText)}`
+            );
+          }
+          break;
+      }
+    });
+
+    this.contextMenuActionsCleanup = cleanup;
+  }
+
   private resolveRelativeUrls(container: HTMLElement, filePath: string): void {
     const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
 
@@ -394,8 +482,14 @@ export class DocumentContext {
     let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const unwatch = this.fileAdapter.watch(filePath, () => {
+      // Skip reload if we just wrote comments
+      if (this.commentManager?.isWriteInProgress()) return;
+
       if (reloadTimeout) clearTimeout(reloadTimeout);
       reloadTimeout = setTimeout(() => {
+        // Re-check write guard inside the debounce window
+        if (this.commentManager?.isWriteInProgress()) return;
+
         void (async () => {
           try {
             const newContent = await this.fileAdapter.readFile(filePath);
@@ -409,7 +503,7 @@ export class DocumentContext {
                 theme: preferences.theme || 'github-light',
                 preferences,
                 useCache: true,
-                useWorkers: false,
+                useWorkers: true,
               });
               this.updateMetadata(container, newContent);
             }

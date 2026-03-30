@@ -225,7 +225,25 @@ export class StateManager {
     this.persistWorkspace();
   }
 
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+
   private persistWorkspace(): void {
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      this.persistWorkspaceNow();
+    }, 500);
+  }
+
+  flushPersist(): void {
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+      this.persistWorkspaceNow();
+    }
+  }
+
+  private persistWorkspaceNow(): void {
     void this.storage.setLocal({
       workspace: {
         sidebarVisible: this.workspace.sidebarVisible,

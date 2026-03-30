@@ -35,6 +35,10 @@ export const IPC_CHANNELS = {
   SET_OPEN_FOLDER: 'mdreview:set-open-folder',
   OPEN_EXTERNAL: 'mdreview:open-external',
 
+  // Context menu
+  SHOW_CONTEXT_MENU: 'mdreview:show-context-menu',
+  REVEAL_IN_FINDER: 'mdreview:reveal-in-finder',
+
   // Directory
   LIST_DIRECTORY: 'mdreview:list-directory',
   WATCH_DIRECTORY: 'mdreview:watch-directory',

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, protocol, net, nativeImage } from 'electron';
+import { readFile } from 'fs/promises';
 import { join, extname, basename } from 'path';
 import { pathToFileURL } from 'url';
 import ElectronStore from 'electron-store';
@@ -33,12 +34,28 @@ const THEME_BACKGROUNDS: Record<string, string> = {
 // Set the app name for the Dock and menu bar (dev mode uses package.json name otherwise)
 app.setName('Design Review');
 
+app.setAboutPanelOptions({
+  applicationName: 'Design Review',
+  applicationVersion: app.getVersion(),
+  credits: 'built with ❤️ by James Ainslie',
+});
+
 // Register custom protocol for serving local assets (images, etc.)
 // Must be called before app.whenReady()
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'local-asset',
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+  {
+    scheme: 'app',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      codeCache: true,
+    },
   },
 ]);
 
@@ -88,7 +105,7 @@ function createWindow(backgroundColor?: string): BrowserWindow {
   if (process.env.ELECTRON_RENDERER_URL) {
     void win.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    void win.loadFile(join(__dirname, '../renderer/index.html'));
+    void win.loadURL('app://renderer/index.html');
   }
 
   return win;
@@ -206,6 +223,34 @@ void app.whenReady().then(async () => {
     }
   });
 
+  // Handle app:// protocol — serves renderer files so the page runs under a
+  // secure, standard scheme instead of file://.  This enables web workers
+  // (Worker constructor requires a non-file: origin) and V8 code caching.
+  const APP_MIME_TYPES: Record<string, string> = {
+    '.html': 'text/html',
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.woff2': 'font/woff2',
+  };
+
+  protocol.handle('app', async (request) => {
+    try {
+      const url = new URL(request.url);
+      const filePath = join(__dirname, '../renderer', decodeURIComponent(url.pathname));
+      const data = await readFile(filePath);
+      const ext = extname(filePath).toLowerCase();
+      return new Response(data, {
+        headers: { 'Content-Type': APP_MIME_TYPES[ext] || 'application/octet-stream' },
+      });
+    } catch (err) {
+      console.error('[mdreview] app:// protocol error:', request.url, err);
+      return new Response('Not Found', { status: 404 });
+    }
+  });
+
   openFilePath = parseOpenFilePath();
 
   const syncStore = new ElectronStore({ name: 'preferences' });
@@ -271,6 +316,8 @@ void app.whenReady().then(async () => {
   });
 
   mainWindow.on('close', () => {
+    // Flush any pending debounced state before saving session
+    stateManagerRef?.flushPersist();
     // Clean up watchers BEFORE the window is destroyed to prevent
     // callbacks firing on a destroyed webContents.
     saveSession();
@@ -284,6 +331,7 @@ void app.whenReady().then(async () => {
   });
 
   app.on('before-quit', () => {
+    stateManagerRef?.flushPersist();
     saveSession();
   });
 });
