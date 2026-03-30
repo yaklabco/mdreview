@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.7](https://github.com/yaklabco/mdreview/compare/v0.3.6...v0.3.7) (2026-03-30)
+
+
+### Features
+
+* **electron:** add app:// protocol, context menu, and lazy file tree ([56ecacc](https://github.com/yaklabco/mdreview/commit/56ecacc16a0c7c326d86e2d398f6bed8f77b210d))
+* **electron:** replace custom About modal with native macOS About panel ([6da1a8d](https://github.com/yaklabco/mdreview/commit/6da1a8d3773859315727e16a89a2cc883c7933eb))
+
+
+### Bug Fixes
+
+* **electron:** force-render mermaid diagrams before DOCX export ([6448c5f](https://github.com/yaklabco/mdreview/commit/6448c5fd5e2c320f4719fc168c0ea9035a09ed7b))
+
+
+### Tests
+
+* **core:** add DOCX export regression and integration tests ([31aa24d](https://github.com/yaklabco/mdreview/commit/31aa24d18d15e8df681a3686e9a0057325bf7094))
+
 ## [0.3.6](https://github.com/yaklabco/mdreview/compare/v0.3.5...v0.3.6) (2026-03-30)
 
 
