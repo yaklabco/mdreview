@@ -244,40 +244,52 @@ export class CommentManager {
 
   /**
    * Show the edit form for an existing comment, pre-populated with its body.
+   *
+   * The card is fully hidden while the form is open so that:
+   *  1. The original comment doesn't peek through behind the editor.
+   *  2. The form sits on document.body (outside the card's stacking context)
+   *     and therefore renders above any neighbouring cards.
    */
   private showEditForm(commentId: string): void {
     const comment = this.comments.find((c) => c.id === commentId);
     if (!comment || !this.ui) return;
 
-    // Find the card and replace its body with an input form
-    const card = document.querySelector(`.mdreview-comment-card[data-comment-id="${commentId}"]`);
+    const card = document.querySelector<HTMLElement>(
+      `.mdreview-comment-card[data-comment-id="${commentId}"]`
+    );
     if (!card) return;
 
-    // Expand the card if it's minimized so the edit form is visible
+    // Expand before measuring so we get the right position
     if (card.classList.contains('minimized')) {
       card.classList.remove('minimized');
       this.repositionAllCards();
     }
 
+    const cardTop = card.style.top;
+
+    // Hide the card entirely while editing
+    card.style.display = 'none';
+
+    const restoreCard = () => {
+      form.remove();
+      card.style.display = '';
+      this.repositionAllCards();
+    };
+
     const form = this.ui.renderInputForm(
       (newBody: string, tags: CommentTag[]) => {
+        restoreCard();
         if (newBody.trim()) {
           void this.editComment(commentId, newBody, tags);
-        }
-        // Restore the card body
-        form.remove();
-        const bodyEl = card.querySelector('.comment-body');
-        if (bodyEl) {
-          (bodyEl as HTMLElement).style.display = '';
-          bodyEl.textContent = newBody.trim() || comment.body;
+          // Update the visible card body to reflect the new text
+          const bodyEl = card.querySelector('.comment-body');
+          if (bodyEl) {
+            bodyEl.textContent = newBody;
+          }
         }
       },
       () => {
-        form.remove();
-        const bodyEl = card.querySelector('.comment-body');
-        if (bodyEl) {
-          (bodyEl as HTMLElement).style.display = '';
-        }
+        restoreCard();
       },
       comment.tags
     );
@@ -288,14 +300,10 @@ export class CommentManager {
       textarea.value = comment.body;
     }
 
-    // Hide the card body and insert the form
-    const bodyEl = card.querySelector('.comment-body');
-    if (bodyEl) {
-      (bodyEl as HTMLElement).style.display = 'none';
-    }
-    card.appendChild(form);
+    // Position the standalone form at the card's location
+    form.style.top = cardTop;
+    document.body.appendChild(form);
 
-    // Focus the textarea
     if (textarea) textarea.focus();
   }
 
@@ -480,8 +488,7 @@ export class CommentManager {
    */
   private async writeFile(content: string): Promise<void> {
     if (!this.fileAdapter) {
-      // No file adapter — graceful degradation, skip write
-      return;
+      throw new Error('No file adapter configured — comment cannot be persisted');
     }
 
     this.writeInProgress = true;

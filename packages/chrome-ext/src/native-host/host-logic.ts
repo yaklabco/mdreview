@@ -123,7 +123,11 @@ export function handleMessage(msg: HostMessage | null | string): HostResponse {
     const existingClean = existingBody.replace(V1_REF, '').replace(V2_REF, '');
     const newClean = newBody.replace(V1_REF, '').replace(V2_REF, '');
 
-    if (existingClean !== newClean) {
+    // Normalize line endings for comparison — Chrome's pre.textContent
+    // always returns LF (\n) but the file on disk may use CRLF (\r\n).
+    const normalise = (s: string) => s.replace(/\r\n/g, '\n');
+
+    if (normalise(existingClean) !== normalise(newClean)) {
       return {
         error:
           'Refused: write would modify document content beyond comment markers. Only comment changes are allowed.',
