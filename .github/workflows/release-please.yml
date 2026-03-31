@@ -141,7 +141,7 @@ jobs:
   attach-electron:
     name: Attach Electron to Release
     needs: [release-please, build-electron]
-    if: needs.release-please.outputs.release_created == 'true'
+    if: always() && needs.release-please.outputs.release_created == 'true' && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
