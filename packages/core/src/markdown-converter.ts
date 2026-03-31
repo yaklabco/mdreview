@@ -249,8 +249,11 @@ export class MarkdownConverter {
       // Calculate word count
       this.metadata.wordCount = markdown.trim().split(/\s+/).length;
 
+      // Preprocess: fix malformed GFM tables (column count mismatches)
+      const preprocessed = MarkdownConverter.fixTableSeparators(markdown);
+
       // Parse and render
-      const html = this.md.render(markdown);
+      const html = this.md.render(preprocessed);
 
       return {
         html,
@@ -312,6 +315,52 @@ export class MarkdownConverter {
   /**
    * Escape HTML for safe rendering
    */
+  /**
+   * Fix GFM table separator rows whose column count doesn't match the
+   * header row.  markdown-it (correctly per spec) rejects tables where the
+   * separator has a different number of columns than the header, but many
+   * LLM-generated and hand-edited files produce this pattern.  We
+   * normalise the separator to match the header so the table still renders.
+   */
+  static fixTableSeparators(markdown: string): string {
+    const lines = markdown.split('\n');
+    const result: string[] = [];
+    let inCodeFence = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Track fenced code blocks
+      if (/^(`{3,}|~{3,})/.test(line)) {
+        inCodeFence = !inCodeFence;
+      }
+
+      if (
+        !inCodeFence &&
+        i > 0 &&
+        /^\|[\s:]*-{1,}[\s:|-]*\|?\s*$/.test(line) // separator-looking line
+      ) {
+        const headerLine = lines[i - 1];
+        // Only fix if the previous line looks like a table header
+        if (/^\|.+\|/.test(headerLine)) {
+          const headerCols = headerLine.split('|').filter((c) => c.trim() !== '').length;
+          const sepCols = line.split('|').filter((c) => c.trim() !== '').length;
+
+          if (sepCols !== headerCols && headerCols > 0) {
+            // Rebuild separator with the correct column count
+            const sep = '| ' + Array(headerCols).fill('---').join(' | ') + ' |';
+            result.push(sep);
+            continue;
+          }
+        }
+      }
+
+      result.push(line);
+    }
+
+    return result.join('\n');
+  }
+
   private escapeHtml(text: string): string {
     const map: { [key: string]: string } = {
       '&': '&amp;',
