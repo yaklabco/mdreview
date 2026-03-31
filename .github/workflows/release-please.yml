@@ -84,7 +84,7 @@ jobs:
               packages/electron/dist/*.dmg
               packages/electron/dist/*.zip
           - name: macOS (x64)
-            os: macos-15-large
+            os: macos-13
             dist-cmd: dist:mac
             artifact-name: electron-mac-x64
             artifact-path: |
