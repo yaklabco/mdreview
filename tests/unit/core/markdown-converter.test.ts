@@ -97,6 +97,39 @@ describe('MarkdownConverter', () => {
       expect(result.html).toContain('<tbody>');
     });
 
+    test('should render tables with mismatched separator column count', async () => {
+      // Regression: LLM-generated tables often have more separator columns than header columns
+      const md =
+        '| Parameter | Value | Default | Rationale |\n| --- | --- | --- | --- | --- | --- |\n| `stripe_size` | 131072 | 16384 | 8x default |';
+      const result = await converter.convert(md);
+      expect(result.html).toContain('<table>');
+      expect(result.html).toContain('<thead>');
+      expect(result.html).toContain('<td>');
+      expect(result.html).toContain('131072');
+    });
+
+    test('should render tables with fewer separator columns than header', async () => {
+      const md = '| A | B | C |\n| --- | --- |\n| 1 | 2 | 3 |';
+      const result = await converter.convert(md);
+      expect(result.html).toContain('<table>');
+      expect(result.html).toContain('<th>A</th>');
+    });
+
+    test('should not break correctly formed tables', async () => {
+      const md = '| A | B |\n| --- | --- |\n| 1 | 2 |';
+      const result = await converter.convert(md);
+      expect(result.html).toContain('<table>');
+      expect(result.html).toContain('<td>1</td>');
+    });
+
+    test('should not fix separators inside code fences', async () => {
+      const md = '```\n| A | B |\n| --- | --- | --- |\n| 1 | 2 |\n```';
+      const result = await converter.convert(md);
+      // Should be rendered as code, not a table
+      expect(result.html).not.toContain('<table>');
+      expect(result.html).toContain('<code>');
+    });
+
     test('should render task lists with checkboxes', async () => {
       const result = await converter.convert(markdownSamples.taskList);
       // Task lists should have checkboxes
@@ -337,5 +370,39 @@ describe('MarkdownConverter', () => {
       expect(result.metadata.links.length).toBeGreaterThan(0);
       expect(result.metadata.wordCount).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('MarkdownConverter.fixTableSeparators', () => {
+  test('normalises separator with too many columns', () => {
+    const input = '| A | B |\n| --- | --- | --- | --- |\n| 1 | 2 |';
+    const fixed = MarkdownConverter.fixTableSeparators(input);
+    expect(fixed).toBe('| A | B |\n| --- | --- |\n| 1 | 2 |');
+  });
+
+  test('normalises separator with too few columns', () => {
+    const input = '| A | B | C |\n| --- |\n| 1 | 2 | 3 |';
+    const fixed = MarkdownConverter.fixTableSeparators(input);
+    expect(fixed).toBe('| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |');
+  });
+
+  test('leaves correct separators unchanged', () => {
+    const input = '| A | B |\n| --- | --- |\n| 1 | 2 |';
+    const fixed = MarkdownConverter.fixTableSeparators(input);
+    expect(fixed).toBe(input);
+  });
+
+  test('does not modify separators inside code fences', () => {
+    const input = '```\n| A | B |\n| --- | --- | --- |\n| 1 | 2 |\n```';
+    const fixed = MarkdownConverter.fixTableSeparators(input);
+    expect(fixed).toBe(input);
+  });
+
+  test('handles multiple tables in one document', () => {
+    const input =
+      '| A | B |\n| --- | --- | --- |\n| 1 | 2 |\n\n| X | Y | Z |\n| --- |\n| a | b | c |';
+    const fixed = MarkdownConverter.fixTableSeparators(input);
+    expect(fixed).toContain('| --- | --- |');
+    expect(fixed).toContain('| --- | --- | --- |');
   });
 });
