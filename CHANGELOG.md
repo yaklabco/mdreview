@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.8](https://github.com/yaklabco/mdreview/compare/v0.3.7...v0.3.8) (2026-03-31)
+
+
+### Bug Fixes
+
+* **ci:** fix extension zip path and Windows icon format in release pipeline ([b1fc66d](https://github.com/yaklabco/mdreview/commit/b1fc66df7eb053742e0c8b8ebdc8dee8f964fe19))
+* **ci:** fix extension zip path and Windows icon format in release pipeline ([431af0a](https://github.com/yaklabco/mdreview/commit/431af0adb1a9b5f7010e13a8a59c7b1af376e246))
+* **core:** render tables with mismatched separator column counts ([b395a24](https://github.com/yaklabco/mdreview/commit/b395a2472491a28df37fc1f9a4e39166a0dbb6d7))
+* **core:** render tables with mismatched separator column counts ([541eb72](https://github.com/yaklabco/mdreview/commit/541eb727eb9795e8394682ef1562565b6d63727e))
+
 ## [0.3.7](https://github.com/yaklabco/mdreview/compare/v0.3.6...v0.3.7) (2026-03-30)
 
 
