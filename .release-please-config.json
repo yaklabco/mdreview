@@ -7,6 +7,11 @@
       "include-v-in-tag": true,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        "packages/chrome-ext/package.json",
+        "packages/chrome-ext/public/manifest.json",
+        "packages/electron/package.json"
+      ],
       "changelog-sections": [
         {"type": "feat", "section": "Features"},
         {"type": "fix", "section": "Bug Fixes"},
