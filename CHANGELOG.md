@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/yaklabco/mdreview/compare/v0.3.10...v0.3.11) (2026-04-13)
+
+
+### Bug Fixes
+
+* pin extension ID and register native host on every build ([#76](https://github.com/yaklabco/mdreview/issues/76)) ([dee377f](https://github.com/yaklabco/mdreview/commit/dee377f644c4ec64abb70c7eb8cce34ed3050534))
+
 ## [0.3.10](https://github.com/yaklabco/mdreview/compare/v0.3.9...v0.3.10) (2026-04-13)
 
 
