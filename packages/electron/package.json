@@ -1,6 +1,6 @@
 {
   "name": "@mdreview/electron",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Electron desktop viewer for mdreview",
   "type": "module",
   "private": true,
