@@ -743,6 +743,7 @@ html, body {
   max-width: var(--md-max-width, 980px);
   margin: 0 auto;
   padding: 45px;
+  padding-bottom: 100px;
   width: 100%;
   scrollbar-width: thin;
   scrollbar-color: var(--md-border) transparent;

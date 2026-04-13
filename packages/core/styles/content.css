@@ -71,6 +71,7 @@ body.mdreview-active {
   max-width: var(--md-max-width, 980px);
   margin: 0 auto;
   padding: 45px;
+  padding-bottom: 100px;
 }
 
 .mdreview-rendered {
@@ -1561,6 +1562,7 @@ body.mdreview-active.toc-visible-right .mdreview-toc-toggle-btn.position-right {
 @media (max-width: 768px) {
   #mdreview-container {
     padding: 20px;
+    padding-bottom: 80px;
   }
 
   .table-wrapper {
