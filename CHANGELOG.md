@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/yaklabco/mdreview/compare/v0.3.9...v0.3.10) (2026-04-13)
+
+
+### Bug Fixes
+
+* sync sub-package versions via release-please extra-files ([#74](https://github.com/yaklabco/mdreview/issues/74)) ([1cb25a2](https://github.com/yaklabco/mdreview/commit/1cb25a266d1991ccf2f40c92dd65ef2c67faec59)), closes [#73](https://github.com/yaklabco/mdreview/issues/73)
+
 ## [0.3.9](https://github.com/yaklabco/mdreview/compare/v0.3.8...v0.3.9) (2026-04-13)
 
 
