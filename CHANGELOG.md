@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.9](https://github.com/yaklabco/mdreview/compare/v0.3.8...v0.3.9) (2026-04-13)
+
+
+### Bug Fixes
+
+* **ci:** run attach-electron even when some matrix builds fail ([b001f80](https://github.com/yaklabco/mdreview/commit/b001f8010ae125cdbc6e6d18d047a73a24fe9410))
+* **ci:** use macos-13 for x64 build (macos-15-large requires metered billing) ([a577d2c](https://github.com/yaklabco/mdreview/commit/a577d2cdc36024f18dfbe3ed41b9d38ee764b331))
+* increase bottom padding to prevent last line from being obscured ([#72](https://github.com/yaklabco/mdreview/issues/72)) ([c61300b](https://github.com/yaklabco/mdreview/commit/c61300b0ff489452f14fab9075c137c7e61d5106)), closes [#71](https://github.com/yaklabco/mdreview/issues/71)
+
 ## [0.3.8](https://github.com/yaklabco/mdreview/compare/v0.3.7...v0.3.8) (2026-03-31)
 
 
