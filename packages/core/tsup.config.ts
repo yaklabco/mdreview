@@ -10,7 +10,7 @@ export default defineConfig({
   },
   format: ["esm"],
   dts: true,
-  sourcemap: true,
+  sourcemap: "inline",
   clean: true,
   target: "es2022",
   outDir: "dist",
