@@ -12,24 +12,24 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./node": {
-      "import": "./dist/node.js",
-      "types": "./dist/node.d.ts"
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
     },
     "./sw": {
-      "import": "./dist/sw.js",
-      "types": "./dist/sw.d.ts"
+      "types": "./dist/sw.d.ts",
+      "import": "./dist/sw.js"
     },
     "./adapters": {
-      "import": "./dist/adapters.js",
-      "types": "./dist/adapters.d.ts"
+      "types": "./dist/adapters.d.ts",
+      "import": "./dist/adapters.js"
     },
     "./utils/debug-logger": {
-      "import": "./dist/utils/debug-logger.js",
-      "types": "./dist/utils/debug-logger.d.ts"
+      "types": "./dist/utils/debug-logger.d.ts",
+      "import": "./dist/utils/debug-logger.js"
     },
     "./styles/content.css": "./styles/content.css"
   },
