@@ -59,5 +59,8 @@
     "tsup": "^8"
   },
   "author": "James Ainslie",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }
