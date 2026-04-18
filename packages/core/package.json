@@ -1,8 +1,15 @@
 {
   "name": "@mdreview/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Core rendering engine for mdreview",
   "type": "module",
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -29,7 +36,8 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest",
-    "test:ci": "vitest --run"
+    "test:ci": "vitest --run",
+    "prepublishOnly": "bun run build && bun run test:ci"
   },
   "dependencies": {
     "@jamesainslie/docx": "^9.5.1-svg.1",
