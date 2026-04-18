@@ -1,5 +1,5 @@
 // @mdreview/core - shared rendering engine
-export const VERSION = '0.0.1';
+export const VERSION = '0.1.0';
 
 // Types
 export type * from './types/index';

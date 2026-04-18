@@ -1,7 +1,7 @@
 // @mdreview/core/node - lightweight entry point for Node.js (Electron main process)
 // Excludes browser-only modules (workers, mermaid, DOM renderers)
 
-export const VERSION = '0.0.1';
+export const VERSION = '0.1.0';
 
 // Types
 export type * from './types/index';
