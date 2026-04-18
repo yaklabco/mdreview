@@ -29,6 +29,19 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './packages/chrome-ext/src'),
+      // Keep `@mdreview/core` resolving to source while the published
+      // package ships `dist/`. Existing tests mock relative paths under
+      // `packages/core/src/...`, and those mocks only intercept when the
+      // importing module also resolves through the same source files.
+      // Subpath aliases mirror the subpath exports in packages/core/package.json.
+      '@mdreview/core/node': resolve(__dirname, './packages/core/src/node.ts'),
+      '@mdreview/core/sw': resolve(__dirname, './packages/core/src/sw.ts'),
+      '@mdreview/core/adapters': resolve(__dirname, './packages/core/src/adapters.ts'),
+      '@mdreview/core/utils/debug-logger': resolve(
+        __dirname,
+        './packages/core/src/utils/debug-logger.ts'
+      ),
+      '@mdreview/core': resolve(__dirname, './packages/core/src/index.ts'),
     },
   },
 });

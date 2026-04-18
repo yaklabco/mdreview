@@ -4,11 +4,26 @@
   "description": "Core rendering engine for mdreview",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./node": "./src/node.ts",
-    "./sw": "./src/sw.ts",
-    "./utils/debug-logger": "./src/utils/debug-logger.ts",
-    "./adapters": "./src/adapters.ts",
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./node": {
+      "import": "./dist/node.js",
+      "types": "./dist/node.d.ts"
+    },
+    "./sw": {
+      "import": "./dist/sw.js",
+      "types": "./dist/sw.d.ts"
+    },
+    "./adapters": {
+      "import": "./dist/adapters.js",
+      "types": "./dist/adapters.d.ts"
+    },
+    "./utils/debug-logger": {
+      "import": "./dist/utils/debug-logger.js",
+      "types": "./dist/utils/debug-logger.d.ts"
+    },
     "./styles/content.css": "./styles/content.css"
   },
   "scripts": {
