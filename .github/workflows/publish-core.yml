@@ -26,6 +26,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: publish-core-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publish to npm
