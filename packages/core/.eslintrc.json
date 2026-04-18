@@ -1,0 +1,3 @@
+{
+  "ignorePatterns": ["tsup.config.ts"]
+}
