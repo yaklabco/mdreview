@@ -20,6 +20,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # @mdreview/core's exports now point at dist/, so consumer packages
+      # (chrome-ext, electron) need dist/*.d.ts to exist before tsc/eslint
+      # can resolve its types. Without this step lint collapses into ~536
+      # @typescript-eslint/no-unsafe-* errors because the types fall back
+      # to `any`.
+      - name: Build @mdreview/core
+        run: bun run --cwd packages/core build
+
       - name: Run ESLint
         run: bun run lint
 
