@@ -77,6 +77,13 @@ export interface AppState {
   };
 }
 
+/**
+ * User preferences extracted from AppState. Exposed as a named alias so
+ * downstream consumers (service workers, embedders) can import `Preferences`
+ * directly instead of reaching through `AppState['preferences']`.
+ */
+export type Preferences = AppState['preferences'];
+
 export interface Theme {
   name: ThemeName;
   displayName: string;
@@ -494,10 +501,10 @@ export type FilenameTemplateVar =
  * A reply within a comment thread
  */
 export interface CommentReply {
-  id: string;        // "reply-1", "reply-2", scoped within parent
+  id: string; // "reply-1", "reply-2", scoped within parent
   author: string;
   body: string;
-  date: string;      // ISO 8601
+  date: string; // ISO 8601
 }
 
 /**
@@ -508,14 +515,7 @@ export type CommentReactions = Record<string, string[]>;
 /**
  * Tag that can be applied to a comment to signal severity/intent.
  */
-export type CommentTag =
-  | 'blocking'
-  | 'nit'
-  | 'suggestion'
-  | 'question'
-  | 'praise'
-  | 'todo'
-  | 'fyi';
+export type CommentTag = 'blocking' | 'nit' | 'suggestion' | 'question' | 'praise' | 'todo' | 'fyi';
 
 /**
  * Positional context for a comment within the document structure.

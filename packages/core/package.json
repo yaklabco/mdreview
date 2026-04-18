@@ -12,7 +12,7 @@
     "./styles/content.css": "./styles/content.css"
   },
   "scripts": {
-    "build": "echo 'Core uses source exports, no build needed'",
+    "build": "tsup",
     "test": "vitest",
     "test:ci": "vitest --run"
   },
