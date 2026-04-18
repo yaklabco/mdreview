@@ -1,0 +1,61 @@
+name: Publish @mdreview/core
+
+# One-time npm setup required before this workflow can successfully publish:
+#
+#   1. Perform a manual `npm publish` from a maintainer machine to create the
+#      @mdreview/core package on npmjs.org (first publish cannot be provenanced
+#      because the package doesn't exist yet).
+#   2. Visit https://www.npmjs.com/package/@mdreview/core/access (or the
+#      org-level page https://www.npmjs.com/settings/mdreview/packages).
+#   3. Add a GitHub Actions Trusted Publisher with:
+#        Organization: yaklabco
+#        Repository:   mdreview
+#        Workflow:     .github/workflows/publish-core.yml
+#        Environment:  (leave blank)
+#
+# After that is configured, every subsequent publish on `core-v*` tags will
+# mint an OIDC token that npm verifies for auth and for provenance signing.
+# No NPM_TOKEN secret is required.
+
+on:
+  push:
+    tags:
+      - 'core-v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-core-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build @mdreview/core
+        run: bun run --cwd packages/core build
+
+      - name: Test @mdreview/core
+        run: bun run --cwd packages/core test:ci
+
+      - name: Publish to npm (OIDC + provenance)
+        working-directory: packages/core
+        run: npm publish --access public --provenance
