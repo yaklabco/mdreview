@@ -11,6 +11,7 @@ import { debug } from '../utils/debug-logger';
 import { TocRenderer } from '@mdreview/core';
 import type { ExportUI } from '../ui/export-ui';
 import type { CommentManager } from '../comments/comment-manager';
+import { BridgeIndicator } from './bridge-indicator';
 
 // Fix Vite's dynamic import base path for Chrome extensions
 // Override import.meta to use chrome-extension:// base URL
@@ -43,6 +44,7 @@ class MDReviewContentScript {
   private tocRenderer: TocRenderer | null = null;
   private exportUI: ExportUI | null = null;
   private commentManager: CommentManager | null = null;
+  private bridgeIndicator: BridgeIndicator | null = null;
 
   async initialize(): Promise<void> {
     // Prevent running in iframes (used for file watching)
@@ -251,6 +253,9 @@ class MDReviewContentScript {
       ) {
         await this.setupComments(content, filePath);
       }
+
+      // Set up bridge health indicator
+      this.setupBridgeIndicator();
 
       // Set up auto-reload if enabled (after initial render completes)
       if (this.state?.preferences.autoReload) {
@@ -574,6 +579,15 @@ class MDReviewContentScript {
             break;
           }
 
+          case 'BRIDGE_STATE_CHANGED': {
+            const bsPayload = message.payload as {
+              state: 'connected' | 'reconnecting' | 'disconnected';
+              consecutiveFailures?: number;
+            };
+            this.bridgeIndicator?.updateState(bsPayload.state, bsPayload.consecutiveFailures);
+            break;
+          }
+
           case 'RELOAD_CONTENT':
             window.location.reload();
             break;
@@ -883,6 +897,42 @@ class MDReviewContentScript {
   }
 
   /**
+   * Set up bridge health indicator
+   */
+  private setupBridgeIndicator(): void {
+    try {
+      this.bridgeIndicator = new BridgeIndicator();
+      this.bridgeIndicator.render(document.body);
+
+      // Wire retry callback
+      this.bridgeIndicator.onRetry(() => {
+        void chrome.runtime.sendMessage({ type: 'RETRY_BRIDGE_CONNECTION' });
+      });
+
+      // Request current bridge state
+      void chrome.runtime
+        .sendMessage({ type: 'GET_BRIDGE_HEALTH' })
+        .then(
+          (response: {
+            state: 'connected' | 'reconnecting' | 'disconnected';
+            consecutiveFailures?: number;
+          }) => {
+            if (response?.state) {
+              this.bridgeIndicator?.updateState(response.state, response.consecutiveFailures);
+            }
+          }
+        )
+        .catch((error: unknown) => {
+          debug.warn('MDView', 'Failed to get bridge health:', error);
+        });
+
+      debug.info('MDView', 'Bridge health indicator initialized');
+    } catch (error) {
+      debug.error('MDView', 'Failed to setup bridge indicator:', error);
+    }
+  }
+
+  /**
    * Handle preference changes
    */
   private async handlePreferenceChange(
@@ -924,6 +974,11 @@ class MDReviewContentScript {
     if (this.commentManager) {
       this.commentManager.destroy();
       this.commentManager = null;
+    }
+
+    if (this.bridgeIndicator) {
+      this.bridgeIndicator.dispose();
+      this.bridgeIndicator = null;
     }
   }
 }
