@@ -58,6 +58,7 @@ export const IPC_CHANNELS = {
   GIT_STAGE: 'mdreview:git-stage',
   GIT_UNSTAGE: 'mdreview:git-unstage',
   GIT_COMMIT: 'mdreview:git-commit',
+  GIT_STASH: 'mdreview:git-stash',
 
   // Events from main → renderer
   FILE_CHANGED: 'mdreview:file-changed',

@@ -383,6 +383,8 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
     (_event, message: string) => deps.gitService?.commit(message) ?? ''
   );
 
+  ipcMain.handle(IPC_CHANNELS.GIT_STASH, () => deps.gitService?.stash());
+
   // Return cleanup function to stop all file watchers before window destruction
   return () => {
     for (const unwatch of fileWatchers.values()) {

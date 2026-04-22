@@ -46,11 +46,12 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.GIT_STAGE).toBe('mdreview:git-stage');
     expect(IPC_CHANNELS.GIT_UNSTAGE).toBe('mdreview:git-unstage');
     expect(IPC_CHANNELS.GIT_COMMIT).toBe('mdreview:git-commit');
+    expect(IPC_CHANNELS.GIT_STASH).toBe('mdreview:git-stash');
   });
 
   it('should follow mdreview:git-* pattern for all git channels', () => {
     const gitChannelKeys = Object.keys(IPC_CHANNELS).filter((key) => key.startsWith('GIT_'));
-    expect(gitChannelKeys.length).toBe(8);
+    expect(gitChannelKeys.length).toBe(9);
     for (const key of gitChannelKeys) {
       const value = IPC_CHANNELS[key as keyof typeof IPC_CHANNELS];
       expect(value).toMatch(/^mdreview:git-/);

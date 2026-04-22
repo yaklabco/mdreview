@@ -116,6 +116,17 @@ function createMockMdviewAPI() {
     onTabClosed: vi.fn().mockReturnValue(vi.fn()),
     onActiveTabChanged: vi.fn().mockReturnValue(vi.fn()),
     onDirectoryChanged: vi.fn().mockReturnValue(vi.fn()),
+
+    // Git methods
+    gitIsRepo: vi.fn().mockResolvedValue(false),
+    gitGetBranch: vi.fn().mockResolvedValue(''),
+    gitListBranches: vi.fn().mockResolvedValue({ local: [], current: '' }),
+    gitCheckout: vi.fn().mockResolvedValue(undefined),
+    gitStatus: vi.fn().mockResolvedValue([]),
+    gitStage: vi.fn().mockResolvedValue(undefined),
+    gitUnstage: vi.fn().mockResolvedValue(undefined),
+    gitCommit: vi.fn().mockResolvedValue('abc123'),
+    gitStash: vi.fn().mockResolvedValue(undefined),
   };
 }
 

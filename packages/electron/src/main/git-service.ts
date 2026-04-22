@@ -153,4 +153,14 @@ export class ElectronGitService implements GitAdapter {
       );
     }
   }
+
+  async stash(): Promise<void> {
+    try {
+      await this.git.stash();
+    } catch (error) {
+      throw new Error(
+        `Failed to stash changes: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 }

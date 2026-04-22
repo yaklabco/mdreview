@@ -4,6 +4,9 @@ import { TabManager } from './tab-manager';
 import { DocumentContext } from './document-context';
 import { StatusBar } from './status-bar';
 import { DocumentHeaderBar } from './document-header-bar';
+import { BranchSelector } from './branch-selector';
+import { GitPanel } from './git-panel';
+import { CheckoutGuard } from './checkout-guard';
 import { registerKeyboardShortcuts } from './keyboard-shortcuts';
 import { setupDragAndDrop } from './drag-drop';
 import { FileTree } from './file-tree';
@@ -18,6 +21,9 @@ export class MDReviewElectronViewer {
   private tabManager: TabManager;
   private statusBar: StatusBar;
   private headerBar: DocumentHeaderBar;
+  private branchSelector: BranchSelector;
+  private gitPanel: GitPanel;
+  private checkoutGuard: CheckoutGuard;
   private fileTree: FileTree;
   private sidebarResize: SidebarResizeHandle | null = null;
   private preferencesPanel: PreferencesPanel;
@@ -31,6 +37,9 @@ export class MDReviewElectronViewer {
     this.tabManager = new TabManager();
     this.statusBar = new StatusBar();
     this.headerBar = new DocumentHeaderBar();
+    this.branchSelector = new BranchSelector();
+    this.gitPanel = new GitPanel();
+    this.checkoutGuard = new CheckoutGuard();
     this.fileTree = new FileTree();
     this.preferencesPanel = new PreferencesPanel();
     this.exportModal = new ExportModal();
@@ -71,6 +80,20 @@ export class MDReviewElectronViewer {
     const headerBarEl = document.getElementById('mdreview-header-bar');
     if (headerBarEl) {
       this.headerBar.render(headerBarEl);
+
+      // Insert branch selector between breadcrumb and actions
+      const actionsEl = headerBarEl.querySelector('.header-bar-actions');
+      if (actionsEl) {
+        const branchWrapper = document.createElement('div');
+        branchWrapper.className = 'branch-selector-wrapper';
+        headerBarEl.insertBefore(branchWrapper, actionsEl);
+        this.branchSelector.render(branchWrapper);
+      }
+
+      this.branchSelector.onCheckout((branch) => {
+        void this.handleBranchCheckout(branch);
+      });
+
       this.headerBar.onExport((format) => {
         const ctx = this.getActiveDocumentContext();
         if (!ctx) return;
@@ -107,6 +130,18 @@ export class MDReviewElectronViewer {
         const state = await window.mdreview.getState();
         const showAllFiles = state.preferences.showAllFiles ?? false;
         return window.mdreview.listDirectory(dirPath, { showAllFiles });
+      });
+
+      // Git panel below file tree
+      this.gitPanel.render(sidebarEl);
+      this.gitPanel.onStage((paths) => {
+        void window.mdreview.gitStage(paths).then(() => this.refreshGitState());
+      });
+      this.gitPanel.onUnstage((paths) => {
+        void window.mdreview.gitUnstage(paths).then(() => this.refreshGitState());
+      });
+      this.gitPanel.onCommit((message) => {
+        void window.mdreview.gitCommit(message).then(() => this.refreshGitState());
       });
 
       // Sidebar resize handle
@@ -514,6 +549,12 @@ export class MDReviewElectronViewer {
     });
     this.cleanupListeners.push(unsubOpenFolder);
 
+    // Refresh git state when files change externally (catches external git operations)
+    const unsubFileChanged = window.mdreview.onFileChanged(() => {
+      void this.refreshGitState();
+    });
+    this.cleanupListeners.push(unsubFileChanged);
+
     const unsubPrefs = window.mdreview.onPreferencesUpdated((prefs) => {
       for (const ctx of this.documents.values()) {
         void ctx.applyPreferences(prefs);
@@ -664,6 +705,65 @@ export class MDReviewElectronViewer {
     if (activeCtx) {
       this.headerBar.update(activeCtx.getFilePath(), this.openFolderPath);
     }
+
+    // Refresh git state when folder changes
+    void this.refreshGitState();
+  }
+
+  private async refreshGitState(): Promise<void> {
+    try {
+      const isRepo = await window.mdreview.gitIsRepo();
+      if (!isRepo) {
+        this.branchSelector.update(false, '', []);
+        this.gitPanel.update(false, '', []);
+        return;
+      }
+
+      const [branchInfo, status] = await Promise.all([
+        window.mdreview.gitListBranches(),
+        window.mdreview.gitStatus(),
+      ]);
+
+      this.branchSelector.update(true, branchInfo.current, branchInfo.local);
+      this.gitPanel.update(true, branchInfo.current, status);
+    } catch (error) {
+      console.error('[mdreview] Error refreshing git state:', error);
+      this.branchSelector.update(false, '', []);
+      this.gitPanel.update(false, '', []);
+    }
+  }
+
+  private async handleBranchCheckout(branch: string): Promise<void> {
+    try {
+      const status = await window.mdreview.gitStatus();
+      const dirtyFiles = status.filter((f) => f.status !== 'untracked');
+
+      if (dirtyFiles.length > 0) {
+        this.checkoutGuard.show({
+          targetBranch: branch,
+          dirtyFileCount: dirtyFiles.length,
+          onCommitFirst: () => {
+            this.gitPanel.focusCommitInput();
+          },
+          onStash: () => {
+            void window.mdreview.gitStash().then(() => {
+              void window.mdreview.gitCheckout(branch).then(() => this.refreshGitState());
+            });
+          },
+          onDiscard: () => {
+            void window.mdreview.gitCheckout(branch).then(() => this.refreshGitState());
+          },
+          onCancel: () => {
+            // No action needed
+          },
+        });
+      } else {
+        await window.mdreview.gitCheckout(branch);
+        await this.refreshGitState();
+      }
+    } catch (error) {
+      console.error('[mdreview] Error during branch checkout:', error);
+    }
   }
 
   private dispose(): void {
@@ -677,6 +777,9 @@ export class MDReviewElectronViewer {
     this.cleanupListeners = [];
     this.tabManager.dispose();
     this.headerBar.dispose();
+    this.branchSelector.dispose();
+    this.gitPanel.dispose();
+    this.checkoutGuard.dismiss();
     this.fileTree.dispose();
     this.preferencesPanel.dispose();
     this.exportModal.dispose();

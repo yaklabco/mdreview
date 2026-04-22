@@ -81,6 +81,7 @@ const api: MdreviewPreloadAPI = {
   gitStage: (paths) => ipcRenderer.invoke(IPC_CHANNELS.GIT_STAGE, paths),
   gitUnstage: (paths) => ipcRenderer.invoke(IPC_CHANNELS.GIT_UNSTAGE, paths),
   gitCommit: (message) => ipcRenderer.invoke(IPC_CHANNELS.GIT_COMMIT, message),
+  gitStash: () => ipcRenderer.invoke(IPC_CHANNELS.GIT_STASH),
 
   // Event listeners
   onFileChanged: (callback) => {

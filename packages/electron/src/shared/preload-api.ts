@@ -95,6 +95,7 @@ export interface MdreviewPreloadAPI {
   gitStage(paths: string[]): Promise<void>;
   gitUnstage(paths: string[]): Promise<void>;
   gitCommit(message: string): Promise<string>;
+  gitStash(): Promise<void>;
 
   // Event listeners (main → renderer)
   onFileChanged(callback: (path: string) => void): () => void;
