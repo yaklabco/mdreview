@@ -4,6 +4,8 @@ import {
   NoopFileAdapter,
   NoopIdentityAdapter,
   NoopExportAdapter,
+  NoopGitAdapter,
+  NoopBridgeHealth,
   createNoopAdapters,
 } from '../adapters';
 import type {
@@ -12,6 +14,8 @@ import type {
   FileAdapter,
   IdentityAdapter,
   ExportAdapter,
+  GitAdapter,
+  BridgeHealth,
   PlatformAdapters,
 } from '../adapters';
 
@@ -138,6 +142,83 @@ describe('Platform Adapters', () => {
     });
   });
 
+  describe('GitAdapter (NoopGitAdapter)', () => {
+    let git: GitAdapter;
+
+    beforeEach(() => {
+      git = new NoopGitAdapter();
+    });
+
+    it('isGitRepo returns false', async () => {
+      const result = await git.isGitRepo();
+      expect(result).toBe(false);
+    });
+
+    it('getCurrentBranch returns empty string', async () => {
+      const branch = await git.getCurrentBranch();
+      expect(branch).toBe('');
+    });
+
+    it('listBranches returns empty local array and empty current', async () => {
+      const branches = await git.listBranches();
+      expect(branches).toEqual({ local: [], current: '' });
+    });
+
+    it('getStatus returns empty array', async () => {
+      const status = await git.getStatus();
+      expect(status).toEqual([]);
+    });
+
+    it('checkout completes without error', async () => {
+      await expect(git.checkout('main')).resolves.toBeUndefined();
+    });
+
+    it('stage completes without error', async () => {
+      await expect(git.stage(['file.ts'])).resolves.toBeUndefined();
+    });
+
+    it('unstage completes without error', async () => {
+      await expect(git.unstage(['file.ts'])).resolves.toBeUndefined();
+    });
+
+    it('commit returns empty string', async () => {
+      const sha = await git.commit('test commit');
+      expect(sha).toBe('');
+    });
+  });
+
+  describe('BridgeHealth (NoopBridgeHealth)', () => {
+    let health: BridgeHealth;
+
+    beforeEach(() => {
+      health = new NoopBridgeHealth();
+    });
+
+    it('state is disconnected', () => {
+      expect(health.state).toBe('disconnected');
+    });
+
+    it('lastHeartbeat is null', () => {
+      expect(health.lastHeartbeat).toBeNull();
+    });
+
+    it('consecutiveFailures is 0', () => {
+      expect(health.consecutiveFailures).toBe(0);
+    });
+
+    it('connect completes without error', async () => {
+      await expect(health.connect()).resolves.toBeUndefined();
+    });
+
+    it('disconnect does not throw', () => {
+      expect(() => health.disconnect()).not.toThrow();
+    });
+
+    it('onStateChange does not throw', () => {
+      expect(() => health.onStateChange(() => {})).not.toThrow();
+    });
+  });
+
   describe('createNoopAdapters()', () => {
     it('returns a complete PlatformAdapters bundle', () => {
       const adapters: PlatformAdapters = createNoopAdapters();
@@ -146,6 +227,16 @@ describe('Platform Adapters', () => {
       expect(adapters.file).toBeInstanceOf(NoopFileAdapter);
       expect(adapters.identity).toBeInstanceOf(NoopIdentityAdapter);
       expect(adapters.export).toBeInstanceOf(NoopExportAdapter);
+    });
+
+    it('includes git adapter', () => {
+      const adapters = createNoopAdapters();
+      expect(adapters.git).toBeInstanceOf(NoopGitAdapter);
+    });
+
+    it('includes bridgeHealth', () => {
+      const adapters = createNoopAdapters();
+      expect(adapters.bridgeHealth).toBeInstanceOf(NoopBridgeHealth);
     });
   });
 

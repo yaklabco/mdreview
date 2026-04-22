@@ -98,6 +98,55 @@ export interface ExportAdapter {
 }
 
 // ---------------------------------------------------------------------------
+// GitAdapter — replaces direct git CLI calls for repo operations
+// ---------------------------------------------------------------------------
+
+/** Status of a single file in the working tree or index */
+export interface GitFileStatus {
+  path: string;
+  status: 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed';
+  staged: boolean;
+}
+
+export interface GitAdapter {
+  /** Check if the current directory is inside a git repository */
+  isGitRepo(): Promise<boolean>;
+  /** Get the name of the current branch */
+  getCurrentBranch(): Promise<string>;
+  /** List local branches and identify the current one */
+  listBranches(): Promise<{ local: string[]; current: string }>;
+  /** Switch to a different branch */
+  checkout(branch: string): Promise<void>;
+  /** Get the status of all changed/untracked files */
+  getStatus(): Promise<GitFileStatus[]>;
+  /** Stage files by path */
+  stage(paths: string[]): Promise<void>;
+  /** Unstage files by path */
+  unstage(paths: string[]): Promise<void>;
+  /** Create a commit with the given message, returns the commit SHA */
+  commit(message: string): Promise<string>;
+}
+
+// ---------------------------------------------------------------------------
+// BridgeHealth — connection health monitoring for native host bridge
+// ---------------------------------------------------------------------------
+
+export interface BridgeHealth {
+  /** Current connection state */
+  state: 'connected' | 'reconnecting' | 'disconnected';
+  /** Timestamp of the last successful heartbeat, or null if never connected */
+  lastHeartbeat: number | null;
+  /** Number of consecutive heartbeat failures */
+  consecutiveFailures: number;
+  /** Establish or re-establish the connection */
+  connect(): Promise<void>;
+  /** Tear down the connection */
+  disconnect(): void;
+  /** Register a callback for connection state changes */
+  onStateChange(cb: (state: BridgeHealth['state']) => void): void;
+}
+
+// ---------------------------------------------------------------------------
 // PlatformAdapters — combined context for dependency injection
 // ---------------------------------------------------------------------------
 
@@ -107,6 +156,8 @@ export interface PlatformAdapters {
   file: FileAdapter;
   identity: IdentityAdapter;
   export: ExportAdapter;
+  git?: GitAdapter;
+  bridgeHealth?: BridgeHealth;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +246,60 @@ export class NoopExportAdapter implements ExportAdapter {
   }
 }
 
+/** Git adapter that reports no repository */
+export class NoopGitAdapter implements GitAdapter {
+  isGitRepo(): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
+  getCurrentBranch(): Promise<string> {
+    return Promise.resolve('');
+  }
+
+  listBranches(): Promise<{ local: string[]; current: string }> {
+    return Promise.resolve({ local: [], current: '' });
+  }
+
+  checkout(_branch: string): Promise<void> {
+    return Promise.resolve();
+  }
+
+  getStatus(): Promise<GitFileStatus[]> {
+    return Promise.resolve([]);
+  }
+
+  stage(_paths: string[]): Promise<void> {
+    return Promise.resolve();
+  }
+
+  unstage(_paths: string[]): Promise<void> {
+    return Promise.resolve();
+  }
+
+  commit(_message: string): Promise<string> {
+    return Promise.resolve('');
+  }
+}
+
+/** Bridge health monitor that is always disconnected */
+export class NoopBridgeHealth implements BridgeHealth {
+  readonly state = 'disconnected' as const;
+  readonly lastHeartbeat = null;
+  readonly consecutiveFailures = 0;
+
+  connect(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  disconnect(): void {
+    // No-op — nothing to disconnect
+  }
+
+  onStateChange(_cb: (state: BridgeHealth['state']) => void): void {
+    // No-op — state never changes
+  }
+}
+
 /** Create a PlatformAdapters bundle with all no-op defaults */
 export function createNoopAdapters(): PlatformAdapters {
   return {
@@ -203,5 +308,7 @@ export function createNoopAdapters(): PlatformAdapters {
     file: new NoopFileAdapter(),
     identity: new NoopIdentityAdapter(),
     export: new NoopExportAdapter(),
+    git: new NoopGitAdapter(),
+    bridgeHealth: new NoopBridgeHealth(),
   };
 }
