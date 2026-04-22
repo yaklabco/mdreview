@@ -6,6 +6,8 @@
 import type { AppState, ThemeName, CachedResult } from '@mdreview/core/sw';
 import { CacheManager, DEFAULT_STATE } from '@mdreview/core/sw';
 import { debug } from '../utils/debug-logger';
+import { ChromeBridgeHealth } from './bridge-health';
+import { sendFramedMessage } from './message-frame';
 
 // Cache management (persists across page reloads)
 const cacheManager = new CacheManager({ maxSize: 50, maxAge: 3600000 });
@@ -98,8 +100,40 @@ class StateManager {
 
 const stateManager = new StateManager();
 
+// Bridge health monitoring
+const bridgeHealth = new ChromeBridgeHealth();
+let bridgeSeqCounter = 0;
+
+// Broadcast bridge state changes to all tabs
+bridgeHealth.onStateChange((newState) => {
+  debug.log('MDView', 'Bridge state changed:', newState);
+  void chrome.tabs.query({}).then((tabs) => {
+    tabs.forEach((tab) => {
+      if (tab.id) {
+        void chrome.tabs
+          .sendMessage(tab.id, {
+            type: 'BRIDGE_STATE_CHANGED',
+            payload: {
+              state: newState,
+              lastHeartbeat: bridgeHealth.lastHeartbeat,
+              consecutiveFailures: bridgeHealth.consecutiveFailures,
+            },
+          })
+          .catch(() => {
+            /* Tab may not have content script */
+          });
+      }
+    });
+  });
+});
+
 // Initialize immediately when service worker loads
 const initializationPromise = stateManager.initialize();
+
+// Connect bridge health monitor after state initialization
+void initializationPromise.then(() => {
+  void bridgeHealth.connect();
+});
 
 // Create context menu for commenting
 function setupContextMenu(): void {
@@ -334,10 +368,7 @@ chrome.runtime.onMessage.addListener(
 
           case 'GET_USERNAME': {
             try {
-              const result: unknown = await chrome.runtime.sendNativeMessage(
-                'com.mdreview.filewriter',
-                { action: 'get_username' }
-              );
+              const result = await sendFramedMessage(bridgeSeqCounter++, 'get_username');
               sendResponse(result);
             } catch (error) {
               debug.error('MDReview-Background', 'Native get_username failed:', error);
@@ -349,19 +380,34 @@ chrome.runtime.onMessage.addListener(
           case 'WRITE_FILE': {
             const payload = message.payload as { path: string; content: string };
             try {
-              const result: unknown = await chrome.runtime.sendNativeMessage(
-                'com.mdreview.filewriter',
-                {
-                  action: 'write',
-                  path: payload.path,
-                  content: payload.content,
-                }
-              );
+              const result = await sendFramedMessage(bridgeSeqCounter++, 'write', {
+                path: payload.path,
+                content: payload.content,
+              });
               sendResponse(result);
             } catch (error) {
               debug.error('MDReview-Background', 'Native write failed:', error);
               sendResponse({ error: String(error) });
             }
+            break;
+          }
+
+          case 'GET_BRIDGE_HEALTH': {
+            sendResponse({
+              state: bridgeHealth.state,
+              lastHeartbeat: bridgeHealth.lastHeartbeat,
+              consecutiveFailures: bridgeHealth.consecutiveFailures,
+            });
+            break;
+          }
+
+          case 'RETRY_BRIDGE_CONNECTION': {
+            await bridgeHealth.connect();
+            sendResponse({
+              state: bridgeHealth.state,
+              lastHeartbeat: bridgeHealth.lastHeartbeat,
+              consecutiveFailures: bridgeHealth.consecutiveFailures,
+            });
             break;
           }
 

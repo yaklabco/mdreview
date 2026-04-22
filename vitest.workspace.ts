@@ -5,7 +5,19 @@ export default defineWorkspace([
     extends: './vitest.config.ts',
     test: {
       name: 'chrome-ext',
-      include: ['tests/**/*.test.ts'],
+      include: [
+        'tests/**/*.test.ts',
+        'packages/chrome-ext/src/background/**/*.test.ts',
+      ],
+    },
+  },
+  {
+    test: {
+      name: 'chrome-ext-node',
+      include: ['packages/chrome-ext/src/native-host/**/*.test.ts'],
+      environment: 'node',
+      globals: true,
+      testTimeout: 10000,
     },
   },
   {

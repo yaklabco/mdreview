@@ -22,10 +22,16 @@ export interface GetUsernameMessage {
   action: 'get_username';
 }
 
-export type HostMessage = WriteMessage | GetUsernameMessage;
+export interface PingMessage {
+  action: 'ping';
+  seq?: number;
+}
+
+export type HostMessage = WriteMessage | GetUsernameMessage | PingMessage;
 
 export interface SuccessResponse {
   success: true;
+  seq?: number;
 }
 
 export interface UsernameResponse {
@@ -59,6 +65,11 @@ export function validatePath(filePath: string): string | null {
 export function handleMessage(msg: HostMessage | null | string): HostResponse {
   if (!msg || typeof msg !== 'object') {
     return { error: 'Invalid message format' };
+  }
+
+  if (msg.action === 'ping') {
+    const pingMsg = msg as PingMessage;
+    return { success: true as const, seq: pingMsg.seq ?? 0 };
   }
 
   if (msg.action === 'get_username') {
