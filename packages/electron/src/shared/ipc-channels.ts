@@ -49,6 +49,16 @@ export const IPC_CHANNELS = {
   UPDATE_TAB_GROUP: 'mdreview:update-tab-group',
   DELETE_TAB_GROUP: 'mdreview:delete-tab-group',
 
+  // Git
+  GIT_IS_REPO: 'mdreview:git-is-repo',
+  GIT_GET_BRANCH: 'mdreview:git-get-branch',
+  GIT_LIST_BRANCHES: 'mdreview:git-list-branches',
+  GIT_CHECKOUT: 'mdreview:git-checkout',
+  GIT_STATUS: 'mdreview:git-status',
+  GIT_STAGE: 'mdreview:git-stage',
+  GIT_UNSTAGE: 'mdreview:git-unstage',
+  GIT_COMMIT: 'mdreview:git-commit',
+
   // Events from main → renderer
   FILE_CHANGED: 'mdreview:file-changed',
   PREFERENCES_UPDATED: 'mdreview:preferences-updated',

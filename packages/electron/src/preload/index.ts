@@ -72,6 +72,16 @@ const api: MdreviewPreloadAPI = {
   watchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.WATCH_DIRECTORY, dirPath),
   unwatchDirectory: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.UNWATCH_DIRECTORY, dirPath),
 
+  // Git
+  gitIsRepo: () => ipcRenderer.invoke(IPC_CHANNELS.GIT_IS_REPO),
+  gitGetBranch: () => ipcRenderer.invoke(IPC_CHANNELS.GIT_GET_BRANCH),
+  gitListBranches: () => ipcRenderer.invoke(IPC_CHANNELS.GIT_LIST_BRANCHES),
+  gitCheckout: (branch) => ipcRenderer.invoke(IPC_CHANNELS.GIT_CHECKOUT, branch),
+  gitStatus: () => ipcRenderer.invoke(IPC_CHANNELS.GIT_STATUS),
+  gitStage: (paths) => ipcRenderer.invoke(IPC_CHANNELS.GIT_STAGE, paths),
+  gitUnstage: (paths) => ipcRenderer.invoke(IPC_CHANNELS.GIT_UNSTAGE, paths),
+  gitCommit: (message) => ipcRenderer.invoke(IPC_CHANNELS.GIT_COMMIT, message),
+
   // Event listeners
   onFileChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);

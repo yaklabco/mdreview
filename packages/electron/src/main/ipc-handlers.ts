@@ -7,6 +7,7 @@ import type { ElectronIdentityAdapter } from './adapters/identity-adapter';
 import type { ElectronExportAdapter } from './adapters/export-adapter';
 import type { RecentFilesManager } from './recent-files';
 import type { DirectoryService } from './directory-service';
+import type { ElectronGitService } from './git-service';
 import type { CacheManager, CachedResult, Preferences } from '@mdreview/core/node';
 import type { TabState, TabGroupState, TabGroupColor } from '../shared/workspace-types';
 
@@ -18,6 +19,7 @@ export interface IPCHandlerDeps {
   exportAdapter: ElectronExportAdapter;
   recentFiles?: RecentFilesManager;
   directoryService?: DirectoryService;
+  gitService?: ElectronGitService;
   getWindow: () => BrowserWindow | null;
   getOpenFilePath: () => string | null;
 }
@@ -351,6 +353,35 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
   ipcMain.handle(IPC_CHANNELS.UNWATCH_DIRECTORY, (_event, dirPath: string) => {
     directoryService?.unwatchDirectory(dirPath);
   });
+
+  // Git operations
+  ipcMain.handle(IPC_CHANNELS.GIT_IS_REPO, () => deps.gitService?.isGitRepo() ?? false);
+
+  ipcMain.handle(IPC_CHANNELS.GIT_GET_BRANCH, () => deps.gitService?.getCurrentBranch() ?? '');
+
+  ipcMain.handle(
+    IPC_CHANNELS.GIT_LIST_BRANCHES,
+    () => deps.gitService?.listBranches() ?? { local: [], current: '' }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.GIT_CHECKOUT, (_event, branch: string) =>
+    deps.gitService?.checkout(branch)
+  );
+
+  ipcMain.handle(IPC_CHANNELS.GIT_STATUS, () => deps.gitService?.getStatus() ?? []);
+
+  ipcMain.handle(IPC_CHANNELS.GIT_STAGE, (_event, paths: string[]) =>
+    deps.gitService?.stage(paths)
+  );
+
+  ipcMain.handle(IPC_CHANNELS.GIT_UNSTAGE, (_event, paths: string[]) =>
+    deps.gitService?.unstage(paths)
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.GIT_COMMIT,
+    (_event, message: string) => deps.gitService?.commit(message) ?? ''
+  );
 
   // Return cleanup function to stop all file watchers before window destruction
   return () => {

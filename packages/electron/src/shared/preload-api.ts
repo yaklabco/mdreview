@@ -1,5 +1,5 @@
 import type { AppState, Preferences, CachedResult } from '@mdreview/core';
-import type { FileChangeInfo, FileWriteResult } from '@mdreview/core';
+import type { FileChangeInfo, FileWriteResult, GitFileStatus } from '@mdreview/core';
 import type {
   WorkspaceState,
   TabState,
@@ -85,6 +85,16 @@ export interface MdreviewPreloadAPI {
   listDirectory(dirPath: string, options?: { showAllFiles?: boolean }): Promise<DirectoryEntry[]>;
   watchDirectory(dirPath: string): Promise<void>;
   unwatchDirectory(dirPath: string): Promise<void>;
+
+  // Git
+  gitIsRepo(): Promise<boolean>;
+  gitGetBranch(): Promise<string>;
+  gitListBranches(): Promise<{ local: string[]; current: string }>;
+  gitCheckout(branch: string): Promise<void>;
+  gitStatus(): Promise<GitFileStatus[]>;
+  gitStage(paths: string[]): Promise<void>;
+  gitUnstage(paths: string[]): Promise<void>;
+  gitCommit(message: string): Promise<string>;
 
   // Event listeners (main → renderer)
   onFileChanged(callback: (path: string) => void): () => void;

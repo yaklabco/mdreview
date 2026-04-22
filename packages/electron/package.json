@@ -19,7 +19,8 @@
   "dependencies": {
     "@mdreview/core": "workspace:*",
     "chokidar": "^4.0.3",
-    "electron-store": "^11.0.2"
+    "electron-store": "^11.0.2",
+    "simple-git": "^3.36.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

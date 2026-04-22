@@ -36,4 +36,24 @@ describe('IPC_CHANNELS', () => {
       expect(value).toMatch(/^mdreview:/);
     }
   });
+
+  it('should have all git channels', () => {
+    expect(IPC_CHANNELS.GIT_IS_REPO).toBe('mdreview:git-is-repo');
+    expect(IPC_CHANNELS.GIT_GET_BRANCH).toBe('mdreview:git-get-branch');
+    expect(IPC_CHANNELS.GIT_LIST_BRANCHES).toBe('mdreview:git-list-branches');
+    expect(IPC_CHANNELS.GIT_CHECKOUT).toBe('mdreview:git-checkout');
+    expect(IPC_CHANNELS.GIT_STATUS).toBe('mdreview:git-status');
+    expect(IPC_CHANNELS.GIT_STAGE).toBe('mdreview:git-stage');
+    expect(IPC_CHANNELS.GIT_UNSTAGE).toBe('mdreview:git-unstage');
+    expect(IPC_CHANNELS.GIT_COMMIT).toBe('mdreview:git-commit');
+  });
+
+  it('should follow mdreview:git-* pattern for all git channels', () => {
+    const gitChannelKeys = Object.keys(IPC_CHANNELS).filter((key) => key.startsWith('GIT_'));
+    expect(gitChannelKeys.length).toBe(8);
+    for (const key of gitChannelKeys) {
+      const value = IPC_CHANNELS[key as keyof typeof IPC_CHANNELS];
+      expect(value).toMatch(/^mdreview:git-/);
+    }
+  });
 });
