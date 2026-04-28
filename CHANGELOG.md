@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.12](https://github.com/yaklabco/mdreview/compare/v0.3.11...v0.3.12) (2026-04-28)
+
+
+### Features
+
+* **chrome-ext:** add bridge health indicator to rendered pages ([fba4bf4](https://github.com/yaklabco/mdreview/commit/fba4bf48637d7ab5d6e250424847577173794160))
+* **chrome-ext:** stabilize native host bridge with heartbeat and reconnection ([578361f](https://github.com/yaklabco/mdreview/commit/578361f2ed3cf2f6d4fb589668d3749ae10f140e))
+* **core:** add GitAdapter and BridgeHealth interfaces ([8740ba3](https://github.com/yaklabco/mdreview/commit/8740ba36a4fec9067fece4b7ada29202e7fbd78d))
+* **electron:** add ElectronGitService with IPC handlers and preload bridge ([e41e629](https://github.com/yaklabco/mdreview/commit/e41e6297bccc8ec0f985d442c005633b6702e189))
+* **electron:** add git UI with branch selector, staging panel, and checkout guard ([cf35e42](https://github.com/yaklabco/mdreview/commit/cf35e42e4e6b0daa41c49b540369ba19347f9c4e))
+
+
+### Bug Fixes
+
+* **chrome-ext:** scope bridge indicator to file:// and add runtime node discovery ([4881414](https://github.com/yaklabco/mdreview/commit/4881414cb928686ee4bd0f943fae1fc58c3dfaba))
+
 ## [0.3.11](https://github.com/yaklabco/mdreview/compare/v0.3.10...v0.3.11) (2026-04-13)
 
 
