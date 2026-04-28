@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Design Review",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5Vp/QwsS+9f988rpy7V1rJ07dlexx75vABgfTTwbRb45K8uz2Tll9uf72xJok4LgtYS66zZzhzeMUN98SuhpZXwABCb+905L1FpxfaenfldRoIsa2MFbrCGa8UgGQOrwEED9sPKp3R9qo5KR2KrQAo6/tTX3L383tn8+rbmtNgvT8kS8lygPkLpofrQ4FfABJsMgBOkWAktmk5R4IRlVa2rPffyr4D8beOReWTirigMTJgoqn+DG5GtbOWDCMEYlW6oBlNj+FImPvQH5R6jyhA5pHLyeU2ncUTyq/rU6+I+nOnLweRX7lkphl+SV4UYmf+4KGcdBe/Eoen/u4XFiswIDAQAB",
   "description": "An app for design review of software projects",
   "permissions": [
