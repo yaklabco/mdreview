@@ -252,10 +252,8 @@ class MDReviewContentScript {
         window.location.protocol === 'file:'
       ) {
         await this.setupComments(content, filePath);
+        this.setupBridgeIndicator();
       }
-
-      // Set up bridge health indicator
-      this.setupBridgeIndicator();
 
       // Set up auto-reload if enabled (after initial render completes)
       if (this.state?.preferences.autoReload) {

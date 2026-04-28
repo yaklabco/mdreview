@@ -42,6 +42,10 @@ function handleMessage(msg2) {
   if (!msg2 || typeof msg2 !== "object") {
     return { error: "Invalid message format" };
   }
+  if (msg2.action === "ping") {
+    const pingMsg = msg2;
+    return { success: true, seq: pingMsg.seq ?? 0 };
+  }
   if (msg2.action === "get_username") {
     try {
       return { success: true, username: os.userInfo().username };

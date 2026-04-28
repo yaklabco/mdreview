@@ -24,23 +24,35 @@ mkdir -p "$MANIFEST_DIR"
 # Get Chrome extension ID (user must provide or we use a wildcard)
 EXTENSION_ID="${1:-*}"
 
-# Find the absolute path to node. Chrome launches native hosts with a
-# minimal PATH (/usr/bin:/bin:/usr/sbin:/sbin) that excludes Homebrew
-# and other user-installed locations, so #!/usr/bin/env node won't work.
-NODE_PATH="$(command -v node 2>/dev/null || true)"
-if [[ -z "$NODE_PATH" ]]; then
-  echo "Error: node not found in PATH" >&2
-  exit 1
-fi
-# Resolve symlinks to get the canonical path
-NODE_PATH="$(readlink -f "$NODE_PATH" 2>/dev/null || realpath "$NODE_PATH" 2>/dev/null || echo "$NODE_PATH")"
-
-# Generate a wrapper script that invokes host.cjs with the absolute node path.
-# This ensures Chrome can always find node regardless of its PATH.
-cat > "$HOST_WRAPPER" << WRAPPER
+# Generate a wrapper script that finds node at runtime.
+# Chrome launches native hosts with a minimal PATH that excludes
+# Homebrew, mise, nvm, etc. The wrapper searches known locations
+# so it survives node version upgrades without reinstalling.
+cat > "$HOST_WRAPPER" << 'WRAPPER'
 #!/bin/bash
-exec "$NODE_PATH" "$HOST_SCRIPT" "\$@"
+find_node() {
+  for candidate in \
+    /opt/homebrew/bin/node \
+    /usr/local/bin/node \
+    "$HOME/.local/share/mise/shims/node" \
+    "$HOME/.nvm/current/bin/node" \
+    "$HOME/.volta/bin/node" \
+    "$HOME/.fnm/current/bin/node" \
+    /usr/bin/node; do
+    if [[ -x "$candidate" ]]; then
+      echo "$candidate"
+      return
+    fi
+  done
+  return 1
+}
+
+NODE="$(find_node)" || { echo "Error: node not found" >&2; exit 1; }
+exec "$NODE" "PLACEHOLDER_HOST_SCRIPT" "$@"
 WRAPPER
+
+# Patch in the actual host script path (can't use variable inside single-quoted heredoc)
+sed -i '' "s|PLACEHOLDER_HOST_SCRIPT|$HOST_SCRIPT|" "$HOST_WRAPPER"
 chmod +x "$HOST_WRAPPER"
 
 # Write manifest pointing to the wrapper (not host.cjs directly)
@@ -58,7 +70,7 @@ EOF
 chmod +x "$HOST_SCRIPT"
 
 echo "Installed $HOST_NAME"
-echo "  Node: $NODE_PATH"
 echo "  Host: $HOST_SCRIPT"
 echo "  Wrapper: $HOST_WRAPPER"
 echo "  Manifest: $MANIFEST_DIR/$HOST_NAME.json"
+echo "  Node: resolved at runtime"
