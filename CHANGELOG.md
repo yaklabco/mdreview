@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.13](https://github.com/yaklabco/mdreview/compare/v0.3.12...v0.3.13) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ci:** replace retired macOS x64 runner ([d204344](https://github.com/yaklabco/mdreview/commit/d2043442a71d63f62ef01c674a04401c515e4640))
+* **ci:** replace retired macOS x64 runner ([28b0449](https://github.com/yaklabco/mdreview/commit/28b044991c413e04d7f6a3aaa4142d5a3eb579ba))
+
 ## [0.3.12](https://github.com/yaklabco/mdreview/compare/v0.3.11...v0.3.12) (2026-04-28)
 
 
