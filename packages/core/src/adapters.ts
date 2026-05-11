@@ -7,6 +7,7 @@
  */
 
 import type {} from './types/index';
+import { NoopTransport, type LogTransport, type ResourceAttrs } from './logging';
 
 // ---------------------------------------------------------------------------
 // StorageAdapter — replaces chrome.storage.sync/local
@@ -147,7 +148,21 @@ export interface BridgeHealth {
 }
 
 // ---------------------------------------------------------------------------
-// PlatformAdapters — combined context for dependency injection
+// LoggingAdapter, platform-specific transport/resource lifecycle wrapper
+// ---------------------------------------------------------------------------
+
+export interface LoggingAdapter {
+  /**
+   * Build the transport for this platform (file, IPC, native-host, etc.)
+   * and return the resource attributes that describe this process.
+   */
+  build(): { transport: LogTransport; resource: ResourceAttrs };
+  /** Optional teardown hook (close file descriptors, etc.). */
+  dispose?(): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// PlatformAdapters, combined context for dependency injection
 // ---------------------------------------------------------------------------
 
 export interface PlatformAdapters {
@@ -158,6 +173,7 @@ export interface PlatformAdapters {
   export: ExportAdapter;
   git?: GitAdapter;
   bridgeHealth?: BridgeHealth;
+  logging?: LoggingAdapter;
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +314,23 @@ export class NoopBridgeHealth implements BridgeHealth {
   onStateChange(_cb: (state: BridgeHealth['state']) => void): void {
     // No-op — state never changes
   }
+}
+
+/** Logging adapter that uses the noop transport and a placeholder resource */
+export class NoopLoggingAdapter implements LoggingAdapter {
+  build(): { transport: LogTransport; resource: ResourceAttrs } {
+    return {
+      transport: NoopTransport,
+      resource: {
+        'service.name': 'mdview',
+        'service.version': '0.0.0',
+        'service.namespace': 'electron-main',
+        'deployment.environment': 'dev',
+        'host.os': 'unknown',
+      },
+    };
+  }
+  async dispose(): Promise<void> {}
 }
 
 /** Create a PlatformAdapters bundle with all no-op defaults */
