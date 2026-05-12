@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.16](https://github.com/yaklabco/mdreview/compare/v0.3.15...v0.3.16) (2026-05-12)
+
+
+### Features
+
+* **comments:** structured error log on comment write failure ([24ed7a0](https://github.com/yaklabco/mdreview/commit/24ed7a0852fbb28839af41b14d74240542b05a85))
+* **comments:** withSpan around comment lifecycle methods ([aa3644a](https://github.com/yaklabco/mdreview/commit/aa3644a04bcf4dd30b080e0217184fbd20e63718))
+* **logging:** comment lifecycle traces and bridge attempt records (Phase 3) ([7a506ef](https://github.com/yaklabco/mdreview/commit/7a506ef610b623fc376308a0e9e18709dcb23472))
+* **logging:** structured bridge attempt records for native-host calls ([b5c0106](https://github.com/yaklabco/mdreview/commit/b5c01064599fd306d8cec29ca53ba30dfbe04951))
+
 ## [0.3.15](https://github.com/yaklabco/mdreview/compare/v0.3.14...v0.3.15) (2026-05-12)
 
 
