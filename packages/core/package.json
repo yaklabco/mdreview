@@ -31,6 +31,10 @@
       "types": "./dist/utils/debug-logger.d.ts",
       "import": "./dist/utils/debug-logger.js"
     },
+    "./logging": {
+      "types": "./dist/logging/index.d.ts",
+      "import": "./dist/logging/index.js"
+    },
     "./styles/content.css": "./styles/content.css"
   },
   "scripts": {

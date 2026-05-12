@@ -7,6 +7,7 @@ export default defineConfig({
     sw: "src/sw.ts",
     adapters: "src/adapters.ts",
     "utils/debug-logger": "src/utils/debug-logger.ts",
+    "logging/index": "src/logging/index.ts",
   },
   format: ["esm"],
   dts: true,

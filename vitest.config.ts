@@ -41,6 +41,7 @@ export default defineConfig({
         __dirname,
         './packages/core/src/utils/debug-logger.ts'
       ),
+      '@mdreview/core/logging': resolve(__dirname, './packages/core/src/logging/index.ts'),
       '@mdreview/core': resolve(__dirname, './packages/core/src/index.ts'),
     },
   },
