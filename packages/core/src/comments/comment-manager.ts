@@ -16,6 +16,8 @@
 
 import type { Comment, CommentParseResult, AppState, CommentTag } from '../types/index';
 import type { FileAdapter, IdentityAdapter } from '../adapters';
+import { getLogger, type Logger } from '../logging';
+import { ATTR_MDVIEW_COMMENT_OP, ATTR_MDVIEW_FILE_PATH } from '../logging/semconv';
 import { CommentUI } from './comment-ui';
 import { CommentHighlighter } from './comment-highlight';
 import { parseComments } from './annotation-parser';
@@ -52,6 +54,7 @@ export class CommentManager {
 
   private readonly fileAdapter: FileAdapter | null;
   private readonly identityAdapter: IdentityAdapter | null;
+  private readonly logger: Logger = getLogger('comments');
 
   private windowListeners: Array<{
     event: string;
@@ -371,7 +374,14 @@ export class CommentManager {
       await this.writeFile(updatedMarkdown);
       if (this.ui) this.ui.showToast('Comment saved');
     } catch (error) {
-      console.error('[MDReview] Comment write failed:', error);
+      this.logger.error(
+        'comment.write.failed',
+        {
+          [ATTR_MDVIEW_COMMENT_OP]: 'add',
+          [ATTR_MDVIEW_FILE_PATH]: this.filePath,
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
       if (this.ui)
         this.ui.showToast(
           `Write failed: ${error instanceof Error ? error.message : String(error)}`
