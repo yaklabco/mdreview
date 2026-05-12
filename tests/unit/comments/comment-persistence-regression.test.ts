@@ -250,8 +250,10 @@ describe('Bug 1 regression: comment file persistence', () => {
 
     await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
-    // addComment should not throw — it catches and toasts
-    await expect(manager.addComment('text', 'body')).resolves.not.toThrow();
+    // addComment now rethrows on write failure so the surrounding span records
+    // the exception; the renderer's "void this.addComment(...)" callers tolerate
+    // the rejection. A toast is still shown before the rethrow.
+    await expect(manager.addComment('text', 'body')).rejects.toThrow('Permission denied');
 
     // The write was attempted
     expect(mockAdapter.writeFile).toHaveBeenCalledTimes(1);
@@ -263,10 +265,11 @@ describe('Bug 1 regression: comment file persistence', () => {
 
     await noAdapterManager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
-    // addComment catches internally — verify it doesn't silently swallow the error
-    await noAdapterManager.addComment('text', 'body');
+    // With no FileAdapter, writeFile throws and addComment surfaces the rejection
+    // so the span can emit an exception event. The optimistic in-memory mutation
+    // still happens before the rethrow.
+    await expect(noAdapterManager.addComment('text', 'body')).rejects.toThrow(/file adapter/i);
 
-    // The comment is added to memory (optimistic) but a toast should indicate failure
     const comments = noAdapterManager.getComments();
     expect(comments).toHaveLength(2);
 
@@ -278,8 +281,9 @@ describe('Bug 1 regression: comment file persistence', () => {
 
     await manager.initialize(sampleMarkdown, '/path/to/file.md', defaultPreferences);
 
-    // Should not throw — CommentManager catches the error
-    await expect(manager.addComment('text', 'body')).resolves.not.toThrow();
+    // addComment now propagates the adapter-reported error so the span can
+    // record it; callers in production use "void this.addComment(...)".
+    await expect(manager.addComment('text', 'body')).rejects.toThrow('Disk full');
   });
 });
 

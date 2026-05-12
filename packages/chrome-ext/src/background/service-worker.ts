@@ -9,6 +9,7 @@ import { debug } from '../utils/debug-logger';
 import { ChromeBridgeHealth } from './bridge-health';
 import { sendFramedMessage } from './message-frame';
 import { handleLogBatchMessage, initSwLogging } from './logging/sw-init';
+import { recordBridgeAttempt } from './logging/bridge-attempt';
 
 // Cache management (persists across page reloads)
 const cacheManager = new CacheManager({ maxSize: 50, maxAge: 3600000 });
@@ -393,10 +394,20 @@ chrome.runtime.onMessage.addListener(
           }
 
           case 'GET_USERNAME': {
+            const attempt = bridgeSeqCounter++;
+            const started = performance.now();
             try {
-              const result = await sendFramedMessage(bridgeSeqCounter++, 'get_username');
+              const result = await sendFramedMessage(attempt, 'get_username');
+              recordBridgeAttempt('GET_USERNAME', attempt, 'ok', performance.now() - started);
               sendResponse(result);
             } catch (error) {
+              recordBridgeAttempt(
+                'GET_USERNAME',
+                attempt,
+                'error',
+                performance.now() - started,
+                error
+              );
               debug.error('MDReview-Background', 'Native get_username failed:', error);
               sendResponse({ error: String(error) });
             }
@@ -405,13 +416,23 @@ chrome.runtime.onMessage.addListener(
 
           case 'WRITE_FILE': {
             const payload = message.payload as { path: string; content: string };
+            const attempt = bridgeSeqCounter++;
+            const started = performance.now();
             try {
-              const result = await sendFramedMessage(bridgeSeqCounter++, 'write', {
+              const result = await sendFramedMessage(attempt, 'write', {
                 path: payload.path,
                 content: payload.content,
               });
+              recordBridgeAttempt('WRITE_FILE', attempt, 'ok', performance.now() - started);
               sendResponse(result);
             } catch (error) {
+              recordBridgeAttempt(
+                'WRITE_FILE',
+                attempt,
+                'error',
+                performance.now() - started,
+                error
+              );
               debug.error('MDReview-Background', 'Native write failed:', error);
               sendResponse({ error: String(error) });
             }

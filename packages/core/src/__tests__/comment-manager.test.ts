@@ -219,8 +219,9 @@ Test[@1] content.
       manager = new CommentManager({ file, identity });
       await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
-      // Should not throw even if write fails
-      await expect(manager.addComment('test', 'note')).resolves.not.toThrow();
+      // addComment surfaces write failures so the span records the exception;
+      // the renderer's "void this.addComment(...)" callers tolerate rejection.
+      await expect(manager.addComment('test', 'note')).rejects.toThrow('Permission denied');
     });
   });
 
@@ -246,12 +247,14 @@ Test[@1] content.
       expect(comments).toEqual([]);
     });
 
-    it('addComment works without FileAdapter (skips write)', async () => {
+    it('addComment surfaces missing-adapter as a rejection while still updating local state', async () => {
       manager = new CommentManager();
       await manager.initialize(SAMPLE_MARKDOWN, '/test/file.md', createMinimalPreferences());
 
-      // Should not throw even without file adapter
-      await expect(manager.addComment('test document', 'A note')).resolves.not.toThrow();
+      // With no FileAdapter wired, writeFile throws "No file adapter configured".
+      // addComment now rethrows so the span records the failure; the local
+      // optimistic state still mutates before the rejection.
+      await expect(manager.addComment('test document', 'A note')).rejects.toThrow(/file adapter/i);
 
       const comments = manager.getComments();
       expect(comments).toHaveLength(1);
@@ -323,8 +326,8 @@ Test[@1] content.
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(identity.getUsername).toHaveBeenCalled();
 
-      // addComment should still work (no file write, but no crash)
-      await expect(manager.addComment('test', 'note')).resolves.not.toThrow();
+      // With no FileAdapter, addComment rejects on the missing-adapter path.
+      await expect(manager.addComment('test', 'note')).rejects.toThrow(/file adapter/i);
     });
   });
 
