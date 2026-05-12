@@ -51,6 +51,7 @@ export const IPC_CHANNELS = {
 
   // Logging (renderer to main batched log records)
   LOG_BATCH: 'mdreview:log-batch',
+  GET_RUNTIME_INFO: 'mdreview:get-runtime-info',
 
   // Git
   GIT_IS_REPO: 'mdreview:git-is-repo',

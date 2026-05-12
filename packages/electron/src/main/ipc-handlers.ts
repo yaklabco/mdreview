@@ -12,6 +12,7 @@ import type { CacheManager, CachedResult, Preferences } from '@mdreview/core/nod
 import type { LogRecord } from '@mdreview/core/logging';
 import type { FileTransport } from './logging/file-transport';
 import type { TabState, TabGroupState, TabGroupColor } from '../shared/workspace-types';
+import type { RuntimeInfo } from '../shared/preload-api';
 
 export interface IPCHandlerDeps {
   stateManager: StateManager;
@@ -23,6 +24,7 @@ export interface IPCHandlerDeps {
   directoryService?: DirectoryService;
   gitService?: ElectronGitService;
   loggingTransport?: FileTransport;
+  getRuntimeInfo?: () => RuntimeInfo;
   getWindow: () => BrowserWindow | null;
   getOpenFilePath: () => string | null;
 }
@@ -387,6 +389,15 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
   );
 
   ipcMain.handle(IPC_CHANNELS.GIT_STASH, () => deps.gitService?.stash());
+
+  // Logging: surface runtime context to the renderer so it can build its own
+  // OTel resource attributes consistently with the main process.
+  ipcMain.handle(IPC_CHANNELS.GET_RUNTIME_INFO, (): RuntimeInfo => {
+    const provider = deps.getRuntimeInfo;
+    return provider
+      ? provider()
+      : { version: '0.0.0', platform: process.platform, isPackaged: false };
+  });
 
   // Logging: forward renderer batches to the main-side FileTransport so renderer
   // records share a file with main-process records. If no transport is wired

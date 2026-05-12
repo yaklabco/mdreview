@@ -443,6 +443,30 @@ describe('IPC Handlers', () => {
     });
   });
 
+  describe('GET_RUNTIME_INFO', () => {
+    it('returns the value produced by deps.getRuntimeInfo', async () => {
+      const info = { version: '9.9.9', platform: 'darwin', isPackaged: true };
+      handlers.clear();
+      registerIpcHandlers({ ...deps, getRuntimeInfo: () => info } as never);
+
+      const handler = handlers.get(IPC_CHANNELS.GET_RUNTIME_INFO);
+      const result = await handler?.();
+      expect(result).toEqual(info);
+    });
+
+    it('falls back to safe defaults when no provider is supplied', async () => {
+      const handler = handlers.get(IPC_CHANNELS.GET_RUNTIME_INFO);
+      const result = (await handler?.()) as {
+        version: string;
+        platform: string;
+        isPackaged: boolean;
+      };
+      expect(result.version).toBe('0.0.0');
+      expect(result.platform).toBe(process.platform);
+      expect(result.isPackaged).toBe(false);
+    });
+  });
+
   describe('LOG_BATCH', () => {
     it('no-ops when loggingTransport is undefined', async () => {
       const handler = handlers.get(IPC_CHANNELS.LOG_BATCH);

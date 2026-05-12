@@ -85,6 +85,7 @@ const api: MdreviewPreloadAPI = {
 
   // Logging
   logBatch: (records) => ipcRenderer.invoke(IPC_CHANNELS.LOG_BATCH, records),
+  getRuntimeInfo: () => ipcRenderer.invoke(IPC_CHANNELS.GET_RUNTIME_INFO),
 
   // Event listeners
   onFileChanged: (callback) => {

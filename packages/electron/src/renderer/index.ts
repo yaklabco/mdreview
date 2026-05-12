@@ -1,7 +1,33 @@
 import '@mdreview/core/styles/content.css';
 import './workspace.css';
 import { DOMPurifierUtil, ThemeEngine } from '@mdreview/core';
+import { initLogging, type ResourceAttrs } from '@mdreview/core/logging';
+import { IpcLogTransport } from './logging/ipc-log-transport';
 import { MDReviewElectronViewer } from './viewer';
+
+// Initialise renderer-side structured logging as early as possible so the
+// rest of the bootstrap can emit through the buffered pipeline. The
+// IpcLogTransport forwards batches to the main process; pre-init records are
+// captured by the in-process ring and replayed once initLogging runs.
+async function initRendererLogging(): Promise<void> {
+  try {
+    const info = await window.mdreview.getRuntimeInfo();
+    const resource: ResourceAttrs = {
+      'service.name': 'mdview',
+      'service.version': info.version,
+      'service.namespace': 'electron-renderer',
+      'deployment.environment': info.isPackaged ? 'prod' : 'dev',
+      'host.os': info.platform,
+    };
+    const transport = new IpcLogTransport((records) => window.mdreview.logBatch(records));
+    initLogging({ transport, resource });
+  } catch {
+    // If the preload bridge is unavailable, pre-init log records remain in the
+    // RingBuffer and a later initLogging call (if any) will drain them.
+  }
+}
+
+void initRendererLogging();
 
 // Configure DOMPurify to allow local-asset:// protocol for serving local file images/links.
 // This must run before any rendering so DOMPurify preserves local-asset: URLs that are

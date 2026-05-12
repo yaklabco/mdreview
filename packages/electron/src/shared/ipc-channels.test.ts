@@ -51,6 +51,7 @@ describe('IPC_CHANNELS', () => {
 
   it('should have logging channels', () => {
     expect(IPC_CHANNELS.LOG_BATCH).toBe('mdreview:log-batch');
+    expect(IPC_CHANNELS.GET_RUNTIME_INFO).toBe('mdreview:get-runtime-info');
   });
 
   it('should follow mdreview:git-* pattern for all git channels', () => {
