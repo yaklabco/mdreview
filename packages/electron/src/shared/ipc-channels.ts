@@ -49,6 +49,10 @@ export const IPC_CHANNELS = {
   UPDATE_TAB_GROUP: 'mdreview:update-tab-group',
   DELETE_TAB_GROUP: 'mdreview:delete-tab-group',
 
+  // Logging (renderer to main batched log records)
+  LOG_BATCH: 'mdreview:log-batch',
+  GET_RUNTIME_INFO: 'mdreview:get-runtime-info',
+
   // Git
   GIT_IS_REPO: 'mdreview:git-is-repo',
   GIT_GET_BRANCH: 'mdreview:git-get-branch',

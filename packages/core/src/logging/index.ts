@@ -127,3 +127,11 @@ export type { Logger, Span } from './logger';
 export type { LogTransport, TransportResult } from './transport';
 export { NoopTransport } from './transport';
 export * from './semconv';
+export {
+  currentFileName,
+  dateStem,
+  nextSizeSuffix,
+  planPrune,
+  planRotation,
+} from './file-rotation';
+export type { DirEntry, LogSource, RotationAction, RotationOpts } from './file-rotation';

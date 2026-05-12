@@ -12,6 +12,17 @@ import { TocRenderer } from '@mdreview/core';
 import type { ExportUI } from '../ui/export-ui';
 import type { CommentManager } from '../comments/comment-manager';
 import { BridgeIndicator } from './bridge-indicator';
+import { initRemoteLogging } from './logging/init';
+
+// Initialise the structured logger as soon as the content script loads so
+// records emitted during page setup go through the SW route instead of the
+// pre-init ring buffer.
+try {
+  initRemoteLogging('chrome-content', chrome.runtime.getManifest().version);
+} catch (error) {
+  // eslint-disable-next-line no-console
+  console.warn('[MDView] initRemoteLogging failed:', error);
+}
 
 // Fix Vite's dynamic import base path for Chrome extensions
 // Override import.meta to use chrome-extension:// base URL

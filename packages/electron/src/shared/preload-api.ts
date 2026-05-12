@@ -1,5 +1,12 @@
 import type { AppState, Preferences, CachedResult } from '@mdreview/core';
 import type { FileChangeInfo, FileWriteResult, GitFileStatus } from '@mdreview/core';
+import type { LogRecord } from '@mdreview/core/logging';
+
+export interface RuntimeInfo {
+  version: string;
+  platform: string;
+  isPackaged: boolean;
+}
 import type {
   WorkspaceState,
   TabState,
@@ -96,6 +103,14 @@ export interface MdreviewPreloadAPI {
   gitUnstage(paths: string[]): Promise<void>;
   gitCommit(message: string): Promise<string>;
   gitStash(): Promise<void>;
+
+  // Logging (renderer to main, batched LogRecord transport)
+  logBatch(records: readonly LogRecord[]): Promise<void>;
+  /**
+   * Runtime context exposed to the renderer so it can build the OTel resource
+   * attributes for its logger without duplicating the data from the main side.
+   */
+  getRuntimeInfo(): Promise<RuntimeInfo>;
 
   // Event listeners (main → renderer)
   onFileChanged(callback: (path: string) => void): () => void;

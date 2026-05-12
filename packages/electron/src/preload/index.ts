@@ -83,6 +83,10 @@ const api: MdreviewPreloadAPI = {
   gitCommit: (message) => ipcRenderer.invoke(IPC_CHANNELS.GIT_COMMIT, message),
   gitStash: () => ipcRenderer.invoke(IPC_CHANNELS.GIT_STASH),
 
+  // Logging
+  logBatch: (records) => ipcRenderer.invoke(IPC_CHANNELS.LOG_BATCH, records),
+  getRuntimeInfo: () => ipcRenderer.invoke(IPC_CHANNELS.GET_RUNTIME_INFO),
+
   // Event listeners
   onFileChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);

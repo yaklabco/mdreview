@@ -4,6 +4,7 @@ import { join, extname, basename } from 'path';
 import { pathToFileURL } from 'url';
 import ElectronStore from 'electron-store';
 import { CacheManager } from '@mdreview/core/node';
+import { initLogging, shutdownLogging } from '@mdreview/core/logging';
 import { ElectronStorageAdapter } from './adapters/storage-adapter';
 import { ElectronFileAdapter } from './adapters/file-adapter';
 import { ElectronIdentityAdapter } from './adapters/identity-adapter';
@@ -14,6 +15,7 @@ import { RecentFilesManager } from './recent-files';
 import { SessionManager } from './session-restore';
 import { DirectoryService } from './directory-service';
 import { buildApplicationMenu } from './menu';
+import { buildLogging } from './logging/init';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 
 const MD_EXTENSIONS = new Set(['.md', '.markdown', '.mdown', '.mkd', '.mkdn', '.mdx']);
@@ -64,6 +66,7 @@ let openFilePath: string | null = null;
 let stateManagerRef: StateManager | null = null;
 let sessionManagerRef: SessionManager | null = null;
 let recentFilesRef: RecentFilesManager | null = null;
+let loggingShutdownStarted = false;
 
 function parseOpenFilePath(): string | null {
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
@@ -253,6 +256,16 @@ void app.whenReady().then(async () => {
 
   openFilePath = parseOpenFilePath();
 
+  // Initialise structured logging before any other subsystem so early errors
+  // are captured. The same FileTransport instance is shared with the IPC
+  // LOG_BATCH handler so renderer batches land in the same JSONL file.
+  const { transport: loggingTransport, resource: loggingResource } = buildLogging({
+    version: app.getVersion(),
+    platform: process.platform,
+    isPackaged: app.isPackaged,
+  });
+  initLogging({ transport: loggingTransport, resource: loggingResource });
+
   const syncStore = new ElectronStore({ name: 'preferences' });
   const localStore = new ElectronStore({ name: 'local' });
 
@@ -295,6 +308,12 @@ void app.whenReady().then(async () => {
     exportAdapter,
     recentFiles,
     directoryService,
+    loggingTransport,
+    getRuntimeInfo: () => ({
+      version: app.getVersion(),
+      platform: process.platform,
+      isPackaged: app.isPackaged,
+    }),
     getWindow: () => mainWindow,
     getOpenFilePath: () => openFilePath,
   });
@@ -330,9 +349,23 @@ void app.whenReady().then(async () => {
     mainWindow = null;
   });
 
-  app.on('before-quit', () => {
+  app.on('before-quit', (event) => {
     stateManagerRef?.flushPersist();
     saveSession();
+    // Drain the structured-logger pipeline so in-flight batches land on disk.
+    // We defer quit briefly via preventDefault until shutdown resolves; the
+    // FileTransport's own retries keep this bounded in practice.
+    if (!loggingShutdownStarted) {
+      loggingShutdownStarted = true;
+      event.preventDefault();
+      void shutdownLogging()
+        .catch((err) => {
+          console.error('[mdview] shutdownLogging failed:', err);
+        })
+        .finally(() => {
+          app.quit();
+        });
+    }
   });
 });
 

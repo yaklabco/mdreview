@@ -11,6 +11,8 @@ vi.mock('fs', () => ({
 
 vi.mock('os', () => ({
   userInfo: vi.fn(),
+  // tmpdir is consulted by the log_batch action; route to a real tmp path.
+  tmpdir: vi.fn(() => '/tmp'),
 }));
 
 describe('host-logic', () => {
@@ -90,6 +92,30 @@ describe('host-logic', () => {
     it('returns error for unknown action', () => {
       const result = handleMessage({ action: 'unknown' } as HostMessage);
       expect(result).toEqual({ error: 'Unknown action: unknown' });
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // log_batch action
+  // -----------------------------------------------------------------------
+
+  describe('log_batch action', () => {
+    it('returns success for an empty records array', () => {
+      const result = handleMessage({ action: 'log_batch', records: [] } as HostMessage);
+      expect(result).toMatchObject({ success: true });
+    });
+
+    it('rejects non-array records', () => {
+      const result = handleMessage({
+        action: 'log_batch',
+        records: 'not an array',
+      } as unknown as HostMessage);
+      expect(result).toMatchObject({ error: expect.stringMatching(/array/i) as unknown });
+    });
+
+    it('rejects missing records field', () => {
+      const result = handleMessage({ action: 'log_batch' } as HostMessage);
+      expect(result).toMatchObject({ error: expect.stringMatching(/array/i) as unknown });
     });
   });
 

@@ -8,6 +8,7 @@ import { CacheManager, DEFAULT_STATE } from '@mdreview/core/sw';
 import { debug } from '../utils/debug-logger';
 import { ChromeBridgeHealth } from './bridge-health';
 import { sendFramedMessage } from './message-frame';
+import { handleLogBatchMessage, initSwLogging } from './logging/sw-init';
 
 // Cache management (persists across page reloads)
 const cacheManager = new CacheManager({ maxSize: 50, maxAge: 3600000 });
@@ -104,6 +105,14 @@ const stateManager = new StateManager();
 const bridgeHealth = new ChromeBridgeHealth();
 let bridgeSeqCounter = 0;
 
+// Logging: wire native-host primary + IndexedDB fallback + bridge-recovery flusher.
+// Initialised at SW load so loggers obtained before message handling flush to
+// the real transport instead of staying in the pre-init ring buffer.
+const swLogging = initSwLogging({
+  bridge: bridgeHealth,
+  version: chrome.runtime.getManifest().version,
+});
+
 // Broadcast bridge state changes to all tabs
 bridgeHealth.onStateChange((newState) => {
   debug.log('MDView', 'Bridge state changed:', newState);
@@ -195,8 +204,25 @@ chrome.runtime.onStartup.addListener(() => {
 
 // Message handler
 chrome.runtime.onMessage.addListener(
-  (message: { type: string; payload?: unknown }, sender, sendResponse) => {
+  (message: { type: string; payload?: unknown; records?: unknown }, sender, sendResponse) => {
     debug.log('MDView', 'Received message:', message.type, 'from:', sender.tab?.id);
+
+    // LOG_BATCH is hot-path; resolve before awaiting state init so loggers in
+    // content/popup contexts don't block on storage I/O.
+    if (message.type === 'LOG_BATCH') {
+      void (async () => {
+        try {
+          const result = await handleLogBatchMessage(swLogging.transport, {
+            records: message.records,
+          });
+          sendResponse(result);
+        } catch (error) {
+          debug.error('MDView', 'LOG_BATCH route threw:', error);
+          sendResponse({ ok: false, reason: String(error) });
+        }
+      })();
+      return true;
+    }
 
     void (async () => {
       try {

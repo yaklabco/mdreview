@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { writeLogBatch } from './log-writer';
 
 export const ALLOWED_EXTENSIONS = ['.md', '.markdown', '.mdx'];
 
@@ -27,7 +28,12 @@ export interface PingMessage {
   seq?: number;
 }
 
-export type HostMessage = WriteMessage | GetUsernameMessage | PingMessage;
+export interface LogBatchMessage {
+  action: 'log_batch';
+  records?: unknown[];
+}
+
+export type HostMessage = WriteMessage | GetUsernameMessage | PingMessage | LogBatchMessage;
 
 export interface SuccessResponse {
   success: true;
@@ -75,6 +81,21 @@ export function handleMessage(msg: HostMessage | null | string): HostResponse {
   if (msg.action === 'get_username') {
     try {
       return { success: true, username: os.userInfo().username };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { error: message };
+    }
+  }
+
+  if (msg.action === 'log_batch') {
+    const logMsg = msg as LogBatchMessage;
+    if (!Array.isArray(logMsg.records)) {
+      return { error: 'log_batch: records must be an array' };
+    }
+    try {
+      const dir = path.join(os.tmpdir(), 'mdview', 'logs');
+      writeLogBatch(logMsg.records, { dir });
+      return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       return { error: message };
