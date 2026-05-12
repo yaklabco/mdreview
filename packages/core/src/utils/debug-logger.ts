@@ -9,6 +9,37 @@
 
 import type { LogLevel } from '../types/index';
 import type { StorageAdapter } from '../adapters';
+import { getLogger } from '../logging';
+import type { Logger } from '../logging';
+
+const LEGACY_LOGGER_NAME = 'legacy.debug';
+const ATTR_CONTEXT = 'mdview.debug.context';
+const ATTR_TABLE = 'mdview.debug.table';
+const ATTR_TIMER = 'mdview.debug.timer';
+const ATTR_GROUP_LABEL = 'mdview.debug.group.label';
+
+function legacy(): Logger {
+  return getLogger(LEGACY_LOGGER_NAME);
+}
+
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function joinArgs(args: unknown[]): string {
+  if (args.length === 0) return '';
+  return args
+    .map((a) => {
+      if (typeof a === 'string') return a;
+      if (a instanceof Error) return a.message;
+      return safeStringify(a);
+    })
+    .join(' ');
+}
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   none: 0,
@@ -66,6 +97,7 @@ export class DebugLogger {
     if (this.shouldLog('debug')) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       console.log(`[${context}]`, ...(args as any[]));
+      legacy().debug(joinArgs(args), { [ATTR_CONTEXT]: context });
     }
   }
 
@@ -73,6 +105,7 @@ export class DebugLogger {
     if (this.shouldLog('debug')) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       console.debug(`[${context}]`, ...(args as any[]));
+      legacy().debug(joinArgs(args), { [ATTR_CONTEXT]: context });
     }
   }
 
@@ -80,6 +113,7 @@ export class DebugLogger {
     if (this.shouldLog('info')) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       console.info(`[${context}]`, ...(args as any[]));
+      legacy().info(joinArgs(args), { [ATTR_CONTEXT]: context });
     }
   }
 
@@ -87,6 +121,7 @@ export class DebugLogger {
     if (this.shouldLog('warn')) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       console.warn(`[${context}]`, ...(args as any[]));
+      legacy().warn(joinArgs(args), { [ATTR_CONTEXT]: context });
     }
   }
 
@@ -94,12 +129,14 @@ export class DebugLogger {
     if (this.shouldLog('error')) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       console.error(`[${context}]`, ...(args as any[]));
+      legacy().error(joinArgs(args), { [ATTR_CONTEXT]: context });
     }
   }
 
   group(context: string, label: string): void {
     if (this.shouldLog('debug')) {
       console.group(`[${context}] ${label}`);
+      legacy().debug(label, { [ATTR_CONTEXT]: context, [ATTR_GROUP_LABEL]: label });
     }
   }
 
@@ -114,18 +151,24 @@ export class DebugLogger {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       console.log(`[${context}]`);
       console.table(data);
+      legacy().info(context, {
+        [ATTR_CONTEXT]: context,
+        [ATTR_TABLE]: safeStringify(data).slice(0, 4096),
+      });
     }
   }
 
   time(context: string, label: string): void {
     if (this.shouldLog('debug')) {
       console.time(`[${context}] ${label}`);
+      legacy().info(`${label}.start`, { [ATTR_CONTEXT]: context, [ATTR_TIMER]: label });
     }
   }
 
   timeEnd(context: string, label: string): void {
     if (this.shouldLog('debug')) {
       console.timeEnd(`[${context}] ${label}`);
+      legacy().info(`${label}.end`, { [ATTR_CONTEXT]: context, [ATTR_TIMER]: label });
     }
   }
 }

@@ -6,6 +6,7 @@ import {
   NoopExportAdapter,
   NoopGitAdapter,
   NoopBridgeHealth,
+  NoopLoggingAdapter,
   createNoopAdapters,
 } from '../adapters';
 import type {
@@ -216,6 +217,15 @@ describe('Platform Adapters', () => {
 
     it('onStateChange does not throw', () => {
       expect(() => health.onStateChange(() => {})).not.toThrow();
+    });
+  });
+
+  describe('NoopLoggingAdapter', () => {
+    it('builds with a noop transport and a valid resource', () => {
+      const a = new NoopLoggingAdapter();
+      const { transport, resource } = a.build();
+      expect(typeof transport.export).toBe('function');
+      expect(resource['service.name']).toBe('mdview');
     });
   });
 
