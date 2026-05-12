@@ -442,4 +442,39 @@ describe('IPC Handlers', () => {
       expect(vi.mocked(electron.shell.showItemInFolder)).toHaveBeenCalledWith('/tmp/test.md');
     });
   });
+
+  describe('LOG_BATCH', () => {
+    it('no-ops when loggingTransport is undefined', async () => {
+      const handler = handlers.get(IPC_CHANNELS.LOG_BATCH);
+      // Default deps have no loggingTransport; handler should resolve without throwing.
+      await expect(handler?.({}, [])).resolves.toBeUndefined();
+    });
+
+    it('forwards records to loggingTransport.export', async () => {
+      const loggingTransport = { export: vi.fn().mockResolvedValue({ ok: true }) };
+      handlers.clear();
+      registerIpcHandlers({ ...deps, loggingTransport } as never);
+
+      const handler = handlers.get(IPC_CHANNELS.LOG_BATCH);
+      const records = [{ body: 'hi' }];
+      await handler?.({}, records);
+
+      expect(loggingTransport.export).toHaveBeenCalledWith(records);
+    });
+
+    it('warns on export failure but does not throw', async () => {
+      const loggingTransport = {
+        export: vi.fn().mockResolvedValue({ ok: false, reason: 'disk full' }),
+      };
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      handlers.clear();
+      registerIpcHandlers({ ...deps, loggingTransport } as never);
+
+      const handler = handlers.get(IPC_CHANNELS.LOG_BATCH);
+      await expect(handler?.({}, [])).resolves.toBeUndefined();
+      expect(warnSpy).toHaveBeenCalledWith('[mdview] log batch failed:', 'disk full');
+
+      warnSpy.mockRestore();
+    });
+  });
 });

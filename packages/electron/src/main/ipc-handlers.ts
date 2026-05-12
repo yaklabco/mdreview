@@ -9,6 +9,8 @@ import type { RecentFilesManager } from './recent-files';
 import type { DirectoryService } from './directory-service';
 import type { ElectronGitService } from './git-service';
 import type { CacheManager, CachedResult, Preferences } from '@mdreview/core/node';
+import type { LogRecord } from '@mdreview/core/logging';
+import type { FileTransport } from './logging/file-transport';
 import type { TabState, TabGroupState, TabGroupColor } from '../shared/workspace-types';
 
 export interface IPCHandlerDeps {
@@ -20,6 +22,7 @@ export interface IPCHandlerDeps {
   recentFiles?: RecentFilesManager;
   directoryService?: DirectoryService;
   gitService?: ElectronGitService;
+  loggingTransport?: FileTransport;
   getWindow: () => BrowserWindow | null;
   getOpenFilePath: () => string | null;
 }
@@ -384,6 +387,21 @@ export function registerIpcHandlers(deps: IPCHandlerDeps): () => void {
   );
 
   ipcMain.handle(IPC_CHANNELS.GIT_STASH, () => deps.gitService?.stash());
+
+  // Logging: forward renderer batches to the main-side FileTransport so renderer
+  // records share a file with main-process records. If no transport is wired
+  // (e.g. test harness), no-op and return so the renderer's invoke resolves.
+  ipcMain.handle(IPC_CHANNELS.LOG_BATCH, async (_event, records: readonly LogRecord[]) => {
+    const transport = deps.loggingTransport;
+    if (!transport) return;
+    const result = await transport.export(records);
+    if (!result.ok) {
+      // Cannot use the structured logger here without risking a feedback loop
+      // (this code path is the logger's main-side sink).
+      // eslint-disable-next-line no-console
+      console.warn('[mdview] log batch failed:', result.reason);
+    }
+  });
 
   // Return cleanup function to stop all file watchers before window destruction
   return () => {
