@@ -5,6 +5,16 @@
 
 import type { AppState, ThemeName, LogLevel } from '@mdreview/core';
 import { debug } from '../utils/debug-logger';
+import { initRemoteLogging } from '../content/logging/init';
+
+// Initialise the structured logger before any popup work runs so popup
+// records flow through the SW LOG_BATCH route from the first emission.
+try {
+  initRemoteLogging('chrome-ext', chrome.runtime.getManifest().version);
+} catch (error) {
+  // eslint-disable-next-line no-console
+  console.warn('[MDView] initRemoteLogging failed:', error);
+}
 
 class PopupManager {
   private state: AppState | null = null;
