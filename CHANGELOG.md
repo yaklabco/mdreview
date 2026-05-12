@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.14](https://github.com/yaklabco/mdreview/compare/v0.3.13...v0.3.14) (2026-05-12)
+
+
+### Features
+
+* **logging:** add OpenTelemetry log SDK deps ([7c97e0c](https://github.com/yaklabco/mdreview/commit/7c97e0cc3d69c08478123a4f1fb7da40e46bed1c))
+* **logging:** BatchLogRecordProcessor with ring-buffer retry ([4ee9823](https://github.com/yaklabco/mdreview/commit/4ee9823651f828594818a253cde91a1373565bcd))
+* **logging:** bounded ring buffer for batch retry ([a7763ea](https://github.com/yaklabco/mdreview/commit/a7763eacc0cb4bc443f3f6383cce769ad4c73d71))
+* **logging:** DebugLogger routes through new logger ([cc9ba9a](https://github.com/yaklabco/mdreview/commit/cc9ba9ad697928e24fe6275d357342faf46fb0b6))
+* **logging:** Logger with child loggers and in-process spans ([e2667f4](https://github.com/yaklabco/mdreview/commit/e2667f44b087dacfda854a6f8ef39339992fc974))
+* **logging:** LoggingAdapter slot in PlatformAdapters ([860f482](https://github.com/yaklabco/mdreview/commit/860f482141d024a5ba9b1ebfc347245c3999ed6c))
+* **logging:** LogTransport interface and noop default ([6c56423](https://github.com/yaklabco/mdreview/commit/6c56423367b8313d893d8a6a8c3dc2fcc0dead2a))
+* **logging:** OTEL log-record types and severity mapping ([9d3e6eb](https://github.com/yaklabco/mdreview/commit/9d3e6eb4ebe119bf0c4693de7a80608d45b96ca2))
+* **logging:** public surface with pre-init buffering ([7cd9caf](https://github.com/yaklabco/mdreview/commit/7cd9caf70884a8f73402a51bce4bdbf8370b8441))
+* **logging:** pure rotation and retention planner ([72272f8](https://github.com/yaklabco/mdreview/commit/72272f8bb25bee8b2f524a7653c84112ab5bfcdb))
+* **logging:** semantic-convention attribute keys ([daa77c1](https://github.com/yaklabco/mdreview/commit/daa77c19edd1ba8319db565a289792c9de74c53d))
+* **logging:** shared OTEL-shaped logging infrastructure (Phase 1) ([1532136](https://github.com/yaklabco/mdreview/commit/15321368c3cbd9f14fe2a71f76e8cc341f5a04f6))
+
 ## [0.3.13](https://github.com/yaklabco/mdreview/compare/v0.3.12...v0.3.13) (2026-04-28)
 
 
