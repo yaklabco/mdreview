@@ -16,8 +16,15 @@
 
 import type { Comment, CommentParseResult, AppState, CommentTag } from '../types/index';
 import type { FileAdapter, IdentityAdapter } from '../adapters';
-import { getLogger, type Logger } from '../logging';
-import { ATTR_MDVIEW_COMMENT_OP, ATTR_MDVIEW_FILE_PATH } from '../logging/semconv';
+import { getLogger, type Logger, type Span } from '../logging';
+import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
+  ATTR_MDVIEW_COMMENT_ID,
+  ATTR_MDVIEW_COMMENT_OP,
+  ATTR_MDVIEW_FILE_PATH,
+} from '../logging/semconv';
 import { CommentUI } from './comment-ui';
 import { CommentHighlighter } from './comment-highlight';
 import { parseComments } from './annotation-parser';
@@ -314,182 +321,228 @@ export class CommentManager {
    * Add a new comment attached to selected text.
    */
   async addComment(selectedText: string, body: string, tags?: CommentTag[]): Promise<void> {
-    const nextId = generateNextCommentId(this.rawMarkdown);
+    return this.logger.withSpan(
+      'comment.add',
+      async (span) => {
+        const nextId = generateNextCommentId(this.rawMarkdown);
+        span.setAttribute(ATTR_MDVIEW_COMMENT_ID, nextId);
+        span.setAttribute(ATTR_MDVIEW_FILE_PATH, this.filePath);
 
-    // Compute insertion offset for positional context
-    const offset = this.sourceMap
-      ? findInsertionPoint(this.sourceMap, selectedText, this.pendingContext ?? undefined)
-      : null;
+        // Compute insertion offset for positional context
+        const offset = this.sourceMap
+          ? findInsertionPoint(this.sourceMap, selectedText, this.pendingContext ?? undefined)
+          : null;
 
-    // Compute positional context from the offset (or fallback to text search)
-    const contentSection = this.getContentSection();
-    const contextOffset = offset ?? contentSection.indexOf(selectedText);
-    const context =
-      contextOffset >= 0 ? computeCommentContext(contentSection, contextOffset) : undefined;
+        // Compute positional context from the offset (or fallback to text search)
+        const contentSection = this.getContentSection();
+        const contextOffset = offset ?? contentSection.indexOf(selectedText);
+        const context =
+          contextOffset >= 0 ? computeCommentContext(contentSection, contextOffset) : undefined;
 
-    const comment: Comment = {
-      id: nextId,
-      selectedText,
-      body,
-      author: this.authorName,
-      date: new Date().toISOString(),
-      resolved: false,
-      context,
-      ...(tags && tags.length > 0 ? { tags } : {}),
-      ...(this.pendingContext?.prefix ? { anchorPrefix: this.pendingContext.prefix } : {}),
-      ...(this.pendingContext?.suffix ? { anchorSuffix: this.pendingContext.suffix } : {}),
-    };
+        const comment: Comment = {
+          id: nextId,
+          selectedText,
+          body,
+          author: this.authorName,
+          date: new Date().toISOString(),
+          resolved: false,
+          context,
+          ...(tags && tags.length > 0 ? { tags } : {}),
+          ...(this.pendingContext?.prefix ? { anchorPrefix: this.pendingContext.prefix } : {}),
+          ...(this.pendingContext?.suffix ? { anchorSuffix: this.pendingContext.suffix } : {}),
+        };
 
-    // Serialize into markdown using source map for accurate placement
-    const updatedMarkdown = this.sourceMap
-      ? serializerAddCommentAtOffset(
-          this.rawMarkdown,
-          comment,
-          this.sourceMap,
-          this.pendingContext ?? undefined
-        )
-      : serializerAddComment(this.rawMarkdown, comment);
-    this.pendingContext = null;
+        // Serialize into markdown using source map for accurate placement
+        const updatedMarkdown = this.sourceMap
+          ? serializerAddCommentAtOffset(
+              this.rawMarkdown,
+              comment,
+              this.sourceMap,
+              this.pendingContext ?? undefined
+            )
+          : serializerAddComment(this.rawMarkdown, comment);
+        this.pendingContext = null;
 
-    // Update internal state immediately (optimistic)
-    this.rawMarkdown = updatedMarkdown;
-    this.sourceMap = buildSourceMap(updatedMarkdown);
-    this.comments.push(comment);
+        // Update internal state immediately (optimistic)
+        this.rawMarkdown = updatedMarkdown;
+        this.sourceMap = buildSourceMap(updatedMarkdown);
+        this.comments.push(comment);
 
-    // Patch DOM immediately (optimistic)
-    const container = document.getElementById('mdreview-container') || document.body;
-    if (this.highlighter) {
-      this.highlighter.highlightComment(container, comment);
-    }
+        // Patch DOM immediately (optimistic)
+        const container = document.getElementById('mdreview-container') || document.body;
+        if (this.highlighter) {
+          this.highlighter.highlightComment(container, comment);
+        }
 
-    if (this.ui) {
-      const card = this.ui.renderCard(comment);
-      document.body.appendChild(card);
-      this.positionCardAtHighlight(card, comment.id);
-      this.repositionAllCards();
-    }
+        if (this.ui) {
+          const card = this.ui.renderCard(comment);
+          document.body.appendChild(card);
+          this.positionCardAtHighlight(card, comment.id);
+          this.repositionAllCards();
+        }
 
-    // Write to file via adapter (if available)
-    try {
-      await this.writeFile(updatedMarkdown);
-      if (this.ui) this.ui.showToast('Comment saved');
-    } catch (error) {
-      this.logger.error(
-        'comment.write.failed',
-        {
-          [ATTR_MDVIEW_COMMENT_OP]: 'add',
-          [ATTR_MDVIEW_FILE_PATH]: this.filePath,
-        },
-        error instanceof Error ? error : new Error(String(error))
-      );
-      if (this.ui)
-        this.ui.showToast(
-          `Write failed: ${error instanceof Error ? error.message : String(error)}`
-        );
-    }
+        // Write to file via adapter (if available). withSpan emits the
+        // exception event and an end record with status=error on throw.
+        try {
+          await this.writeFile(updatedMarkdown);
+          if (this.ui) this.ui.showToast('Comment saved');
+        } catch (err) {
+          if (this.ui)
+            this.ui.showToast(`Write failed: ${err instanceof Error ? err.message : String(err)}`);
+          throw err;
+        }
+      },
+      { [ATTR_MDVIEW_COMMENT_OP]: 'add' }
+    );
   }
 
   /**
    * Edit the body of an existing comment.
    */
   async editComment(id: string, newBody: string, tags?: CommentTag[]): Promise<void> {
-    let updatedMarkdown = serializerUpdateComment(this.rawMarkdown, id, newBody);
+    return this.logger.withSpan(
+      'comment.edit',
+      async (span) => {
+        span.setAttribute(ATTR_MDVIEW_COMMENT_ID, id);
+        span.setAttribute(ATTR_MDVIEW_FILE_PATH, this.filePath);
 
-    // Update internal state immediately.
-    // No source map rebuild needed — edit only changes the comments section
-    // (below the separator), which the source map does not cover.
-    const comment = this.comments.find((c) => c.id === id);
+        let updatedMarkdown = serializerUpdateComment(this.rawMarkdown, id, newBody);
 
-    // Persist tag changes to metadata if tags were explicitly provided and differ
-    if (comment && tags !== undefined) {
-      const oldTags = comment.tags ?? [];
-      const newTags = tags.length > 0 ? tags : [];
-      const tagsChanged =
-        oldTags.length !== newTags.length || oldTags.some((t, i) => t !== newTags[i]);
+        // Update internal state immediately.
+        // No source map rebuild needed; edit only changes the comments section
+        // (below the separator), which the source map does not cover.
+        const comment = this.comments.find((c) => c.id === id);
 
-      if (tagsChanged) {
-        updatedMarkdown = serializerUpdateCommentMetadata(updatedMarkdown, id, (meta) => {
-          if (newTags.length > 0) {
-            meta.tags = newTags;
-          } else {
-            delete meta.tags;
+        // Persist tag changes to metadata if tags were explicitly provided and differ
+        if (comment && tags !== undefined) {
+          const oldTags = comment.tags ?? [];
+          const newTags = tags.length > 0 ? tags : [];
+          const tagsChanged =
+            oldTags.length !== newTags.length || oldTags.some((t, i) => t !== newTags[i]);
+
+          if (tagsChanged) {
+            updatedMarkdown = serializerUpdateCommentMetadata(updatedMarkdown, id, (meta) => {
+              if (newTags.length > 0) {
+                meta.tags = newTags;
+              } else {
+                delete meta.tags;
+              }
+            });
           }
-        });
-      }
-    }
+        }
 
-    this.rawMarkdown = updatedMarkdown;
-    if (comment) {
-      comment.body = newBody;
-      if (tags !== undefined) {
-        comment.tags = tags.length > 0 ? tags : undefined;
-      }
-    }
+        this.rawMarkdown = updatedMarkdown;
+        if (comment) {
+          comment.body = newBody;
+          if (tags !== undefined) {
+            comment.tags = tags.length > 0 ? tags : undefined;
+          }
+        }
 
-    // Write to file
-    try {
-      await this.writeFile(updatedMarkdown);
-      if (this.ui) this.ui.showToast('Comment updated');
-    } catch {
-      if (this.ui) this.ui.showToast('Comment updated locally (file write failed)');
-    }
+        // Write to file
+        try {
+          await this.writeFile(updatedMarkdown);
+          if (this.ui) this.ui.showToast('Comment updated');
+        } catch (err) {
+          this.recordWriteFailure(span, err, 'edit');
+          if (this.ui) this.ui.showToast('Comment updated locally (file write failed)');
+        }
+      },
+      { [ATTR_MDVIEW_COMMENT_OP]: 'edit' }
+    );
   }
 
   /**
    * Mark a comment as resolved.
    */
   async resolveComment(id: string): Promise<void> {
-    const updatedMarkdown = serializerResolveComment(this.rawMarkdown, id);
+    return this.logger.withSpan(
+      'comment.resolve',
+      async (span) => {
+        span.setAttribute(ATTR_MDVIEW_COMMENT_ID, id);
+        span.setAttribute(ATTR_MDVIEW_FILE_PATH, this.filePath);
 
-    // Update internal state immediately.
-    // No source map rebuild needed — resolve only changes metadata in the
-    // comments section (below the separator).
-    this.rawMarkdown = updatedMarkdown;
-    const comment = this.comments.find((c) => c.id === id);
-    if (comment) {
-      comment.resolved = true;
-    }
+        const updatedMarkdown = serializerResolveComment(this.rawMarkdown, id);
 
-    // Update highlight to resolved state immediately
-    if (this.highlighter) {
-      this.highlighter.setResolved(id);
-    }
+        // Update internal state immediately.
+        // No source map rebuild needed; resolve only changes metadata in the
+        // comments section (below the separator).
+        this.rawMarkdown = updatedMarkdown;
+        const comment = this.comments.find((c) => c.id === id);
+        if (comment) {
+          comment.resolved = true;
+        }
 
-    // Write to file
-    try {
-      await this.writeFile(updatedMarkdown);
-    } catch {
-      if (this.ui) this.ui.showToast('Resolved locally (file write failed)');
-    }
+        // Update highlight to resolved state immediately
+        if (this.highlighter) {
+          this.highlighter.setResolved(id);
+        }
+
+        // Write to file
+        try {
+          await this.writeFile(updatedMarkdown);
+        } catch (err) {
+          this.recordWriteFailure(span, err, 'resolve');
+          if (this.ui) this.ui.showToast('Resolved locally (file write failed)');
+        }
+      },
+      { [ATTR_MDVIEW_COMMENT_OP]: 'resolve' }
+    );
   }
 
   /**
    * Delete a comment entirely.
    */
   async deleteComment(id: string): Promise<void> {
-    const updatedMarkdown = serializerRemoveComment(this.rawMarkdown, id);
+    return this.logger.withSpan(
+      'comment.delete',
+      async (span) => {
+        span.setAttribute(ATTR_MDVIEW_COMMENT_ID, id);
+        span.setAttribute(ATTR_MDVIEW_FILE_PATH, this.filePath);
 
-    // Update internal state immediately
-    this.rawMarkdown = updatedMarkdown;
-    this.sourceMap = buildSourceMap(updatedMarkdown);
-    this.comments = this.comments.filter((c) => c.id !== id);
+        const updatedMarkdown = serializerRemoveComment(this.rawMarkdown, id);
 
-    // Remove highlight from DOM immediately
-    if (this.highlighter) {
-      this.highlighter.removeHighlight(id);
-    }
+        // Update internal state immediately
+        this.rawMarkdown = updatedMarkdown;
+        this.sourceMap = buildSourceMap(updatedMarkdown);
+        this.comments = this.comments.filter((c) => c.id !== id);
 
-    // Remove card from DOM and reposition remaining cards
-    const card = document.querySelector(`.mdreview-comment-card[data-comment-id="${id}"]`);
-    if (card) card.remove();
-    this.repositionAllCards();
+        // Remove highlight from DOM immediately
+        if (this.highlighter) {
+          this.highlighter.removeHighlight(id);
+        }
 
-    // Write to file
-    try {
-      await this.writeFile(updatedMarkdown);
-    } catch {
-      if (this.ui) this.ui.showToast('Deleted locally (file write failed)');
-    }
+        // Remove card from DOM and reposition remaining cards
+        const card = document.querySelector(`.mdreview-comment-card[data-comment-id="${id}"]`);
+        if (card) card.remove();
+        this.repositionAllCards();
+
+        // Write to file
+        try {
+          await this.writeFile(updatedMarkdown);
+        } catch (err) {
+          this.recordWriteFailure(span, err, 'delete');
+          if (this.ui) this.ui.showToast('Deleted locally (file write failed)');
+        }
+      },
+      { [ATTR_MDVIEW_COMMENT_OP]: 'delete' }
+    );
+  }
+
+  /**
+   * Record a write failure as an exception event on the active span, so the
+   * error is visible in the trace context even when the calling method
+   * swallows the rejection to preserve user-facing graceful-degradation
+   * behaviour (the local state is still updated and a toast is shown).
+   */
+  private recordWriteFailure(span: Span, err: unknown, op: string): void {
+    const e = err instanceof Error ? err : new Error(String(err));
+    span.addEvent('exception', {
+      [ATTR_EXCEPTION_TYPE]: e.name,
+      [ATTR_EXCEPTION_MESSAGE]: e.message,
+      [ATTR_EXCEPTION_STACKTRACE]: e.stack ?? '',
+      [ATTR_MDVIEW_COMMENT_OP]: op,
+    });
   }
 
   /**
@@ -581,84 +634,104 @@ export class CommentManager {
    * Add a reply to an existing comment.
    */
   async addReply(commentId: string, body: string): Promise<void> {
-    const reply = {
-      author: this.authorName,
-      body,
-      date: new Date().toISOString(),
-    };
+    return this.logger.withSpan(
+      'comment.reply',
+      async (span) => {
+        span.setAttribute(ATTR_MDVIEW_COMMENT_ID, commentId);
+        span.setAttribute(ATTR_MDVIEW_FILE_PATH, this.filePath);
 
-    const { markdown: updatedMarkdown, replyId } = serializerAddReply(
-      this.rawMarkdown,
-      commentId,
-      reply
+        const reply = {
+          author: this.authorName,
+          body,
+          date: new Date().toISOString(),
+        };
+
+        const { markdown: updatedMarkdown, replyId } = serializerAddReply(
+          this.rawMarkdown,
+          commentId,
+          reply
+        );
+
+        // Update internal state
+        this.rawMarkdown = updatedMarkdown;
+        const comment = this.comments.find((c) => c.id === commentId);
+        if (comment) {
+          const replies = comment.replies ?? [];
+          replies.push({ id: replyId, ...reply });
+          comment.replies = replies;
+        }
+
+        // Refresh the card content
+        this.refreshCardContent(commentId);
+
+        // Write to file
+        try {
+          await this.writeFile(updatedMarkdown);
+          if (this.ui) this.ui.showToast('Reply saved');
+        } catch (err) {
+          this.recordWriteFailure(span, err, 'reply');
+          if (this.ui) this.ui.showToast('Reply saved locally (file write failed)');
+        }
+      },
+      { [ATTR_MDVIEW_COMMENT_OP]: 'reply' }
     );
-
-    // Update internal state
-    this.rawMarkdown = updatedMarkdown;
-    const comment = this.comments.find((c) => c.id === commentId);
-    if (comment) {
-      const replies = comment.replies ?? [];
-      replies.push({ id: replyId, ...reply });
-      comment.replies = replies;
-    }
-
-    // Refresh the card content
-    this.refreshCardContent(commentId);
-
-    // Write to file
-    try {
-      await this.writeFile(updatedMarkdown);
-      if (this.ui) this.ui.showToast('Reply saved');
-    } catch {
-      if (this.ui) this.ui.showToast('Reply saved locally (file write failed)');
-    }
   }
 
   /**
    * Toggle an emoji reaction on a comment.
    */
   async toggleReaction(commentId: string, emoji: string): Promise<void> {
-    const updatedMarkdown = serializerToggleReaction(
-      this.rawMarkdown,
-      commentId,
-      emoji,
-      this.authorName
-    );
+    return this.logger.withSpan(
+      'comment.reaction',
+      async (span) => {
+        span.setAttribute(ATTR_MDVIEW_COMMENT_ID, commentId);
+        span.setAttribute(ATTR_MDVIEW_FILE_PATH, this.filePath);
 
-    // Update internal state
-    this.rawMarkdown = updatedMarkdown;
-    const comment = this.comments.find((c) => c.id === commentId);
-    if (comment) {
-      const reactions = comment.reactions ?? {};
-      const authors = reactions[emoji] ?? [];
-      const idx = authors.indexOf(this.authorName);
-      if (idx >= 0) {
-        authors.splice(idx, 1);
-        if (authors.length === 0) {
-          delete reactions[emoji];
-        } else {
-          reactions[emoji] = authors;
+        const updatedMarkdown = serializerToggleReaction(
+          this.rawMarkdown,
+          commentId,
+          emoji,
+          this.authorName
+        );
+
+        // Update internal state
+        this.rawMarkdown = updatedMarkdown;
+        const comment = this.comments.find((c) => c.id === commentId);
+        if (comment) {
+          const reactions = comment.reactions ?? {};
+          const authors = reactions[emoji] ?? [];
+          const idx = authors.indexOf(this.authorName);
+          if (idx >= 0) {
+            authors.splice(idx, 1);
+            if (authors.length === 0) {
+              delete reactions[emoji];
+            } else {
+              reactions[emoji] = authors;
+            }
+          } else {
+            reactions[emoji] = [...authors, this.authorName];
+          }
+
+          if (Object.keys(reactions).length > 0) {
+            comment.reactions = reactions;
+          } else {
+            delete comment.reactions;
+          }
         }
-      } else {
-        reactions[emoji] = [...authors, this.authorName];
-      }
 
-      if (Object.keys(reactions).length > 0) {
-        comment.reactions = reactions;
-      } else {
-        delete comment.reactions;
-      }
-    }
+        // Refresh the card content
+        this.refreshCardContent(commentId);
 
-    // Refresh the card content
-    this.refreshCardContent(commentId);
-
-    // Write to file
-    try {
-      await this.writeFile(updatedMarkdown);
-    } catch {
-      if (this.ui) this.ui.showToast('Reaction saved locally (file write failed)');
-    }
+        // Write to file
+        try {
+          await this.writeFile(updatedMarkdown);
+        } catch (err) {
+          this.recordWriteFailure(span, err, 'reaction');
+          if (this.ui) this.ui.showToast('Reaction saved locally (file write failed)');
+        }
+      },
+      { [ATTR_MDVIEW_COMMENT_OP]: 'reaction' }
+    );
   }
 
   /**

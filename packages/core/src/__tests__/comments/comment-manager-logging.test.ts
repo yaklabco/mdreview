@@ -39,7 +39,7 @@ vi.mock('../../comments/comment-highlight', () => {
 const RESOURCE: ResourceAttrs = {
   'service.name': 'mdview',
   'service.version': '0.0.0-test',
-  'service.namespace': 'core-test',
+  'service.namespace': 'electron-renderer',
   'deployment.environment': 'dev',
   'host.os': 'test',
 };
@@ -95,7 +95,7 @@ This is a test document.
 Some content here.
 `;
 
-describe('CommentManager logging (comment.write.failed)', () => {
+describe('CommentManager logging spans', () => {
   let manager: CommentManager;
   let transport: CapturingTransport;
 
@@ -120,7 +120,64 @@ describe('CommentManager logging (comment.write.failed)', () => {
     await shutdownLogging();
   });
 
-  it('emits a structured error log when the file write fails', async () => {
+  it('emits comment.add.start and comment.add.end with status=ok on success', async () => {
+    const file = createMockFileAdapter();
+    const identity = createMockIdentityAdapter();
+
+    manager = new CommentManager({ file, identity });
+    await manager.initialize(SAMPLE_MARKDOWN, '/test/doc.md', createMinimalPreferences());
+
+    await manager.addComment('test document', 'a comment body');
+
+    await new Promise((r) => setTimeout(r, 10));
+    await shutdownLogging();
+
+    const startRec = transport.records.find((r) => r.body === 'comment.add.start');
+    const endRec = transport.records.find((r) => r.body === 'comment.add.end');
+
+    expect(startRec).toBeDefined();
+    expect(endRec).toBeDefined();
+    expect(startRec?.traceId).toBeDefined();
+    expect(startRec?.traceId).toBe(endRec?.traceId);
+    expect(startRec?.attributes['mdview.comment.op']).toBe('add');
+    // span.setAttribute mutations are visible on the end record (and any
+    // exception event) since the start record is emitted before fn runs.
+    expect(endRec?.attributes['mdview.file.path']).toBe('/test/doc.md');
+    expect(endRec?.attributes['mdview.comment.id']).toBeDefined();
+    expect(endRec?.attributes['mdview.span.status']).toBe('ok');
+    expect(endRec?.attributes['duration_ns']).toBeTypeOf('number');
+  });
+
+  it('emits comment.resolve.start/end on a successful resolveComment', async () => {
+    const mdWithComment = `# Hello
+
+Test[@1] content.
+
+<!-- mdview:annotations [{"id":1,"anchor":{"text":"Test"},"body":"A note","author":"tester","date":"2024-01-01T00:00:00.000Z"}] -->
+`;
+    const file = createMockFileAdapter();
+    const identity = createMockIdentityAdapter();
+
+    manager = new CommentManager({ file, identity });
+    await manager.initialize(mdWithComment, '/test/doc.md', createMinimalPreferences());
+
+    await manager.resolveComment('comment-1');
+
+    await new Promise((r) => setTimeout(r, 10));
+    await shutdownLogging();
+
+    const startRec = transport.records.find((r) => r.body === 'comment.resolve.start');
+    const endRec = transport.records.find((r) => r.body === 'comment.resolve.end');
+
+    expect(startRec).toBeDefined();
+    expect(endRec).toBeDefined();
+    expect(startRec?.attributes['mdview.comment.op']).toBe('resolve');
+    expect(endRec?.attributes['mdview.comment.id']).toBe('comment-1');
+    expect(endRec?.attributes['mdview.span.status']).toBe('ok');
+    expect(endRec?.traceId).toBe(startRec?.traceId);
+  });
+
+  it('emits start, exception, and end (status=error) when addComment write fails', async () => {
     const writeError = new Error('disk full');
     const file = createMockFileAdapter({
       writeFile: vi.fn().mockRejectedValue(writeError),
@@ -130,20 +187,29 @@ describe('CommentManager logging (comment.write.failed)', () => {
     manager = new CommentManager({ file, identity });
     await manager.initialize(SAMPLE_MARKDOWN, '/test/doc.md', createMinimalPreferences());
 
-    await manager.addComment('test document', 'a comment body');
+    // addComment now rethrows on write failure so the surrounding span emits
+    // an exception event and an end record with status=error.
+    await expect(manager.addComment('test document', 'a comment body')).rejects.toThrow(
+      'disk full'
+    );
 
-    // Allow microtasks to drain so the error record reaches the transport.
+    // Allow microtasks to drain so all span records reach the transport.
     await new Promise((r) => setTimeout(r, 10));
     await shutdownLogging();
 
     const errorRecords = transport.records.filter((r) => r.severityText === 'ERROR');
     expect(errorRecords.length).toBeGreaterThan(0);
 
-    const rec = errorRecords.find((r) => r.body === 'comment.write.failed');
-    expect(rec).toBeDefined();
-    expect(rec?.attributes['mdview.comment.op']).toBe('add');
-    expect(rec?.attributes['mdview.file.path']).toBe('/test/doc.md');
-    expect(rec?.attributes['exception.message']).toBe('disk full');
-    expect(rec?.attributes['exception.type']).toBe('Error');
+    const exceptionRec = transport.records.find((r) => r.body === 'exception');
+    expect(exceptionRec).toBeDefined();
+    expect(exceptionRec?.attributes['mdview.span.name']).toBe('comment.add');
+    expect(exceptionRec?.attributes['exception.message']).toBe('disk full');
+    expect(exceptionRec?.attributes['exception.type']).toBe('Error');
+    expect(exceptionRec?.traceId).toBeDefined();
+
+    const endRec = transport.records.find((r) => r.body === 'comment.add.end');
+    expect(endRec).toBeDefined();
+    expect(endRec?.attributes['mdview.span.status']).toBe('error');
+    expect(endRec?.traceId).toBe(exceptionRec?.traceId);
   });
 });
