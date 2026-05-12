@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.15](https://github.com/yaklabco/mdreview/compare/v0.3.14...v0.3.15) (2026-05-12)
+
+
+### Features
+
+* **logging:** bridge-recovery flusher for buffered logs ([7baee1b](https://github.com/yaklabco/mdreview/commit/7baee1b16f85306fc73c8267946d118b7f1d4a61))
+* **logging:** Chrome IndexedDB fallback transport ([6031e2c](https://github.com/yaklabco/mdreview/commit/6031e2c57abc3f8a0cc9e2d78dd9c69f6b76916d))
+* **logging:** Chrome native-host transport ([136d44e](https://github.com/yaklabco/mdreview/commit/136d44e4fa7972c0e3e3dc0b08dcf80830a63896))
+* **logging:** composite transport with bridge fallback ([ff41f59](https://github.com/yaklabco/mdreview/commit/ff41f59f4fb12fcfc70a56762b9dc860e15397ef))
+* **logging:** Electron FileTransport with rotation ([d15abd5](https://github.com/yaklabco/mdreview/commit/d15abd5a45bab1bdffd51038e9e618c80d7bcda3))
+* **logging:** native-host LOG_BATCH handler ([0334f25](https://github.com/yaklabco/mdreview/commit/0334f257c1ef543cf86be188bfaacf9141bad890))
+* **logging:** platform transports and native-host wire-up (Phase 2) ([5fae67a](https://github.com/yaklabco/mdreview/commit/5fae67aa4350e135aece24f153d6a589a9b7324d))
+* **logging:** renderer-to-main LOG_BATCH IPC bridge ([bcb01d1](https://github.com/yaklabco/mdreview/commit/bcb01d129c6132b6ae79aab7b444a37438366797))
+* **logging:** SW LOG_BATCH route and per-context init ([46c7910](https://github.com/yaklabco/mdreview/commit/46c79108319d069024cc61a2084b3b65f5264c2e))
+* **logging:** wire Electron main and renderer loggers ([c55e46f](https://github.com/yaklabco/mdreview/commit/c55e46f8622e35b5e64c9cdbadbe4c6f322083a4))
+
+
+### Tests
+
+* **logging:** end-to-end smoke for ring + processor + logger ([ac57221](https://github.com/yaklabco/mdreview/commit/ac57221937184079c9131a8148b468bd29454a13))
+
 ## [0.3.14](https://github.com/yaklabco/mdreview/compare/v0.3.13...v0.3.14) (2026-05-12)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.2](https://github.com/yaklabco/mdreview/compare/core-v0.3.1...core-v0.3.2) (2026-05-12)
+
+
+### Features
+
+* **logging:** Electron FileTransport with rotation ([d15abd5](https://github.com/yaklabco/mdreview/commit/d15abd5a45bab1bdffd51038e9e618c80d7bcda3))
+* **logging:** platform transports and native-host wire-up (Phase 2) ([5fae67a](https://github.com/yaklabco/mdreview/commit/5fae67aa4350e135aece24f153d6a589a9b7324d))
+
+
+### Tests
+
+* **logging:** end-to-end smoke for ring + processor + logger ([ac57221](https://github.com/yaklabco/mdreview/commit/ac57221937184079c9131a8148b468bd29454a13))
+
 ## [0.3.1](https://github.com/yaklabco/mdreview/compare/core-v0.3.0...core-v0.3.1) (2026-05-12)
 
 
